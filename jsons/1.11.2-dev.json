@@ -115,6 +115,10 @@
     {
       "name":"net.md-5:SpecialSource:1.7.4",
       "url":"http://repo.maven.apache.org/maven2"
+    },
+    {
+      "name":"org.spigotmc:spigot-api:1.11.2-R0.1-SNAPSHOT",
+      "url":"https://hub.spigotmc.org/nexus/content/repositories/snapshots/"      
     }
 
   ]
