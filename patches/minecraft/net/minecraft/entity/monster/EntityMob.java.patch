@@ -1,0 +1,96 @@
+--- ../src-base/minecraft/net/minecraft/entity/monster/EntityMob.java
++++ ../src-work/minecraft/net/minecraft/entity/monster/EntityMob.java
+@@ -18,6 +18,8 @@
+ import net.minecraft.world.EnumDifficulty;
+ import net.minecraft.world.EnumSkyBlock;
+ import net.minecraft.world.World;
++import org.bukkit.Bukkit;
++import org.bukkit.event.entity.EntityCombustByEntityEvent;
+ 
+ public abstract class EntityMob extends EntityCreature implements IMob
+ {
+@@ -85,56 +87,55 @@
+         return p_184588_1_ > 4 ? SoundEvents.field_187735_cx : SoundEvents.field_187589_cA;
+     }
+ 
+-    public boolean func_70652_k(Entity p_70652_1_)
+-    {
+-        float f = (float)this.func_110148_a(SharedMonsterAttributes.field_111264_e).func_111126_e();
++    public boolean func_70652_k(Entity p_70652_1_) {
++        float f = (float) this.func_110148_a(SharedMonsterAttributes.field_111264_e).func_111126_e();
+         int i = 0;
+ 
+-        if (p_70652_1_ instanceof EntityLivingBase)
+-        {
+-            f += EnchantmentHelper.func_152377_a(this.func_184614_ca(), ((EntityLivingBase)p_70652_1_).func_70668_bt());
++        if (p_70652_1_ instanceof EntityLivingBase) {
++            f += EnchantmentHelper.func_152377_a(this.func_184614_ca(), ((EntityLivingBase) p_70652_1_).func_70668_bt());
+             i += EnchantmentHelper.func_77501_a(this);
+         }
+ 
+         boolean flag = p_70652_1_.func_70097_a(DamageSource.func_76358_a(this), f);
+ 
+-        if (flag)
+-        {
+-            if (i > 0 && p_70652_1_ instanceof EntityLivingBase)
+-            {
+-                ((EntityLivingBase)p_70652_1_).func_70653_a(this, (float)i * 0.5F, (double)MathHelper.func_76126_a(this.field_70177_z * 0.017453292F), (double)(-MathHelper.func_76134_b(this.field_70177_z * 0.017453292F)));
++        if (flag) {
++            if (i > 0 && p_70652_1_ instanceof EntityLivingBase) {
++                ((EntityLivingBase) p_70652_1_).func_70653_a(this, (float) i * 0.5F, (double) MathHelper.func_76126_a(this.field_70177_z * 0.017453292F), (double) (-MathHelper.func_76134_b(this.field_70177_z * 0.017453292F)));
+                 this.field_70159_w *= 0.6D;
+                 this.field_70179_y *= 0.6D;
+             }
+ 
+             int j = EnchantmentHelper.func_90036_a(this);
+ 
+-            if (j > 0)
+-            {
+-                p_70652_1_.func_70015_d(j * 4);
+-            }
++            if (j > 0) {
++                // CraftBukkit start - Call a combust event when somebody hits with a fire enchanted item
++                EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), p_70652_1_.getBukkitEntity(), j * 4);
++                Bukkit.getPluginManager().callEvent(combustEvent);
+ 
+-            if (p_70652_1_ instanceof EntityPlayer)
+-            {
+-                EntityPlayer entityplayer = (EntityPlayer)p_70652_1_;
+-                ItemStack itemstack = this.func_184614_ca();
+-                ItemStack itemstack1 = entityplayer.func_184587_cr() ? entityplayer.func_184607_cu() : ItemStack.field_190927_a;
++                if (!combustEvent.isCancelled()) {
++                    p_70652_1_.func_70015_d(combustEvent.getDuration());
++                }
++                // CraftBukkit end            }
+ 
+-                if (!itemstack.func_190926_b() && !itemstack1.func_190926_b() && itemstack.func_77973_b() instanceof ItemAxe && itemstack1.func_77973_b() == Items.field_185159_cQ)
+-                {
+-                    float f1 = 0.25F + (float)EnchantmentHelper.func_185293_e(this) * 0.05F;
++                if (p_70652_1_ instanceof EntityPlayer) {
++                    EntityPlayer entityplayer = (EntityPlayer) p_70652_1_;
++                    ItemStack itemstack = this.func_184614_ca();
++                    ItemStack itemstack1 = entityplayer.func_184587_cr() ? entityplayer.func_184607_cu() : ItemStack.field_190927_a;
+ 
+-                    if (this.field_70146_Z.nextFloat() < f1)
+-                    {
+-                        entityplayer.func_184811_cZ().func_185145_a(Items.field_185159_cQ, 100);
+-                        this.field_70170_p.func_72960_a(entityplayer, (byte)30);
++                    if (!itemstack.func_190926_b() && !itemstack1.func_190926_b() && itemstack.func_77973_b() instanceof ItemAxe && itemstack1.func_77973_b() == Items.field_185159_cQ) {
++                        float f1 = 0.25F + (float) EnchantmentHelper.func_185293_e(this) * 0.05F;
++
++                        if (this.field_70146_Z.nextFloat() < f1) {
++                            entityplayer.func_184811_cZ().func_185145_a(Items.field_185159_cQ, 100);
++                            this.field_70170_p.func_72960_a(entityplayer, (byte) 30);
++                        }
+                     }
+                 }
++
++                this.func_174815_a(this, p_70652_1_);
+             }
+ 
+-            this.func_174815_a(this, p_70652_1_);
+         }
+-
+         return flag;
+     }
+ 

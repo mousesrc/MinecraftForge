@@ -434,9 +434,9 @@ public class DimensionManager
         {
             return DimensionManager.getWorld(0).getSaveHandler().getWorldDirectory();
         }/*
-        else if (MinecraftServer.getServer() != null)
+        else if (((CraftServer)Bukkit.getServer()).getServer() != null)
         {
-            MinecraftServer srv = MinecraftServer.getServer();
+            MinecraftServer srv = ((CraftServer)Bukkit.getServer()).getServer();
             SaveHandler saveHandler = (SaveHandler) srv.getActiveAnvilConverter().getSaveLoader(srv.getFolderName(), false);
             return saveHandler.getWorldDirectory();
         }*/

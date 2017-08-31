@@ -1,0 +1,116 @@
+--- ../src-base/minecraft/net/minecraft/util/DamageSource.java
++++ ../src-work/minecraft/net/minecraft/util/DamageSource.java
+@@ -11,6 +11,7 @@
+ import net.minecraft.util.text.TextComponentTranslation;
+ import net.minecraft.util.text.translation.I18n;
+ import net.minecraft.world.Explosion;
++import org.bukkit.event.entity.EntityDamageEvent;
+ 
+ public class DamageSource
+ {
+@@ -44,7 +45,19 @@
+     private boolean field_82730_x;
+     private boolean field_76378_k;
+     public String field_76373_n;
++    // CraftBukkit start
++    private boolean sweep;
+ 
++    public boolean isSweep() {
++        return sweep;
++    }
++
++    public net.minecraft.util.DamageSource sweep() {
++        this.sweep = true;
++        return this;
++    }
++    // CraftBukkit end
++
+     public static DamageSource func_76358_a(EntityLivingBase p_76358_0_)
+     {
+         return new EntityDamageSource("mob", p_76358_0_);
+@@ -231,4 +244,85 @@
+     {
+         return null;
+     }
++    public static EntityDamageEvent.DamageCause asBukkit(DamageSource source)
++    {
++        EntityDamageEvent.DamageCause cause = null;
++        if(source == DamageSource.field_76372_a)
++        {
++            cause = EntityDamageEvent.DamageCause.FIRE;
++        }
++        else if(source == DamageSource.field_76370_b)
++        {
++            cause = EntityDamageEvent.DamageCause.FIRE_TICK;
++        }
++        else if(source == DamageSource.field_180137_b)
++        {
++            cause = EntityDamageEvent.DamageCause.LIGHTNING;
++        }
++        else if(source == DamageSource.field_190095_e)
++        {
++            cause = EntityDamageEvent.DamageCause.HOT_FLOOR;
++        }
++        else if(source == DamageSource.field_76368_d)
++        {
++            cause = EntityDamageEvent.DamageCause.SUFFOCATION;
++        }
++        else if(source == DamageSource.field_191291_g)
++        {
++            cause = EntityDamageEvent.DamageCause.CRAMMING;
++        }
++        else if(source == DamageSource.field_76369_e)
++        {
++            cause = EntityDamageEvent.DamageCause.DROWNING;
++        }
++        else if(source == DamageSource.field_76366_f)
++        {
++            cause = EntityDamageEvent.DamageCause.STARVATION;
++        }
++        else if(source == DamageSource.field_76367_g)
++        {
++            cause = EntityDamageEvent.DamageCause.CONTACT;
++        }
++        else if(source == DamageSource.field_76379_h)
++        {
++            cause = EntityDamageEvent.DamageCause.FALL;
++        }
++        else if(source == DamageSource.field_188406_j)
++        {
++            cause = EntityDamageEvent.DamageCause.FLY_INTO_WALL;
++        }
++        else if(source == DamageSource.field_76380_i)
++        {
++            cause = EntityDamageEvent.DamageCause.VOID;
++        }
++        else if(source == DamageSource.field_76377_j)
++        {
++            cause = EntityDamageEvent.DamageCause.CONTACT;
++        }
++        else if(source == DamageSource.field_76376_m)
++        {
++            cause = EntityDamageEvent.DamageCause.MAGIC;
++        }
++        else if(source == DamageSource.field_82727_n)
++        {
++            cause = EntityDamageEvent.DamageCause.WITHER;
++        }
++        else if(source == DamageSource.field_82728_o || source == DamageSource.field_82729_p)
++        {
++            cause = EntityDamageEvent.DamageCause.FALLING_BLOCK;
++        }
++        else if(source == DamageSource.field_188407_q)
++        {
++            cause = EntityDamageEvent.DamageCause.DRAGON_BREATH;
++        }
++        else if(source == DamageSource.field_191552_t)
++        {
++            cause = EntityDamageEvent.DamageCause.ENTITY_EXPLOSION;
++        }
++        else
++        {
++            cause = EntityDamageEvent.DamageCause.CUSTOM;
++        }
++        return cause;
++    }
+ }

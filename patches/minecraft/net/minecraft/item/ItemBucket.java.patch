@@ -1,15 +1,249 @@
 --- ../src-base/minecraft/net/minecraft/item/ItemBucket.java
 +++ ../src-work/minecraft/net/minecraft/item/ItemBucket.java
-@@ -38,6 +38,8 @@
-         boolean flag = this.field_77876_a == Blocks.field_150350_a;
-         ItemStack itemstack = p_77659_2_.func_184586_b(p_77659_3_);
-         RayTraceResult raytraceresult = this.func_77621_a(p_77659_1_, p_77659_2_, flag);
-+        ActionResult<ItemStack> ret = net.minecraftforge.event.ForgeEventFactory.onBucketUse(p_77659_2_, p_77659_1_, itemstack, raytraceresult);
+@@ -21,64 +21,84 @@
+ import net.minecraft.util.math.BlockPos;
+ import net.minecraft.util.math.RayTraceResult;
+ import net.minecraft.world.World;
++import net.minecraftforge.event.ForgeEventFactory;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.player.PlayerBucketEmptyEvent;
++import org.bukkit.event.player.PlayerBucketFillEvent;
+ 
+ public class ItemBucket extends Item
+ {
+-    private final Block field_77876_a;
++    private final Block containedBlock;
+ 
+-    public ItemBucket(Block p_i45331_1_)
++    public ItemBucket(Block containedBlockIn)
+     {
+-        this.field_77777_bU = 1;
+-        this.field_77876_a = p_i45331_1_;
+-        this.func_77637_a(CreativeTabs.field_78026_f);
++        this.maxStackSize = 1;
++        this.containedBlock = containedBlockIn;
++        this.setCreativeTab(CreativeTabs.MISC);
+     }
+ 
+-    public ActionResult<ItemStack> func_77659_a(World p_77659_1_, EntityPlayer p_77659_2_, EnumHand p_77659_3_)
++    public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn)
+     {
+-        boolean flag = this.field_77876_a == Blocks.field_150350_a;
+-        ItemStack itemstack = p_77659_2_.func_184586_b(p_77659_3_);
+-        RayTraceResult raytraceresult = this.func_77621_a(p_77659_1_, p_77659_2_, flag);
++        boolean flag = this.containedBlock == Blocks.AIR;
++        ItemStack itemstack = playerIn.getHeldItem(handIn);
++        RayTraceResult raytraceresult = this.rayTrace(worldIn, playerIn, flag);
++        ActionResult<ItemStack> ret = ForgeEventFactory.onBucketUse(playerIn, worldIn, itemstack, raytraceresult);
 +        if (ret != null) return ret;
  
          if (raytraceresult == null)
          {
-@@ -181,4 +183,16 @@
+             return new ActionResult(EnumActionResult.PASS, itemstack);
+         }
+-        else if (raytraceresult.field_72313_a != RayTraceResult.Type.BLOCK)
++        else if (raytraceresult.typeOfHit != RayTraceResult.Type.BLOCK)
+         {
+             return new ActionResult(EnumActionResult.PASS, itemstack);
+         }
+         else
+         {
+-            BlockPos blockpos = raytraceresult.func_178782_a();
++            BlockPos blockpos = raytraceresult.getBlockPos();
+ 
+-            if (!p_77659_1_.func_175660_a(p_77659_2_, blockpos))
++            if (!worldIn.isBlockModifiable(playerIn, blockpos))
+             {
+                 return new ActionResult(EnumActionResult.FAIL, itemstack);
+             }
+             else if (flag)
+             {
+-                if (!p_77659_2_.func_175151_a(blockpos.func_177972_a(raytraceresult.field_178784_b), raytraceresult.field_178784_b, itemstack))
++                if (!playerIn.canPlayerEdit(blockpos.offset(raytraceresult.sideHit), raytraceresult.sideHit, itemstack))
+                 {
+                     return new ActionResult(EnumActionResult.FAIL, itemstack);
+                 }
+                 else
+                 {
+-                    IBlockState iblockstate = p_77659_1_.func_180495_p(blockpos);
+-                    Material material = iblockstate.func_185904_a();
++                    IBlockState iblockstate = worldIn.getBlockState(blockpos);
++                    Material material = iblockstate.getMaterial();
+ 
+-                    if (material == Material.field_151586_h && ((Integer)iblockstate.func_177229_b(BlockLiquid.field_176367_b)).intValue() == 0)
++                    if (material == Material.WATER && ((Integer)iblockstate.getValue(BlockLiquid.LEVEL)).intValue() == 0)
+                     {
+-                        p_77659_1_.func_180501_a(blockpos, Blocks.field_150350_a.func_176223_P(), 11);
+-                        p_77659_2_.func_71029_a(StatList.func_188057_b(this));
+-                        p_77659_2_.func_184185_a(SoundEvents.field_187630_M, 1.0F, 1.0F);
+-                        return new ActionResult(EnumActionResult.SUCCESS, this.func_150910_a(itemstack, p_77659_2_, Items.field_151131_as));
++                        // CraftBukkit start
++                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(playerIn, blockpos.getX(), blockpos.getY(), blockpos.getZ(), null, itemstack, Items.WATER_BUCKET);
++
++                        if (event.isCancelled()) {
++                            return new ActionResult(EnumActionResult.FAIL, itemstack);
++                        }
++                        // CraftBukkit end
++                        worldIn.setBlockState(blockpos, Blocks.AIR.getDefaultState(), 11);
++                        playerIn.addStat(StatList.getObjectUseStats(this));
++                        playerIn.playSound(SoundEvents.ITEM_BUCKET_FILL, 1.0F, 1.0F);
++                        return new ActionResult(EnumActionResult.SUCCESS, this.fillBucket(itemstack, playerIn, Items.WATER_BUCKET));
+                     }
+-                    else if (material == Material.field_151587_i && ((Integer)iblockstate.func_177229_b(BlockLiquid.field_176367_b)).intValue() == 0)
++                    else if (material == Material.LAVA && ((Integer)iblockstate.getValue(BlockLiquid.LEVEL)).intValue() == 0)
+                     {
+-                        p_77659_2_.func_184185_a(SoundEvents.field_187633_N, 1.0F, 1.0F);
+-                        p_77659_1_.func_180501_a(blockpos, Blocks.field_150350_a.func_176223_P(), 11);
+-                        p_77659_2_.func_71029_a(StatList.func_188057_b(this));
+-                        return new ActionResult(EnumActionResult.SUCCESS, this.func_150910_a(itemstack, p_77659_2_, Items.field_151129_at));
++                        // CraftBukkit start
++                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(playerIn, blockpos.getX(), blockpos.getY(), blockpos.getZ(), null, itemstack, Items.LAVA_BUCKET);
++
++                        if (event.isCancelled()) {
++                            return new ActionResult(EnumActionResult.FAIL, itemstack);
++                        }
++                        // CraftBukkit end
++                        playerIn.playSound(SoundEvents.ITEM_BUCKET_FILL_LAVA, 1.0F, 1.0F);
++                        worldIn.setBlockState(blockpos, Blocks.AIR.getDefaultState(), 11);
++                        playerIn.addStat(StatList.getObjectUseStats(this));
++                        return new ActionResult(EnumActionResult.SUCCESS, this.fillBucket(itemstack, playerIn, Items.LAVA_BUCKET));
+                     }
+                     else
+                     {
+@@ -88,17 +108,17 @@
+             }
+             else
+             {
+-                boolean flag1 = p_77659_1_.func_180495_p(blockpos).func_177230_c().func_176200_f(p_77659_1_, blockpos);
+-                BlockPos blockpos1 = flag1 && raytraceresult.field_178784_b == EnumFacing.UP ? blockpos : blockpos.func_177972_a(raytraceresult.field_178784_b);
++                boolean flag1 = worldIn.getBlockState(blockpos).getBlock().isReplaceable(worldIn, blockpos);
++                BlockPos blockpos1 = flag1 && raytraceresult.sideHit == EnumFacing.UP ? blockpos : blockpos.offset(raytraceresult.sideHit);
+ 
+-                if (!p_77659_2_.func_175151_a(blockpos1, raytraceresult.field_178784_b, itemstack))
++                if (!playerIn.canPlayerEdit(blockpos1, raytraceresult.sideHit, itemstack))
+                 {
+                     return new ActionResult(EnumActionResult.FAIL, itemstack);
+                 }
+-                else if (this.func_180616_a(p_77659_2_, p_77659_1_, blockpos1))
++                else if (this.tryPlaceContainedLiquid(playerIn, worldIn, blockpos1))
+                 {
+-                    p_77659_2_.func_71029_a(StatList.func_188057_b(this));
+-                    return !p_77659_2_.field_71075_bZ.field_75098_d ? new ActionResult(EnumActionResult.SUCCESS, new ItemStack(Items.field_151133_ar)) : new ActionResult(EnumActionResult.SUCCESS, itemstack);
++                    playerIn.addStat(StatList.getObjectUseStats(this));
++                    return !playerIn.capabilities.isCreativeMode ? new ActionResult(EnumActionResult.SUCCESS, new ItemStack(Items.BUCKET)) : new ActionResult(EnumActionResult.SUCCESS, itemstack);
+                 }
+                 else
+                 {
+@@ -108,77 +128,98 @@
+         }
+     }
+ 
+-    private ItemStack func_150910_a(ItemStack p_150910_1_, EntityPlayer p_150910_2_, Item p_150910_3_)
++    private ItemStack fillBucket(ItemStack emptyBuckets, EntityPlayer player, Item fullBucket)
+     {
+-        if (p_150910_2_.field_71075_bZ.field_75098_d)
++        if (player.capabilities.isCreativeMode)
+         {
+-            return p_150910_1_;
++            return emptyBuckets;
+         }
+         else
+         {
+-            p_150910_1_.func_190918_g(1);
++            emptyBuckets.shrink(1);
+ 
+-            if (p_150910_1_.func_190926_b())
++            if (emptyBuckets.isEmpty())
+             {
+-                return new ItemStack(p_150910_3_);
++                return new ItemStack(fullBucket);
+             }
+             else
+             {
+-                if (!p_150910_2_.field_71071_by.func_70441_a(new ItemStack(p_150910_3_)))
++                if (!player.inventory.addItemStackToInventory(new ItemStack(fullBucket)))
+                 {
+-                    p_150910_2_.func_71019_a(new ItemStack(p_150910_3_), false);
++                    player.dropItem(new ItemStack(fullBucket), false);
+                 }
+ 
+-                return p_150910_1_;
++                return emptyBuckets;
+             }
+         }
+     }
+ 
+-    public boolean func_180616_a(@Nullable EntityPlayer p_180616_1_, World p_180616_2_, BlockPos p_180616_3_)
++    public boolean tryPlaceContainedLiquid(@Nullable EntityPlayer player, World worldIn, BlockPos posIn)
+     {
+-        if (this.field_77876_a == Blocks.field_150350_a)
++        if (this.containedBlock == Blocks.AIR)
+         {
+             return false;
+         }
+         else
+         {
+-            IBlockState iblockstate = p_180616_2_.func_180495_p(p_180616_3_);
+-            Material material = iblockstate.func_185904_a();
+-            boolean flag = !material.func_76220_a();
+-            boolean flag1 = iblockstate.func_177230_c().func_176200_f(p_180616_2_, p_180616_3_);
++            IBlockState iblockstate = worldIn.getBlockState(posIn);
++            Material material = iblockstate.getMaterial();
++            boolean flag = !material.isSolid();
++            boolean flag1 = iblockstate.getBlock().isReplaceable(worldIn, posIn);
+ 
+-            if (!p_180616_2_.func_175623_d(p_180616_3_) && !flag && !flag1)
++            if (!worldIn.isAirBlock(posIn) && !flag && !flag1)
+             {
+                 return false;
+             }
+             else
+             {
+-                if (p_180616_2_.field_73011_w.func_177500_n() && this.field_77876_a == Blocks.field_150358_i)
++                // CraftBukkit start
++                if (player != null) {
++                    PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(player, posIn.getX(), posIn.getY(), posIn.getZ(), null, null);
++                    if (event.isCancelled()) {
++                        // TODO: inventory not updated
++                        return false;
++                    }
++                }
++                // CraftBukkit end
++                if (worldIn.provider.doesWaterVaporize() && this.containedBlock == Blocks.FLOWING_WATER)
+                 {
+-                    int l = p_180616_3_.func_177958_n();
+-                    int i = p_180616_3_.func_177956_o();
+-                    int j = p_180616_3_.func_177952_p();
+-                    p_180616_2_.func_184133_a(p_180616_1_, p_180616_3_, SoundEvents.field_187646_bt, SoundCategory.BLOCKS, 0.5F, 2.6F + (p_180616_2_.field_73012_v.nextFloat() - p_180616_2_.field_73012_v.nextFloat()) * 0.8F);
++                    int l = posIn.getX();
++                    int i = posIn.getY();
++                    int j = posIn.getZ();
++                    worldIn.playSound(player, posIn, SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, 0.5F, 2.6F + (worldIn.rand.nextFloat() - worldIn.rand.nextFloat()) * 0.8F);
+ 
+                     for (int k = 0; k < 8; ++k)
+                     {
+-                        p_180616_2_.func_175688_a(EnumParticleTypes.SMOKE_LARGE, (double)l + Math.random(), (double)i + Math.random(), (double)j + Math.random(), 0.0D, 0.0D, 0.0D, new int[0]);
++                        worldIn.spawnParticle(EnumParticleTypes.SMOKE_LARGE, (double)l + Math.random(), (double)i + Math.random(), (double)j + Math.random(), 0.0D, 0.0D, 0.0D, new int[0]);
+                     }
+                 }
+                 else
+                 {
+-                    if (!p_180616_2_.field_72995_K && (flag || flag1) && !material.func_76224_d())
++                    if (!worldIn.isRemote && (flag || flag1) && !material.isLiquid())
+                     {
+-                        p_180616_2_.func_175655_b(p_180616_3_, true);
++                        worldIn.destroyBlock(posIn, true);
+                     }
+ 
+-                    SoundEvent soundevent = this.field_77876_a == Blocks.field_150356_k ? SoundEvents.field_187627_L : SoundEvents.field_187624_K;
+-                    p_180616_2_.func_184133_a(p_180616_1_, p_180616_3_, soundevent, SoundCategory.BLOCKS, 1.0F, 1.0F);
+-                    p_180616_2_.func_180501_a(p_180616_3_, this.field_77876_a.func_176223_P(), 11);
++                    SoundEvent soundevent = this.containedBlock == Blocks.FLOWING_LAVA ? SoundEvents.ITEM_BUCKET_EMPTY_LAVA : SoundEvents.ITEM_BUCKET_EMPTY;
++                    worldIn.playSound(player, posIn, soundevent, SoundCategory.BLOCKS, 1.0F, 1.0F);
++                    worldIn.setBlockState(posIn, this.containedBlock.getDefaultState(), 11);
+                 }
+ 
+                 return true;
              }
          }
      }

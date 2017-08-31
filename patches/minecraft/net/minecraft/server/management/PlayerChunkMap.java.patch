@@ -1,0 +1,26 @@
+--- ../src-base/minecraft/net/minecraft/server/management/PlayerChunkMap.java
++++ ../src-work/minecraft/net/minecraft/server/management/PlayerChunkMap.java
+@@ -48,13 +48,22 @@
+     private long field_111192_g;
+     private boolean field_187312_l = true;
+     private boolean field_187313_m = true;
++    private boolean wasNotEmpty; // CraftBukkit - add field
+ 
+     public PlayerChunkMap(WorldServer p_i1176_1_)
+     {
+         this.field_72701_a = p_i1176_1_;
+         this.func_152622_a(p_i1176_1_.func_73046_m().func_184103_al().func_72395_o());
+     }
+-
++    // CraftBukkit start - add method
++    public final boolean isChunkInUse(int x, int z) {
++        net.minecraft.server.management.PlayerChunkMapEntry pi = func_187301_b(x, z);
++        if (pi != null) {
++            return (pi.field_187283_c.size() > 0);
++        }
++        return false;
++    }
++    // CraftBukkit end
+     public WorldServer func_72688_a()
+     {
+         return this.field_72701_a;

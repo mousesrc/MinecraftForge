@@ -1,8 +1,103 @@
 --- ../src-base/minecraft/net/minecraft/item/crafting/RecipesBanners.java
 +++ ../src-work/minecraft/net/minecraft/item/crafting/RecipesBanners.java
-@@ -93,9 +93,10 @@
+@@ -16,39 +16,41 @@
+ 
+ public class RecipesBanners
+ {
+-    void func_179534_a(CraftingManager p_179534_1_)
++    void addRecipes(CraftingManager manager)
+     {
+         for (EnumDyeColor enumdyecolor : EnumDyeColor.values())
+         {
+-            p_179534_1_.func_92103_a(ItemBanner.func_190910_a(enumdyecolor, (NBTTagList)null), new Object[] {"###", "###", " | ", '#', new ItemStack(Blocks.field_150325_L, 1, enumdyecolor.func_176765_a()), '|', Items.field_151055_y});
++            manager.addRecipe(ItemBanner.makeBanner(enumdyecolor, (NBTTagList)null), new Object[] {"###", "###", " | ", '#', new ItemStack(Blocks.WOOL, 1, enumdyecolor.getMetadata()), '|', Items.STICK});
+         }
+ 
+-        p_179534_1_.func_180302_a(new RecipesBanners.RecipeDuplicatePattern());
+-        p_179534_1_.func_180302_a(new RecipesBanners.RecipeAddPattern());
++        manager.addRecipe(new RecipesBanners.RecipeDuplicatePattern());
++        manager.addRecipe(new RecipesBanners.RecipeAddPattern());
+     }
+ 
+-    public static class RecipeAddPattern implements IRecipe
++    public static class RecipeAddPattern extends ShapelessRecipes implements IRecipe
+         {
+-            private RecipeAddPattern()
+-            {
++            // CraftBukkit start - Delegate to new parent class with bogus info
++            private RecipeAddPattern() {
++                super(new ItemStack(Items.BANNER, 0, 0), java.util.Arrays.asList(new ItemStack(Items.BANNER)));
+             }
++            // CraftBukkit end
+ 
+-            public boolean func_77569_a(InventoryCrafting p_77569_1_, World p_77569_2_)
++            public boolean matches(InventoryCrafting inv, World worldIn)
+             {
+                 boolean flag = false;
+ 
+-                for (int i = 0; i < p_77569_1_.func_70302_i_(); ++i)
++                for (int i = 0; i < inv.getSizeInventory(); ++i)
+                 {
+-                    ItemStack itemstack = p_77569_1_.func_70301_a(i);
++                    ItemStack itemstack = inv.getStackInSlot(i);
+ 
+-                    if (itemstack.func_77973_b() == Items.field_179564_cE)
++                    if (itemstack.getItem() == Items.BANNER)
                      {
-                         ItemStack itemstack2 = p_77572_1_.func_70301_a(j);
+                         if (flag)
+                         {
+                             return false;
+                         }
+ 
+-                        if (TileEntityBanner.func_175113_c(itemstack) >= 6)
++                        if (TileEntityBanner.getPatterns(itemstack) >= 6)
+                         {
+                             return false;
+                         }
+@@ -63,113 +65,110 @@
+                 }
+                 else
+                 {
+-                    return this.func_190933_c(p_77569_1_) != null;
++                    return this.matchPatterns(inv) != null;
+                 }
+             }
+ 
+-            public ItemStack func_77572_b(InventoryCrafting p_77572_1_)
++            public ItemStack getCraftingResult(InventoryCrafting inv)
+             {
+-                ItemStack itemstack = ItemStack.field_190927_a;
++                ItemStack itemstack = ItemStack.EMPTY;
+ 
+-                for (int i = 0; i < p_77572_1_.func_70302_i_(); ++i)
++                for (int i = 0; i < inv.getSizeInventory(); ++i)
+                 {
+-                    ItemStack itemstack1 = p_77572_1_.func_70301_a(i);
++                    ItemStack itemstack1 = inv.getStackInSlot(i);
+ 
+-                    if (!itemstack1.func_190926_b() && itemstack1.func_77973_b() == Items.field_179564_cE)
++                    if (!itemstack1.isEmpty() && itemstack1.getItem() == Items.BANNER)
+                     {
+-                        itemstack = itemstack1.func_77946_l();
+-                        itemstack.func_190920_e(1);
++                        itemstack = itemstack1.copy();
++                        itemstack.setCount(1);
+                         break;
+                     }
+                 }
+ 
+-                BannerPattern bannerpattern = this.func_190933_c(p_77572_1_);
++                BannerPattern bannerpattern = this.matchPatterns(inv);
+ 
+                 if (bannerpattern != null)
+                 {
+                     int k = 0;
+ 
+-                    for (int j = 0; j < p_77572_1_.func_70302_i_(); ++j)
++                    for (int j = 0; j < inv.getSizeInventory(); ++j)
+                     {
+-                        ItemStack itemstack2 = p_77572_1_.func_70301_a(j);
++                        ItemStack itemstack2 = inv.getStackInSlot(j);
  
 -                        if (itemstack2.func_77973_b() == Items.field_151100_aR)
 +                        int color = getColor(itemstack2);
@@ -13,38 +108,160 @@
                              break;
                          }
                      }
-@@ -139,11 +140,7 @@
+ 
+-                    NBTTagCompound nbttagcompound1 = itemstack.func_190925_c("BlockEntityTag");
++                    NBTTagCompound nbttagcompound1 = itemstack.getOrCreateSubCompound("BlockEntityTag");
+                     NBTTagList nbttaglist;
+ 
+-                    if (nbttagcompound1.func_150297_b("Patterns", 9))
++                    if (nbttagcompound1.hasKey("Patterns", 9))
+                     {
+-                        nbttaglist = nbttagcompound1.func_150295_c("Patterns", 10);
++                        nbttaglist = nbttagcompound1.getTagList("Patterns", 10);
+                     }
+                     else
+                     {
+                         nbttaglist = new NBTTagList();
+-                        nbttagcompound1.func_74782_a("Patterns", nbttaglist);
++                        nbttagcompound1.setTag("Patterns", nbttaglist);
+                     }
+ 
+                     NBTTagCompound nbttagcompound = new NBTTagCompound();
+-                    nbttagcompound.func_74778_a("Pattern", bannerpattern.func_190993_b());
+-                    nbttagcompound.func_74768_a("Color", k);
+-                    nbttaglist.func_74742_a(nbttagcompound);
++                    nbttagcompound.setString("Pattern", bannerpattern.getHashname());
++                    nbttagcompound.setInteger("Color", k);
++                    nbttaglist.appendTag(nbttagcompound);
+                 }
+ 
+                 return itemstack;
+             }
+ 
+-            public int func_77570_a()
++            public int getRecipeSize()
+             {
+                 return 10;
+             }
+ 
+-            public ItemStack func_77571_b()
++            public ItemStack getRecipeOutput()
+             {
+-                return ItemStack.field_190927_a;
++                return ItemStack.EMPTY;
+             }
+ 
+-            public NonNullList<ItemStack> func_179532_b(InventoryCrafting p_179532_1_)
++            public NonNullList<ItemStack> getRemainingItems(InventoryCrafting inv)
+             {
+-                NonNullList<ItemStack> nonnulllist = NonNullList.<ItemStack>func_191197_a(p_179532_1_.func_70302_i_(), ItemStack.field_190927_a);
++                NonNullList<ItemStack> nonnulllist = NonNullList.<ItemStack>withSize(inv.getSizeInventory(), ItemStack.EMPTY);
+ 
                  for (int i = 0; i < nonnulllist.size(); ++i)
                  {
-                     ItemStack itemstack = p_179532_1_.func_70301_a(i);
+-                    ItemStack itemstack = p_179532_1_.func_70301_a(i);
 -
 -                    if (itemstack.func_77973_b().func_77634_r())
 -                    {
 -                        nonnulllist.set(i, new ItemStack(itemstack.func_77973_b().func_77668_q()));
 -                    }
++                    ItemStack itemstack = inv.getStackInSlot(i);
 +                    nonnulllist.set(i, net.minecraftforge.common.ForgeHooks.getContainerItem(itemstack));
                  }
  
                  return nonnulllist;
-@@ -169,7 +166,7 @@
+             }
  
-                                 if (!itemstack.func_190926_b() && itemstack.func_77973_b() != Items.field_179564_cE)
+             @Nullable
+-            private BannerPattern func_190933_c(InventoryCrafting p_190933_1_)
++            private BannerPattern matchPatterns(InventoryCrafting p_190933_1_)
+             {
+                 for (BannerPattern bannerpattern : BannerPattern.values())
+                 {
+-                    if (bannerpattern.func_191000_d())
++                    if (bannerpattern.hasPattern())
+                     {
+                         boolean flag = true;
+ 
+-                        if (bannerpattern.func_190999_e())
++                        if (bannerpattern.hasPatternItem())
+                         {
+                             boolean flag1 = false;
+                             boolean flag2 = false;
+ 
+-                            for (int i = 0; i < p_190933_1_.func_70302_i_() && flag; ++i)
++                            for (int i = 0; i < p_190933_1_.getSizeInventory() && flag; ++i)
+                             {
+-                                ItemStack itemstack = p_190933_1_.func_70301_a(i);
++                                ItemStack itemstack = p_190933_1_.getStackInSlot(i);
+ 
+-                                if (!itemstack.func_190926_b() && itemstack.func_77973_b() != Items.field_179564_cE)
++                                if (!itemstack.isEmpty() && itemstack.getItem() != Items.BANNER)
                                  {
 -                                    if (itemstack.func_77973_b() == Items.field_151100_aR)
 +                                    if (isDye(itemstack))
                                      {
                                          if (flag2)
                                          {
-@@ -209,7 +206,7 @@
+@@ -181,7 +180,7 @@
+                                     }
+                                     else
+                                     {
+-                                        if (flag1 || !itemstack.func_77969_a(bannerpattern.func_190998_f()))
++                                        if (flag1 || !itemstack.isItemEqual(bannerpattern.getPatternItem()))
+                                         {
+                                             flag = false;
+                                             break;
+@@ -197,39 +196,39 @@
+                                 flag = false;
+                             }
+                         }
+-                        else if (p_190933_1_.func_70302_i_() == bannerpattern.func_190996_c().length * bannerpattern.func_190996_c()[0].length())
++                        else if (p_190933_1_.getSizeInventory() == bannerpattern.getPatterns().length * bannerpattern.getPatterns()[0].length())
+                         {
+                             int j = -1;
  
-                                 if (!itemstack1.func_190926_b() && itemstack1.func_77973_b() != Items.field_179564_cE)
+-                            for (int k = 0; k < p_190933_1_.func_70302_i_() && flag; ++k)
++                            for (int k = 0; k < p_190933_1_.getSizeInventory() && flag; ++k)
+                             {
+                                 int l = k / 3;
+                                 int i1 = k % 3;
+-                                ItemStack itemstack1 = p_190933_1_.func_70301_a(k);
++                                ItemStack itemstack1 = p_190933_1_.getStackInSlot(k);
+ 
+-                                if (!itemstack1.func_190926_b() && itemstack1.func_77973_b() != Items.field_179564_cE)
++                                if (!itemstack1.isEmpty() && itemstack1.getItem() != Items.BANNER)
                                  {
 -                                    if (itemstack1.func_77973_b() != Items.field_151100_aR)
 +                                    if (!isDye(itemstack1))
                                      {
                                          flag = false;
                                          break;
-@@ -250,6 +247,38 @@
+                                     }
+ 
+-                                    if (j != -1 && j != itemstack1.func_77960_j())
++                                    if (j != -1 && j != itemstack1.getMetadata())
+                                     {
+                                         flag = false;
+                                         break;
+                                     }
+ 
+-                                    if (bannerpattern.func_190996_c()[l].charAt(i1) == 32)
++                                    if (bannerpattern.getPatterns()[l].charAt(i1) == 32)
+                                     {
+                                         flag = false;
+                                         break;
+                                     }
+ 
+-                                    j = itemstack1.func_77960_j();
++                                    j = itemstack1.getMetadata();
+                                 }
+-                                else if (bannerpattern.func_190996_c()[l].charAt(i1) != 32)
++                                else if (bannerpattern.getPatterns()[l].charAt(i1) != 32)
+                                 {
+                                     flag = false;
+                                     break;
+@@ -250,60 +249,94 @@
  
                  return null;
              }
@@ -82,16 +299,152 @@
 +            }
          }
  
-     public static class RecipeDuplicatePattern implements IRecipe
-@@ -361,9 +390,9 @@
+-    public static class RecipeDuplicatePattern implements IRecipe
++    public static class RecipeDuplicatePattern extends ShapelessRecipes implements IRecipe
+         {
+-            private RecipeDuplicatePattern()
+-            {
++            // CraftBukkit start - Delegate to new parent class with bogus info
++            private RecipeDuplicatePattern() {
++                super(new ItemStack(Items.BANNER, 0, 0), java.util.Arrays.asList(new ItemStack(Items.DYE, 0, 5)));
+             }
++            // CraftBukkit end
  
-                     if (!itemstack.func_190926_b())
+-            public boolean func_77569_a(InventoryCrafting p_77569_1_, World p_77569_2_)
++            public boolean matches(InventoryCrafting inv, World worldIn)
+             {
+-                ItemStack itemstack = ItemStack.field_190927_a;
+-                ItemStack itemstack1 = ItemStack.field_190927_a;
++                ItemStack itemstack = ItemStack.EMPTY;
++                ItemStack itemstack1 = ItemStack.EMPTY;
+ 
+-                for (int i = 0; i < p_77569_1_.func_70302_i_(); ++i)
++                for (int i = 0; i < inv.getSizeInventory(); ++i)
+                 {
+-                    ItemStack itemstack2 = p_77569_1_.func_70301_a(i);
++                    ItemStack itemstack2 = inv.getStackInSlot(i);
+ 
+-                    if (!itemstack2.func_190926_b())
++                    if (!itemstack2.isEmpty())
+                     {
+-                        if (itemstack2.func_77973_b() != Items.field_179564_cE)
++                        if (itemstack2.getItem() != Items.BANNER)
+                         {
+                             return false;
+                         }
+ 
+-                        if (!itemstack.func_190926_b() && !itemstack1.func_190926_b())
++                        if (!itemstack.isEmpty() && !itemstack1.isEmpty())
+                         {
+                             return false;
+                         }
+ 
+-                        EnumDyeColor enumdyecolor = ItemBanner.func_179225_h(itemstack2);
+-                        boolean flag = TileEntityBanner.func_175113_c(itemstack2) > 0;
++                        EnumDyeColor enumdyecolor = ItemBanner.getBaseColor(itemstack2);
++                        boolean flag = TileEntityBanner.getPatterns(itemstack2) > 0;
+ 
+-                        if (!itemstack.func_190926_b())
++                        if (!itemstack.isEmpty())
+                         {
+                             if (flag)
+                             {
+                                 return false;
+                             }
+ 
+-                            if (enumdyecolor != ItemBanner.func_179225_h(itemstack))
++                            if (enumdyecolor != ItemBanner.getBaseColor(itemstack))
+                             {
+                                 return false;
+                             }
+ 
+                             itemstack1 = itemstack2;
+                         }
+-                        else if (!itemstack1.func_190926_b())
++                        else if (!itemstack1.isEmpty())
+                         {
+                             if (!flag)
+                             {
+                                 return false;
+                             }
+ 
+-                            if (enumdyecolor != ItemBanner.func_179225_h(itemstack1))
++                            if (enumdyecolor != ItemBanner.getBaseColor(itemstack1))
+                             {
+                                 return false;
+                             }
+@@ -321,54 +354,54 @@
+                     }
+                 }
+ 
+-                return !itemstack.func_190926_b() && !itemstack1.func_190926_b();
++                return !itemstack.isEmpty() && !itemstack1.isEmpty();
+             }
+ 
+-            public ItemStack func_77572_b(InventoryCrafting p_77572_1_)
++            public ItemStack getCraftingResult(InventoryCrafting inv)
+             {
+-                for (int i = 0; i < p_77572_1_.func_70302_i_(); ++i)
++                for (int i = 0; i < inv.getSizeInventory(); ++i)
+                 {
+-                    ItemStack itemstack = p_77572_1_.func_70301_a(i);
++                    ItemStack itemstack = inv.getStackInSlot(i);
+ 
+-                    if (!itemstack.func_190926_b() && TileEntityBanner.func_175113_c(itemstack) > 0)
++                    if (!itemstack.isEmpty() && TileEntityBanner.getPatterns(itemstack) > 0)
+                     {
+-                        ItemStack itemstack1 = itemstack.func_77946_l();
+-                        itemstack1.func_190920_e(1);
++                        ItemStack itemstack1 = itemstack.copy();
++                        itemstack1.setCount(1);
+                         return itemstack1;
+                     }
+                 }
+ 
+-                return ItemStack.field_190927_a;
++                return ItemStack.EMPTY;
+             }
+ 
+-            public int func_77570_a()
++            public int getRecipeSize()
+             {
+                 return 2;
+             }
+ 
+-            public ItemStack func_77571_b()
++            public ItemStack getRecipeOutput()
+             {
+-                return ItemStack.field_190927_a;
++                return ItemStack.EMPTY;
+             }
+ 
+-            public NonNullList<ItemStack> func_179532_b(InventoryCrafting p_179532_1_)
++            public NonNullList<ItemStack> getRemainingItems(InventoryCrafting inv)
+             {
+-                NonNullList<ItemStack> nonnulllist = NonNullList.<ItemStack>func_191197_a(p_179532_1_.func_70302_i_(), ItemStack.field_190927_a);
++                NonNullList<ItemStack> nonnulllist = NonNullList.<ItemStack>withSize(inv.getSizeInventory(), ItemStack.EMPTY);
+ 
+                 for (int i = 0; i < nonnulllist.size(); ++i)
+                 {
+-                    ItemStack itemstack = p_179532_1_.func_70301_a(i);
++                    ItemStack itemstack = inv.getStackInSlot(i);
+ 
+-                    if (!itemstack.func_190926_b())
++                    if (!itemstack.isEmpty())
                      {
 -                        if (itemstack.func_77973_b().func_77634_r())
-+                        if (itemstack.func_77973_b().hasContainerItem(itemstack))
++                        if (itemstack.getItem().hasContainerItem(itemstack))
                          {
 -                            nonnulllist.set(i, new ItemStack(itemstack.func_77973_b().func_77668_q()));
 +                            nonnulllist.set(i, net.minecraftforge.common.ForgeHooks.getContainerItem(itemstack));
                          }
-                         else if (itemstack.func_77942_o() && TileEntityBanner.func_175113_c(itemstack) > 0)
+-                        else if (itemstack.func_77942_o() && TileEntityBanner.func_175113_c(itemstack) > 0)
++                        else if (itemstack.hasTagCompound() && TileEntityBanner.getPatterns(itemstack) > 0)
                          {
+-                            ItemStack itemstack1 = itemstack.func_77946_l();
+-                            itemstack1.func_190920_e(1);
++                            ItemStack itemstack1 = itemstack.copy();
++                            itemstack1.setCount(1);
+                             nonnulllist.set(i, itemstack1);
+                         }
+                     }

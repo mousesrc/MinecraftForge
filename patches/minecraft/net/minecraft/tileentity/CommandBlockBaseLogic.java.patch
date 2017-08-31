@@ -1,0 +1,479 @@
+--- ../src-base/minecraft/net/minecraft/tileentity/CommandBlockBaseLogic.java
++++ ../src-work/minecraft/net/minecraft/tileentity/CommandBlockBaseLogic.java
+@@ -1,156 +1,171 @@
+ package net.minecraft.tileentity;
+ 
++import com.google.common.base.Joiner;
+ import io.netty.buffer.ByteBuf;
+ import java.text.SimpleDateFormat;
++import java.util.ArrayList;
+ import java.util.Date;
++import org.apache.logging.log4j.Level;
+ import javax.annotation.Nullable;
+-import net.minecraft.command.CommandResultStats;
+-import net.minecraft.command.ICommandManager;
+-import net.minecraft.command.ICommandSender;
++
++import net.minecraft.command.*;
+ import net.minecraft.crash.CrashReport;
+ import net.minecraft.crash.CrashReportCategory;
+ import net.minecraft.crash.ICrashReportDetail;
++import net.minecraft.entity.item.EntityMinecartCommandBlock;
+ import net.minecraft.entity.player.EntityPlayer;
++import net.minecraft.entity.player.EntityPlayerMP;
+ import net.minecraft.nbt.NBTTagCompound;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.util.ReportedException;
+ import net.minecraft.util.text.ITextComponent;
+ import net.minecraft.util.text.TextComponentString;
++import net.minecraft.util.text.TextComponentTranslation;
++import net.minecraft.util.text.TextFormatting;
+ import net.minecraft.world.World;
++import net.minecraft.world.WorldServer;
++import net.minecraftforge.common.DimensionManager;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
++import org.bukkit.Bukkit;
++import org.bukkit.command.CommandSender;
++import org.bukkit.craftbukkit.CraftServer;
++import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
+ 
+ public abstract class CommandBlockBaseLogic implements ICommandSender
+ {
+-    private static final SimpleDateFormat field_145766_a = new SimpleDateFormat("HH:mm:ss");
+-    private int field_145764_b;
+-    private boolean field_145765_c = true;
+-    private ITextComponent field_145762_d;
+-    private String field_145763_e = "";
+-    private String field_145761_f = "@";
+-    private final CommandResultStats field_175575_g = new CommandResultStats();
++    private static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("HH:mm:ss");
++    private int successCount;
++    private boolean trackOutput = true;
++    private ITextComponent lastOutput;
++    private String commandStored = "";
++    private String customName = "@";
++    private final CommandResultStats resultStats = new CommandResultStats();
++    protected org.bukkit.command.CommandSender sender; // CraftBukkit - add sender
+ 
+-    public int func_145760_g()
++    public int getSuccessCount()
+     {
+-        return this.field_145764_b;
++        return this.successCount;
+     }
+ 
+-    public void func_184167_a(int p_184167_1_)
++    public void setSuccessCount(int successCountIn)
+     {
+-        this.field_145764_b = p_184167_1_;
++        this.successCount = successCountIn;
+     }
+ 
+-    public ITextComponent func_145749_h()
++    public ITextComponent getLastOutput()
+     {
+-        return (ITextComponent)(this.field_145762_d == null ? new TextComponentString("") : this.field_145762_d);
++        return (ITextComponent)(this.lastOutput == null ? new TextComponentString("") : this.lastOutput);
+     }
+ 
+-    public NBTTagCompound func_189510_a(NBTTagCompound p_189510_1_)
++    public NBTTagCompound writeToNBT(NBTTagCompound p_189510_1_)
+     {
+-        p_189510_1_.func_74778_a("Command", this.field_145763_e);
+-        p_189510_1_.func_74768_a("SuccessCount", this.field_145764_b);
+-        p_189510_1_.func_74778_a("CustomName", this.field_145761_f);
+-        p_189510_1_.func_74757_a("TrackOutput", this.field_145765_c);
++        p_189510_1_.setString("Command", this.commandStored);
++        p_189510_1_.setInteger("SuccessCount", this.successCount);
++        p_189510_1_.setString("CustomName", this.customName);
++        p_189510_1_.setBoolean("TrackOutput", this.trackOutput);
+ 
+-        if (this.field_145762_d != null && this.field_145765_c)
++        if (this.lastOutput != null && this.trackOutput)
+         {
+-            p_189510_1_.func_74778_a("LastOutput", ITextComponent.Serializer.func_150696_a(this.field_145762_d));
++            p_189510_1_.setString("LastOutput", ITextComponent.Serializer.componentToJson(this.lastOutput));
+         }
+ 
+-        this.field_175575_g.func_179670_b(p_189510_1_);
++        this.resultStats.writeStatsToNBT(p_189510_1_);
+         return p_189510_1_;
+     }
+ 
+-    public void func_145759_b(NBTTagCompound p_145759_1_)
++    public void readDataFromNBT(NBTTagCompound nbt)
+     {
+-        this.field_145763_e = p_145759_1_.func_74779_i("Command");
+-        this.field_145764_b = p_145759_1_.func_74762_e("SuccessCount");
++        this.commandStored = nbt.getString("Command");
++        this.successCount = nbt.getInteger("SuccessCount");
+ 
+-        if (p_145759_1_.func_150297_b("CustomName", 8))
++        if (nbt.hasKey("CustomName", 8))
+         {
+-            this.field_145761_f = p_145759_1_.func_74779_i("CustomName");
++            this.customName = nbt.getString("CustomName");
+         }
+ 
+-        if (p_145759_1_.func_150297_b("TrackOutput", 1))
++        if (nbt.hasKey("TrackOutput", 1))
+         {
+-            this.field_145765_c = p_145759_1_.func_74767_n("TrackOutput");
++            this.trackOutput = nbt.getBoolean("TrackOutput");
+         }
+ 
+-        if (p_145759_1_.func_150297_b("LastOutput", 8) && this.field_145765_c)
++        if (nbt.hasKey("LastOutput", 8) && this.trackOutput)
+         {
+             try
+             {
+-                this.field_145762_d = ITextComponent.Serializer.func_150699_a(p_145759_1_.func_74779_i("LastOutput"));
++                this.lastOutput = ITextComponent.Serializer.jsonToComponent(nbt.getString("LastOutput"));
+             }
+             catch (Throwable throwable)
+             {
+-                this.field_145762_d = new TextComponentString(throwable.getMessage());
++                this.lastOutput = new TextComponentString(throwable.getMessage());
+             }
+         }
+         else
+         {
+-            this.field_145762_d = null;
++            this.lastOutput = null;
+         }
+ 
+-        this.field_175575_g.func_179668_a(p_145759_1_);
++        this.resultStats.readStatsFromNBT(nbt);
+     }
+ 
+-    public boolean func_70003_b(int p_70003_1_, String p_70003_2_)
++    public boolean canUseCommand(int permLevel, String commandName)
+     {
+-        return p_70003_1_ <= 2;
++        return permLevel <= 2;
+     }
+ 
+-    public void func_145752_a(String p_145752_1_)
++    public void setCommand(String command)
+     {
+-        this.field_145763_e = p_145752_1_;
+-        this.field_145764_b = 0;
++        this.commandStored = command;
++        this.successCount = 0;
+     }
+ 
+-    public String func_145753_i()
++    public String getCommand()
+     {
+-        return this.field_145763_e;
++        return this.commandStored;
+     }
+ 
+-    public void func_145755_a(World p_145755_1_)
++    public void trigger(World worldIn)
+     {
+-        if (p_145755_1_.field_72995_K)
++        if (worldIn.isRemote)
+         {
+-            this.field_145764_b = 0;
++            this.successCount = 0;
+         }
+-        else if ("Searge".equalsIgnoreCase(this.field_145763_e))
++        else if ("Searge".equalsIgnoreCase(this.commandStored))
+         {
+-            this.field_145762_d = new TextComponentString("#itzlipofutzli");
+-            this.field_145764_b = 1;
++            this.lastOutput = new TextComponentString("#itzlipofutzli");
++            this.successCount = 1;
+         }
+         else
+         {
+-            MinecraftServer minecraftserver = this.func_184102_h();
++            MinecraftServer minecraftserver = this.getServer();
+ 
+-            if (minecraftserver != null && minecraftserver.func_175578_N() && minecraftserver.func_82356_Z())
++            if (minecraftserver != null && minecraftserver.isAnvilFileSet() && minecraftserver.isCommandBlockEnabled())
+             {
+-                ICommandManager icommandmanager = minecraftserver.func_71187_D();
++                ICommandManager icommandmanager = minecraftserver.getCommandManager();
+ 
+                 try
+                 {
+-                    this.field_145762_d = null;
+-                    this.field_145764_b = icommandmanager.func_71556_a(this, this.field_145763_e);
++                    this.lastOutput = null;
++                    // CraftBukkit start - Handle command block commands using Bukkit dispatcher
++                    this.successCount = executeSafely(this, sender, this.commandStored);
++                    // CraftBukkit end
+                 }
+                 catch (Throwable throwable)
+                 {
+-                    CrashReport crashreport = CrashReport.func_85055_a(throwable, "Executing command block");
+-                    CrashReportCategory crashreportcategory = crashreport.func_85058_a("Command to be executed");
+-                    crashreportcategory.func_189529_a("Command", new ICrashReportDetail<String>()
++                    CrashReport crashreport = CrashReport.makeCrashReport(throwable, "Executing command block");
++                    CrashReportCategory crashreportcategory = crashreport.makeCategory("Command to be executed");
++                    crashreportcategory.setDetail("Command", new ICrashReportDetail<String>()
+                     {
+                         public String call() throws Exception
+                         {
+-                            return CommandBlockBaseLogic.this.func_145753_i();
++                            return CommandBlockBaseLogic.this.getCommand();
+                         }
+                     });
+-                    crashreportcategory.func_189529_a("Name", new ICrashReportDetail<String>()
++                    crashreportcategory.setDetail("Name", new ICrashReportDetail<String>()
+                     {
+                         public String call() throws Exception
+                         {
+-                            return CommandBlockBaseLogic.this.func_70005_c_();
++                            return CommandBlockBaseLogic.this.getName();
+                         }
+                     });
+                     throw new ReportedException(crashreport);
+@@ -158,88 +173,213 @@
+             }
+             else
+             {
+-                this.field_145764_b = 0;
++                this.successCount = 0;
+             }
+         }
+     }
++    public static int executeSafely(ICommandSender sender, CommandSender bSender, String command) {
++        try {
++            return executeCommand(sender, bSender, command);
++        } catch (CommandException commandexception) {
++            // Taken from CommandHandler
++            TextComponentTranslation chatmessage = new TextComponentTranslation(commandexception.getMessage(), commandexception.getErrorObjects());
++            chatmessage.getStyle().setColor(TextFormatting.RED);
++            sender.sendMessage(chatmessage);
++        }
+ 
+-    public String func_70005_c_()
++        return 0;
++    }
++    // CraftBukkit start
++    public static int executeCommand(ICommandSender sender, org.bukkit.command.CommandSender bSender, String command) throws CommandException {
++        org.bukkit.command.SimpleCommandMap commandMap = sender.getEntityWorld().getServer().getCommandMap();
++        Joiner joiner = Joiner.on(" ");
++        if (command.startsWith("/")) {
++            command = command.substring(1);
++        }
++        String[] args = command.split(" ");
++        ArrayList<String[]> commands = new ArrayList<String[]>();
++
++        String cmd = args[0];
++        if (cmd.startsWith("minecraft:")) cmd = cmd.substring("minecraft:".length());
++        if (cmd.startsWith("bukkit:")) cmd = cmd.substring("bukkit:".length());
++
++        // Block disallowed commands
++        if (cmd.equalsIgnoreCase("stop") || cmd.equalsIgnoreCase("kick") || cmd.equalsIgnoreCase("op")
++                || cmd.equalsIgnoreCase("deop") || cmd.equalsIgnoreCase("ban") || cmd.equalsIgnoreCase("ban-ip")
++                || cmd.equalsIgnoreCase("pardon") || cmd.equalsIgnoreCase("pardon-ip") || cmd.equalsIgnoreCase("reload")) {
++            return 0;
++        }
++
++        // Handle vanilla commands;
++        org.bukkit.command.Command commandBlockCommand = commandMap.getCommand(args[0]);
++        if (sender.getEntityWorld().getServer().getCommandBlockOverride(args[0])) {
++            commandBlockCommand = commandMap.getCommand("minecraft:" + args[0]);
++        }
++        if (commandBlockCommand instanceof VanillaCommandWrapper) {
++            command = command.trim();
++            if (command.startsWith("/")) {
++                command = command.substring(1);
++            }
++            String as[] = command.split(" ");
++            as = VanillaCommandWrapper.dropFirstArgument(as);
++            if (!((VanillaCommandWrapper) commandBlockCommand).testPermission(bSender)) {
++                return 0;
++            }
++            return ((VanillaCommandWrapper) commandBlockCommand).dispatchVanillaCommand(bSender, sender, as);
++        }
++
++        // Make sure this is a valid command
++        if (commandMap.getCommand(args[0]) == null) {
++            return 0;
++        }
++
++        commands.add(args);
++
++        // Find positions of command block syntax, if any
++        MinecraftServer server = ((CraftServer) Bukkit.getServer()).getServer();
++        // server.worlds = DimensionManager.getWorlds();
++        // server.worlds[0] = (WorldServer) sender.getEntityWorld();
++        int bpos = 0;
++        WorldServer[] worlds =  DimensionManager.getWorlds();
++        for (int pos = 1; pos < worlds.length; pos++) {
++            WorldServer world = worlds[bpos++];
++            if (worlds[0] == world) {
++                pos--;
++                continue;
++            }
++        }
++        ArrayList<String[]> newCommands = new ArrayList<String[]>();
++        for (int i = 0; i < args.length; i++) {
++            if (EntitySelector.isSelector(args[i])) {
++                for (int j = 0; j < commands.size(); j++) {
++                    newCommands.addAll(buildCommands(sender, commands.get(j), i));
++                }
++                ArrayList<String[]> temp = commands;
++                commands = newCommands;
++                newCommands = temp;
++                newCommands.clear();
++            }
++        }
++
++
++        int completed = 0;
++
++        // Now dispatch all of the commands we ended up with
++        for (int i = 0; i < commands.size(); i++) {
++            try {
++                if (commandMap.dispatch(bSender, joiner.join(java.util.Arrays.asList(commands.get(i))))) {
++                    completed++;
++                }
++            } catch (Throwable exception) {
++                if (sender.getCommandSenderEntity() instanceof EntityMinecartCommandBlock) {
++                    server.LOG.log(Level.ERROR,String.format("MinecartCommandBlock at (%d,%d,%d) failed to handle command", sender.getPosition().getX(), sender.getPosition().getY(), sender.getPosition().getZ()), exception);
++                } else if (sender instanceof net.minecraft.tileentity.CommandBlockBaseLogic) {
++                    net.minecraft.tileentity.CommandBlockBaseLogic listener = (net.minecraft.tileentity.CommandBlockBaseLogic) sender;
++                    server.LOG.log(Level.ERROR, String.format("CommandBlock at (%d,%d,%d) failed to handle command", listener.getPosition().getX(), listener.getPosition().getY(), listener.getPosition().getZ()), exception);
++                } else {
++                    server.LOG.log(Level.ERROR, String.format("Unknown CommandBlock failed to handle command"), exception);
++                }
++            }
++        }
++
++        return completed;
++    }
++
++    private static ArrayList<String[]> buildCommands(ICommandSender sender, String[] args, int pos) throws CommandException {
++        ArrayList<String[]> commands = new ArrayList<String[]>();
++        java.util.List<EntityPlayerMP> players = (java.util.List<EntityPlayerMP>)EntitySelector.matchEntities(sender, args[pos], EntityPlayerMP.class);
++
++        if (players != null) {
++            for (EntityPlayerMP player : players) {
++                if (player.world != sender.getEntityWorld()) {
++                    continue;
++                }
++                String[] command = args.clone();
++                command[pos] = player.getName();
++                commands.add(command);
++            }
++        }
++
++        return commands;
++    }
++    // CraftBukkit end
++    public String getName()
+     {
+-        return this.field_145761_f;
++        return this.customName;
+     }
+ 
+-    public ITextComponent func_145748_c_()
++    public ITextComponent getDisplayName()
+     {
+-        return new TextComponentString(this.func_70005_c_());
++        return new TextComponentString(this.getName());
+     }
+ 
+-    public void func_145754_b(String p_145754_1_)
++    public void setName(String name)
+     {
+-        this.field_145761_f = p_145754_1_;
++        this.customName = name;
+     }
+ 
+-    public void func_145747_a(ITextComponent p_145747_1_)
++    public void sendMessage(ITextComponent component)
+     {
+-        if (this.field_145765_c && this.func_130014_f_() != null && !this.func_130014_f_().field_72995_K)
++        if (this.trackOutput && this.getEntityWorld() != null && !this.getEntityWorld().isRemote)
+         {
+-            this.field_145762_d = (new TextComponentString("[" + field_145766_a.format(new Date()) + "] ")).func_150257_a(p_145747_1_);
+-            this.func_145756_e();
++            this.lastOutput = (new TextComponentString("[" + TIMESTAMP_FORMAT.format(new Date()) + "] ")).appendSibling(component);
++            this.updateCommand();
+         }
+     }
+ 
+-    public boolean func_174792_t_()
++    public boolean sendCommandFeedback()
+     {
+-        MinecraftServer minecraftserver = this.func_184102_h();
+-        return minecraftserver == null || !minecraftserver.func_175578_N() || minecraftserver.field_71305_c[0].func_82736_K().func_82766_b("commandBlockOutput");
++        MinecraftServer minecraftserver = this.getServer();
++        return minecraftserver == null || !minecraftserver.isAnvilFileSet() || minecraftserver.worlds[0].getGameRules().getBoolean("commandBlockOutput");
+     }
+ 
+-    public void func_174794_a(CommandResultStats.Type p_174794_1_, int p_174794_2_)
++    public void setCommandStat(CommandResultStats.Type type, int amount)
+     {
+-        this.field_175575_g.func_184932_a(this.func_184102_h(), this, p_174794_1_, p_174794_2_);
++        this.resultStats.setCommandStatForSender(this.getServer(), this, type, amount);
+     }
+ 
+-    public abstract void func_145756_e();
++    public abstract void updateCommand();
+ 
+     @SideOnly(Side.CLIENT)
+-    public abstract int func_145751_f();
++    public abstract int getCommandBlockType();
+ 
+     @SideOnly(Side.CLIENT)
+-    public abstract void func_145757_a(ByteBuf p_145757_1_);
++    public abstract void fillInInfo(ByteBuf buf);
+ 
+-    public void func_145750_b(@Nullable ITextComponent p_145750_1_)
++    public void setLastOutput(@Nullable ITextComponent lastOutputMessage)
+     {
+-        this.field_145762_d = p_145750_1_;
++        this.lastOutput = lastOutputMessage;
+     }
+ 
+-    public void func_175573_a(boolean p_175573_1_)
++    public void setTrackOutput(boolean shouldTrackOutput)
+     {
+-        this.field_145765_c = p_175573_1_;
++        this.trackOutput = shouldTrackOutput;
+     }
+ 
+-    public boolean func_175571_m()
++    public boolean shouldTrackOutput()
+     {
+-        return this.field_145765_c;
++        return this.trackOutput;
+     }
+ 
+-    public boolean func_175574_a(EntityPlayer p_175574_1_)
++    public boolean tryOpenEditCommandBlock(EntityPlayer playerIn)
+     {
+-        if (!p_175574_1_.func_189808_dh())
++        if (!playerIn.canUseCommandBlock())
+         {
+             return false;
+         }
+         else
+         {
+-            if (p_175574_1_.func_130014_f_().field_72995_K)
++            if (playerIn.getEntityWorld().isRemote)
+             {
+-                p_175574_1_.func_184809_a(this);
++                playerIn.displayGuiEditCommandCart(this);
+             }
+ 
+             return true;
+         }
+     }
+ 
+-    public CommandResultStats func_175572_n()
++    public CommandResultStats getCommandResultStats()
+     {
+-        return this.field_175575_g;
++        return this.resultStats;
+     }
+ }

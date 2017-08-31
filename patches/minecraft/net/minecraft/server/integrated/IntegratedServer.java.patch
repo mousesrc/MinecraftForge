@@ -1,6 +1,21 @@
 --- ../src-base/minecraft/net/minecraft/server/integrated/IntegratedServer.java
 +++ ../src-work/minecraft/net/minecraft/server/integrated/IntegratedServer.java
-@@ -69,8 +69,6 @@
+@@ -22,13 +22,7 @@
+ import net.minecraft.util.CryptManager;
+ import net.minecraft.util.HttpUtil;
+ import net.minecraft.util.Util;
+-import net.minecraft.world.EnumDifficulty;
+-import net.minecraft.world.GameType;
+-import net.minecraft.world.ServerWorldEventHandler;
+-import net.minecraft.world.WorldServer;
+-import net.minecraft.world.WorldServerMulti;
+-import net.minecraft.world.WorldSettings;
+-import net.minecraft.world.WorldType;
++import net.minecraft.world.*;
+ import net.minecraft.world.demo.DemoWorldServer;
+ import net.minecraft.world.storage.ISaveHandler;
+ import net.minecraft.world.storage.WorldInfo;
+@@ -69,8 +63,6 @@
      public void func_71247_a(String p_71247_1_, String p_71247_2_, long p_71247_3_, WorldType p_71247_5_, String p_71247_6_)
      {
          this.func_71237_c(p_71247_1_);
@@ -9,7 +24,7 @@
          ISaveHandler isavehandler = this.func_71254_M().func_75804_a(p_71247_1_, true);
          this.func_175584_a(this.func_71270_I(), isavehandler);
          WorldInfo worldinfo = isavehandler.func_75757_d();
-@@ -84,44 +82,23 @@
+@@ -84,44 +76,23 @@
              worldinfo.func_76062_a(p_71247_2_);
          }
  
@@ -65,7 +80,7 @@
          {
              this.func_147139_a(this.field_71349_l.field_71474_y.field_74318_M);
          }
-@@ -139,9 +116,10 @@
+@@ -139,13 +110,13 @@
          this.func_71245_h(true);
          field_147148_h.info("Generating keypair");
          this.func_71253_a(CryptManager.func_75891_b());
@@ -76,8 +91,13 @@
 +        return net.minecraftforge.fml.common.FMLCommonHandler.instance().handleServerStarting(this);
      }
  
-     public void func_71217_p()
-@@ -214,6 +192,7 @@
+-    public void func_71217_p()
+-    {
++    public void func_71217_p() throws MinecraftException {
+         boolean flag = this.field_71348_o;
+         this.field_71348_o = Minecraft.func_71410_x().func_147114_u() != null && Minecraft.func_71410_x().func_147113_T();
+ 
+@@ -214,6 +185,7 @@
  
      public EnumDifficulty func_147135_j()
      {
@@ -85,7 +105,7 @@
          return this.field_71349_l.field_71441_e.func_72912_H().func_176130_y();
      }
  
-@@ -357,6 +336,7 @@
+@@ -357,6 +329,7 @@
  
      public void func_71263_m()
      {

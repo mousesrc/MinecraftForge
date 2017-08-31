@@ -1,13 +1,19 @@
 --- ../src-base/minecraft/net/minecraft/world/Explosion.java
 +++ ../src-work/minecraft/net/minecraft/world/Explosion.java
-@@ -41,6 +41,7 @@
-     private final float field_77280_f;
+@@ -38,10 +38,11 @@
+     private final double field_77285_c;
+     private final double field_77282_d;
+     public final Entity field_77283_e;
+-    private final float field_77280_f;
++    float field_77280_f;
      private final List<BlockPos> field_77281_g;
      private final Map<EntityPlayer, Vec3d> field_77288_k;
+-
 +    private final Vec3d position;
- 
++    public boolean isCanceled = false;
      @SideOnly(Side.CLIENT)
      public Explosion(World p_i45752_1_, Entity p_i45752_2_, double p_i45752_3_, double p_i45752_5_, double p_i45752_7_, float p_i45752_9_, List<BlockPos> p_i45752_10_)
+     {
 @@ -68,6 +69,7 @@
          this.field_77282_d = p_i45754_7_;
          this.field_77286_a = p_i45754_10_;

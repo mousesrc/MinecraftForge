@@ -1,0 +1,36 @@
+--- ../src-base/minecraft/net/minecraft/entity/projectile/EntityTippedArrow.java
++++ ../src-work/minecraft/net/minecraft/entity/projectile/EntityTippedArrow.java
+@@ -43,7 +43,24 @@
+     {
+         super(p_i46758_1_, p_i46758_2_);
+     }
++    // CraftBukkit start accessor methods
++    public void refreshEffects() {
++        this.func_184212_Q().func_187227_b(net.minecraft.entity.projectile.EntityTippedArrow.field_184559_f, Integer.valueOf(PotionUtils.func_185181_a((Collection) PotionUtils.func_185186_a(this.field_184560_g, (Collection) this.field_184561_h))));
++    }
+ 
++    public String getType() {
++        return ((ResourceLocation) PotionType.field_185176_a.func_177774_c(this.field_184560_g)).toString();
++    }
++
++    public void setType(String string) {
++        this.field_184560_g = PotionType.field_185176_a.func_82594_a(new ResourceLocation(string));
++        this.field_70180_af.func_187227_b(net.minecraft.entity.projectile.EntityTippedArrow.field_184559_f, Integer.valueOf(PotionUtils.func_185181_a((Collection) PotionUtils.func_185186_a(this.field_184560_g, (Collection) this.field_184561_h))));
++    }
++
++    public boolean isTipped() {
++        return !(this.field_184561_h.isEmpty() && this.field_184560_g == PotionTypes.field_185229_a);
++    }
++    // CraftBukkit end
+     public void func_184555_a(ItemStack p_184555_1_)
+     {
+         if (p_184555_1_.func_77973_b() == Items.field_185167_i)
+@@ -151,7 +168,7 @@
+         return ((Integer)this.field_70180_af.func_187225_a(field_184559_f)).intValue();
+     }
+ 
+-    private void func_191507_d(int p_191507_1_)
++    public void func_191507_d(int p_191507_1_)
+     {
+         this.field_191509_at = true;
+         this.field_70180_af.func_187227_b(field_184559_f, Integer.valueOf(p_191507_1_));

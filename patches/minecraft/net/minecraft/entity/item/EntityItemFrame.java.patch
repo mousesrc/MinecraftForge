@@ -1,6 +1,26 @@
 --- ../src-base/minecraft/net/minecraft/entity/item/EntityItemFrame.java
 +++ ../src-work/minecraft/net/minecraft/entity/item/EntityItemFrame.java
-@@ -140,7 +140,7 @@
+@@ -24,6 +24,7 @@
+ import net.minecraft.world.storage.MapData;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
+ 
+ public class EntityItemFrame extends EntityHanging
+ {
+@@ -63,6 +64,11 @@
+         {
+             if (!this.field_70170_p.field_72995_K)
+             {
++                // CraftBukkit start - fire EntityDamageEvent
++                if (CraftEventFactory.handleNonLivingEntityDamageEvent(this, p_70097_1_, p_70097_2_, false) || this.field_70128_L) {
++                    return true;
++                }
++                // CraftBukkit end
+                 this.func_146065_b(p_70097_1_.func_76346_g(), false);
+                 this.func_184185_a(SoundEvents.field_187629_cO, 1.0F, 1.0F);
+                 this.func_82334_a(ItemStack.field_190927_a);
+@@ -140,7 +146,7 @@
      {
          if (!p_110131_1_.func_190926_b())
          {

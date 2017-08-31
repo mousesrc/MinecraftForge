@@ -22,3 +22,12 @@
      }
  
      public void func_72835_b()
+@@ -113,7 +115,7 @@
+         return this.field_73033_b;
+     }
+ 
+-    protected boolean func_175680_a(int p_175680_1_, int p_175680_2_, boolean p_175680_3_)
++    public boolean func_175680_a(int p_175680_1_, int p_175680_2_, boolean p_175680_3_)
+     {
+         return p_175680_3_ || !this.func_72863_F().func_186025_d(p_175680_1_, p_175680_2_).func_76621_g();
+     }

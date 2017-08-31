@@ -1,0 +1,172 @@
+--- ../src-base/minecraft/net/minecraft/item/crafting/ShieldRecipes.java
++++ ../src-work/minecraft/net/minecraft/item/crafting/ShieldRecipes.java
+@@ -7,35 +7,39 @@
+ import net.minecraft.nbt.NBTTagCompound;
+ import net.minecraft.util.NonNullList;
+ import net.minecraft.world.World;
++import org.bukkit.inventory.ShapelessRecipe;
+ 
+ public class ShieldRecipes
+ {
+-    public void func_185256_a(CraftingManager p_185256_1_)
++    public void addRecipes(CraftingManager manager)
+     {
+-        p_185256_1_.func_92103_a(new ItemStack(Items.field_185159_cQ), new Object[] {"WoW", "WWW", " W ", 'W', Blocks.field_150344_f, 'o', Items.field_151042_j});
+-        p_185256_1_.func_180302_a(new ShieldRecipes.Decoration());
++        manager.addRecipe(new ItemStack(Items.SHIELD), new Object[] {"WoW", "WWW", " W ", 'W', Blocks.PLANKS, 'o', Items.IRON_INGOT});
++        manager.addRecipe(new ShieldRecipes.Decoration());
+     }
+ 
+-    public static class Decoration implements IRecipe
++    public static class Decoration extends ShapelessRecipes implements IRecipe
+         {
+-            private Decoration()
+-            {
++
++            // CraftBukkit start - Delegate to new parent class with bogus info
++            private Decoration() {
++                super(new ItemStack(Items.SHIELD, 0 ,0), java.util.Arrays.asList(new ItemStack(Items.BANNER, 0, 0)));
+             }
++            // CraftBukkit end
+ 
+-            public boolean func_77569_a(InventoryCrafting p_77569_1_, World p_77569_2_)
++            public boolean matches(InventoryCrafting inv, World worldIn)
+             {
+-                ItemStack itemstack = ItemStack.field_190927_a;
+-                ItemStack itemstack1 = ItemStack.field_190927_a;
++                ItemStack itemstack = ItemStack.EMPTY;
++                ItemStack itemstack1 = ItemStack.EMPTY;
+ 
+-                for (int i = 0; i < p_77569_1_.func_70302_i_(); ++i)
++                for (int i = 0; i < inv.getSizeInventory(); ++i)
+                 {
+-                    ItemStack itemstack2 = p_77569_1_.func_70301_a(i);
++                    ItemStack itemstack2 = inv.getStackInSlot(i);
+ 
+-                    if (!itemstack2.func_190926_b())
++                    if (!itemstack2.isEmpty())
+                     {
+-                        if (itemstack2.func_77973_b() == Items.field_179564_cE)
++                        if (itemstack2.getItem() == Items.BANNER)
+                         {
+-                            if (!itemstack1.func_190926_b())
++                            if (!itemstack1.isEmpty())
+                             {
+                                 return false;
+                             }
+@@ -44,17 +48,17 @@
+                         }
+                         else
+                         {
+-                            if (itemstack2.func_77973_b() != Items.field_185159_cQ)
++                            if (itemstack2.getItem() != Items.SHIELD)
+                             {
+                                 return false;
+                             }
+ 
+-                            if (!itemstack.func_190926_b())
++                            if (!itemstack.isEmpty())
+                             {
+                                 return false;
+                             }
+ 
+-                            if (itemstack2.func_179543_a("BlockEntityTag") != null)
++                            if (itemstack2.getSubCompound("BlockEntityTag") != null)
+                             {
+                                 return false;
+                             }
+@@ -64,7 +68,7 @@
+                     }
+                 }
+ 
+-                if (!itemstack.func_190926_b() && !itemstack1.func_190926_b())
++                if (!itemstack.isEmpty() && !itemstack1.isEmpty())
+                 {
+                     return true;
+                 }
+@@ -74,63 +78,63 @@
+                 }
+             }
+ 
+-            public ItemStack func_77572_b(InventoryCrafting p_77572_1_)
++            public ItemStack getCraftingResult(InventoryCrafting inv)
+             {
+-                ItemStack itemstack = ItemStack.field_190927_a;
+-                ItemStack itemstack1 = ItemStack.field_190927_a;
++                ItemStack itemstack = ItemStack.EMPTY;
++                ItemStack itemstack1 = ItemStack.EMPTY;
+ 
+-                for (int i = 0; i < p_77572_1_.func_70302_i_(); ++i)
++                for (int i = 0; i < inv.getSizeInventory(); ++i)
+                 {
+-                    ItemStack itemstack2 = p_77572_1_.func_70301_a(i);
++                    ItemStack itemstack2 = inv.getStackInSlot(i);
+ 
+-                    if (!itemstack2.func_190926_b())
++                    if (!itemstack2.isEmpty())
+                     {
+-                        if (itemstack2.func_77973_b() == Items.field_179564_cE)
++                        if (itemstack2.getItem() == Items.BANNER)
+                         {
+                             itemstack = itemstack2;
+                         }
+-                        else if (itemstack2.func_77973_b() == Items.field_185159_cQ)
++                        else if (itemstack2.getItem() == Items.SHIELD)
+                         {
+-                            itemstack1 = itemstack2.func_77946_l();
++                            itemstack1 = itemstack2.copy();
+                         }
+                     }
+                 }
+ 
+-                if (itemstack1.func_190926_b())
++                if (itemstack1.isEmpty())
+                 {
+                     return itemstack1;
+                 }
+                 else
+                 {
+-                    NBTTagCompound nbttagcompound = itemstack.func_179543_a("BlockEntityTag");
+-                    NBTTagCompound nbttagcompound1 = nbttagcompound == null ? new NBTTagCompound() : nbttagcompound.func_74737_b();
+-                    nbttagcompound1.func_74768_a("Base", itemstack.func_77960_j() & 15);
+-                    itemstack1.func_77983_a("BlockEntityTag", nbttagcompound1);
++                    NBTTagCompound nbttagcompound = itemstack.getSubCompound("BlockEntityTag");
++                    NBTTagCompound nbttagcompound1 = nbttagcompound == null ? new NBTTagCompound() : nbttagcompound.copy();
++                    nbttagcompound1.setInteger("Base", itemstack.getMetadata() & 15);
++                    itemstack1.setTagInfo("BlockEntityTag", nbttagcompound1);
+                     return itemstack1;
+                 }
+             }
+ 
+-            public int func_77570_a()
++            public int getRecipeSize()
+             {
+                 return 2;
+             }
+ 
+-            public ItemStack func_77571_b()
++            public ItemStack getRecipeOutput()
+             {
+-                return ItemStack.field_190927_a;
++                return ItemStack.EMPTY;
+             }
+ 
+-            public NonNullList<ItemStack> func_179532_b(InventoryCrafting p_179532_1_)
++            public NonNullList<ItemStack> getRemainingItems(InventoryCrafting inv)
+             {
+-                NonNullList<ItemStack> nonnulllist = NonNullList.<ItemStack>func_191197_a(p_179532_1_.func_70302_i_(), ItemStack.field_190927_a);
++                NonNullList<ItemStack> nonnulllist = NonNullList.<ItemStack>withSize(inv.getSizeInventory(), ItemStack.EMPTY);
+ 
+                 for (int i = 0; i < nonnulllist.size(); ++i)
+                 {
+-                    ItemStack itemstack = p_179532_1_.func_70301_a(i);
++                    ItemStack itemstack = inv.getStackInSlot(i);
+ 
+-                    if (itemstack.func_77973_b().func_77634_r())
++                    if (itemstack.getItem().hasContainerItem())
+                     {
+-                        nonnulllist.set(i, new ItemStack(itemstack.func_77973_b().func_77668_q()));
++                        nonnulllist.set(i, new ItemStack(itemstack.getItem().getContainerItem()));
+                     }
+                 }
+ 

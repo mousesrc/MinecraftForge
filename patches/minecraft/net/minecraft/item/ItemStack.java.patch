@@ -1,15 +1,33 @@
 --- ../src-base/minecraft/net/minecraft/item/ItemStack.java
 +++ ../src-work/minecraft/net/minecraft/item/ItemStack.java
-@@ -47,7 +47,7 @@
+@@ -27,6 +27,7 @@
+ import net.minecraft.nbt.NBTBase;
+ import net.minecraft.nbt.NBTTagCompound;
+ import net.minecraft.nbt.NBTTagList;
++import net.minecraft.server.MinecraftServer;
+ import net.minecraft.stats.StatList;
+ import net.minecraft.util.ActionResult;
+ import net.minecraft.util.EnumActionResult;
+@@ -46,14 +47,16 @@
+ import net.minecraft.world.World;
  import net.minecraftforge.fml.relauncher.Side;
  import net.minecraftforge.fml.relauncher.SideOnly;
++import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.CraftServer;
  
 -public final class ItemStack
 +public final class ItemStack implements net.minecraftforge.common.capabilities.ICapabilitySerializable<NBTTagCompound>
  {
      public static final ItemStack field_190927_a = new ItemStack((Item)null);
      public static final DecimalFormat field_111284_a = new DecimalFormat("#.##");
-@@ -63,6 +63,10 @@
+     private int field_77994_a;
+     private int field_77992_b;
+-    public final Item field_151002_e;
++    public Item field_151002_e;
+     private NBTTagCompound field_77990_d;
+     private boolean field_190928_g;
+     int field_77991_e;
+@@ -63,6 +66,10 @@
      private Block field_179550_j;
      private boolean field_179551_k;
  
@@ -20,43 +38,104 @@
      public ItemStack(Block p_i1876_1_)
      {
          this((Block)p_i1876_1_, 1);
-@@ -88,8 +92,10 @@
+@@ -88,8 +95,31 @@
          this((Item)p_i1880_1_, p_i1880_2_, 0);
      }
  
 -    public ItemStack(Item p_i1881_1_, int p_i1881_2_, int p_i1881_3_)
-+    public ItemStack(Item p_i1881_1_, int p_i1881_2_, int p_i1881_3_){ this(p_i1881_1_, p_i1881_2_, p_i1881_3_, null); }
++    public ItemStack(Item p_i1881_1_, int p_i1881_2_, int p_i1881_3_){
++        this(p_i1881_1_, p_i1881_2_, p_i1881_3_, true);
++    }
++    public ItemStack(net.minecraft.item.Item item, int i, int j, boolean convert) {
++        // CraftBukkit end
++        this.field_151002_e = item;
++        this.field_77991_e = j;
++        this.field_77994_a = i;
++        // CraftBukkit start - Pass to setData to do filtering
++        if (Bukkit.getServer() != null) {
++            this.func_77964_b(j);
++        }
++        if (convert) {
++            this.convertStack();
++        }
++        // CraftBukkit end
++        if (this.field_77991_e < 0) {
++            // this.damage = 0; // CraftBukkit - remove this.
++        }
++
++        this.func_190923_F();
++    }
 +    public ItemStack(Item p_i1881_1_, int p_i1881_2_, int p_i1881_3_, @Nullable NBTTagCompound capNBT)
      {
 +        this.capNBT = capNBT;
          this.field_151002_e = p_i1881_1_;
          this.field_77991_e = p_i1881_3_;
          this.field_77994_a = p_i1881_2_;
-@@ -100,6 +106,7 @@
+@@ -100,8 +130,36 @@
          }
  
          this.func_190923_F();
 +        this.forgeInit();
      }
++    // Called to run this stack through the data converter to handle older storage methods and serialized items
++    public void convertStack() {
++        if (((CraftServer)(Bukkit.getServer())).getServer() != null) {
++            NBTTagCompound savedStack = new NBTTagCompound();
++            this.func_77955_b(savedStack);
++            ((CraftServer)(Bukkit.getServer())).getServer().func_184110_aI().func_188257_a(FixTypes.ITEM_INSTANCE, savedStack); // PAIL: convert
++            this.load(savedStack);
++        }
++    }
++    // CraftBukkit - break into own method
++    public void load(NBTTagCompound nbttagcompound) {
++        this.capNBT = nbttagcompound.func_74764_b("ForgeCaps") ? nbttagcompound.func_74775_l("ForgeCaps") : null;
++        this.field_151002_e = Item.func_111206_d(nbttagcompound.func_74779_i("id"));
++        this.field_77994_a = nbttagcompound.func_74771_c("Count");
++        // CraftBukkit start - Route through setData for filtering
++        // this.damage = Math.max(0, nbttagcompound.getShort("Damage"));
++        this.func_77964_b(nbttagcompound.func_74765_d("Damage"));
++        // CraftBukkit end
  
++        if (nbttagcompound.func_150297_b("tag", 10)) {
++            // CraftBukkit start - make defensive copy as this data may be coming from the save thread
++            this.field_77990_d = (NBTTagCompound) nbttagcompound.func_74775_l("tag").func_74737_b();
++            if (this.field_151002_e != null) {
++                this.field_151002_e.func_179215_a(this.field_77990_d);
++                // CraftBukkit end
++            }
++        }
++    }
      private void func_190923_F()
-@@ -109,7 +116,8 @@
+     {
+         this.field_190928_g = this.func_190926_b();
+@@ -109,26 +167,18 @@
  
      public ItemStack(NBTTagCompound p_i47263_1_)
      {
 -        this.field_151002_e = Item.func_111206_d(p_i47263_1_.func_74779_i("id"));
-+        this.capNBT = p_i47263_1_.func_74764_b("ForgeCaps") ? p_i47263_1_.func_74775_l("ForgeCaps") : null;
-+        this.field_151002_e = p_i47263_1_.func_150297_b("id", 8) ? Item.func_111206_d(p_i47263_1_.func_74779_i("id")) : Item.func_150898_a(Blocks.field_150350_a); //Forge fix tons of NumberFormatExceptions that are caused by deserializing EMPTY ItemStacks.
-         this.field_77994_a = p_i47263_1_.func_74771_c("Count");
-         this.field_77991_e = Math.max(0, p_i47263_1_.func_74765_d("Damage"));
- 
-@@ -124,11 +132,12 @@
-         }
- 
+-        this.field_77994_a = p_i47263_1_.func_74771_c("Count");
+-        this.field_77991_e = Math.max(0, p_i47263_1_.func_74765_d("Damage"));
+-
+-        if (p_i47263_1_.func_150297_b("tag", 10))
+-        {
+-            this.field_77990_d = p_i47263_1_.func_74775_l("tag");
+-
+-            if (this.field_151002_e != null)
+-            {
+-                this.field_151002_e.func_179215_a(p_i47263_1_);
+-            }
+-        }
+-
++        load(p_i47263_1_);
          this.func_190923_F();
 +        this.forgeInit();
      }
- 
+-
++    @Deprecated
++    public void setItem(net.minecraft.item.Item item) {
++        this.field_151002_e = item;
++        this.func_77964_b(this.func_77960_j()); // CraftBukkit - Set data again to ensure it is filtered properly
++    }
      public boolean func_190926_b()
      {
 -        return this == field_190927_a ? true : (this.field_151002_e != null && this.field_151002_e != Item.func_150898_a(Blocks.field_150350_a) ? (this.field_77994_a <= 0 ? true : this.field_77991_e < -32768 || this.field_77991_e > 65535) : true);
@@ -64,7 +143,7 @@
      }
  
      public static void func_189868_a(DataFixer p_189868_0_)
-@@ -148,11 +157,12 @@
+@@ -148,11 +198,12 @@
  
      public Item func_77973_b()
      {
@@ -78,7 +157,7 @@
          EnumActionResult enumactionresult = this.func_77973_b().func_180614_a(p_179546_1_, p_179546_2_, p_179546_3_, p_179546_4_, p_179546_5_, p_179546_6_, p_179546_7_, p_179546_8_);
  
          if (enumactionresult == EnumActionResult.SUCCESS)
-@@ -163,6 +173,19 @@
+@@ -163,6 +214,19 @@
          return enumactionresult;
      }
  
@@ -98,7 +177,7 @@
      public float func_150997_a(IBlockState p_150997_1_)
      {
          return this.func_77973_b().func_150893_a(this, p_150997_1_);
-@@ -190,12 +213,18 @@
+@@ -190,12 +254,18 @@
              p_77955_1_.func_74782_a("tag", this.field_77990_d);
          }
  
@@ -118,7 +197,7 @@
      }
  
      public boolean func_77985_e()
-@@ -205,7 +234,7 @@
+@@ -205,7 +275,7 @@
  
      public boolean func_77984_f()
      {
@@ -127,7 +206,7 @@
      }
  
      public boolean func_77981_g()
-@@ -215,32 +244,27 @@
+@@ -215,32 +285,27 @@
  
      public boolean func_77951_h()
      {
@@ -165,7 +244,7 @@
      }
  
      public boolean func_96631_a(int p_96631_1_, Random p_96631_2_)
-@@ -272,8 +296,8 @@
+@@ -272,8 +337,8 @@
                  }
              }
  
@@ -176,7 +255,7 @@
          }
      }
  
-@@ -322,7 +346,7 @@
+@@ -322,7 +387,7 @@
  
      public boolean func_150998_b(IBlockState p_150998_1_)
      {
@@ -185,7 +264,7 @@
      }
  
      public boolean func_111282_a(EntityPlayer p_111282_1_, EntityLivingBase p_111282_2_, EnumHand p_111282_3_)
-@@ -332,7 +356,7 @@
+@@ -332,7 +397,7 @@
  
      public ItemStack func_77946_l()
      {
@@ -194,7 +273,7 @@
  
          if (this.field_77990_d != null)
          {
-@@ -344,7 +368,7 @@
+@@ -344,7 +409,7 @@
  
      public static boolean func_77970_a(ItemStack p_77970_0_, ItemStack p_77970_1_)
      {
@@ -203,7 +282,7 @@
      }
  
      public static boolean func_77989_b(ItemStack p_77989_0_, ItemStack p_77989_1_)
-@@ -354,7 +378,7 @@
+@@ -354,7 +419,7 @@
  
      private boolean func_77959_d(ItemStack p_77959_1_)
      {
@@ -212,7 +291,7 @@
      }
  
      public static boolean func_179545_c(ItemStack p_179545_0_, ItemStack p_179545_1_)
-@@ -758,6 +782,7 @@
+@@ -758,6 +823,7 @@
              }
          }
  
@@ -220,7 +299,7 @@
          return list;
      }
  
-@@ -869,7 +894,7 @@
+@@ -869,7 +935,7 @@
          }
          else
          {
@@ -229,7 +308,7 @@
          }
  
          return multimap;
-@@ -982,6 +1007,53 @@
+@@ -982,6 +1048,53 @@
          }
      }
  
@@ -283,7 +362,7 @@
      @SideOnly(Side.CLIENT)
      public int func_190921_D()
      {
-@@ -1013,4 +1085,66 @@
+@@ -1013,4 +1126,66 @@
      {
          this.func_190917_f(-p_190918_1_);
      }

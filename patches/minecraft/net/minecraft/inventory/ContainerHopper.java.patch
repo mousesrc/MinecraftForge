@@ -1,0 +1,34 @@
+--- ../src-base/minecraft/net/minecraft/inventory/ContainerHopper.java
++++ ../src-work/minecraft/net/minecraft/inventory/ContainerHopper.java
+@@ -3,14 +3,31 @@
+ import net.minecraft.entity.player.EntityPlayer;
+ import net.minecraft.entity.player.InventoryPlayer;
+ import net.minecraft.item.ItemStack;
++import org.bukkit.craftbukkit.inventory.CraftInventory;
++import org.bukkit.craftbukkit.inventory.CraftInventoryView;
+ 
+ public class ContainerHopper extends Container
+ {
+     private final IInventory field_94538_a;
++    // CraftBukkit start
++    private CraftInventoryView bukkitEntity = null;
++    private InventoryPlayer player;
+ 
++    @Override
++    public CraftInventoryView getBukkitView() {
++        if (bukkitEntity != null) {
++            return bukkitEntity;
++        }
++
++        CraftInventory inventory = new CraftInventory(this.field_94538_a);
++        bukkitEntity = new CraftInventoryView(this.player.field_70458_d.getBukkitEntity(), inventory, this);
++        return bukkitEntity;
++    }
++    // CraftBukkit end
+     public ContainerHopper(InventoryPlayer p_i45792_1_, IInventory p_i45792_2_, EntityPlayer p_i45792_3_)
+     {
+         this.field_94538_a = p_i45792_2_;
++        this.player = p_i45792_1_; // CraftBukkit - save player
+         p_i45792_2_.func_174889_b(p_i45792_3_);
+         int i = 51;
+ 

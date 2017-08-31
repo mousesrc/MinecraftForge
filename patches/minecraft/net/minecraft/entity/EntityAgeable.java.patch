@@ -1,6 +1,14 @@
 --- ../src-base/minecraft/net/minecraft/entity/EntityAgeable.java
 +++ ../src-work/minecraft/net/minecraft/entity/EntityAgeable.java
-@@ -38,7 +38,7 @@
+@@ -21,6 +21,7 @@
+     protected int field_175503_c;
+     private float field_98056_d = -1.0F;
+     private float field_98057_e;
++    public boolean ageLocked; // CraftBukkit
+ 
+     public EntityAgeable(World p_i1578_1_)
+     {
+@@ -38,7 +39,7 @@
          {
              if (!this.field_70170_p.field_72995_K)
              {
@@ -9,7 +17,7 @@
  
                  if (oclass != null && this.getClass() == oclass)
                  {
-@@ -79,7 +79,7 @@
+@@ -79,7 +80,7 @@
          }
          else
          {
@@ -18,3 +26,66 @@
              return oclass != null && p_190669_2_ == oclass;
          }
      }
+@@ -166,42 +167,36 @@
+         super.func_184206_a(p_184206_1_);
+     }
+ 
+-    public void func_70636_d()
+-    {
++    public void func_70636_d() {
+         super.func_70636_d();
+ 
+-        if (this.field_70170_p.field_72995_K)
+-        {
+-            if (this.field_175503_c > 0)
++        if (this.field_70170_p.field_72995_K || ageLocked)  // CraftBukkit
+             {
+-                if (this.field_175503_c % 4 == 0)
+-                {
+-                    this.field_70170_p.func_175688_a(EnumParticleTypes.VILLAGER_HAPPY, this.field_70165_t + (double)(this.field_70146_Z.nextFloat() * this.field_70130_N * 2.0F) - (double)this.field_70130_N, this.field_70163_u + 0.5D + (double)(this.field_70146_Z.nextFloat() * this.field_70131_O), this.field_70161_v + (double)(this.field_70146_Z.nextFloat() * this.field_70130_N * 2.0F) - (double)this.field_70130_N, 0.0D, 0.0D, 0.0D, new int[0]);
+-                }
++                if (this.field_175503_c > 0) {
++                    if (this.field_175503_c % 4 == 0) {
++                        this.field_70170_p.func_175688_a(EnumParticleTypes.VILLAGER_HAPPY, this.field_70165_t + (double) (this.field_70146_Z.nextFloat() * this.field_70130_N * 2.0F) - (double) this.field_70130_N, this.field_70163_u + 0.5D + (double) (this.field_70146_Z.nextFloat() * this.field_70131_O), this.field_70161_v + (double) (this.field_70146_Z.nextFloat() * this.field_70130_N * 2.0F) - (double) this.field_70130_N, 0.0D, 0.0D, 0.0D, new int[0]);
++                    }
+ 
+-                --this.field_175503_c;
++                    --this.field_175503_c;
++                }
+             }
+-        }
+         else
+-        {
+-            int i = this.func_70874_b();
+-
+-            if (i < 0)
+             {
+-                ++i;
+-                this.func_70873_a(i);
++                int i = this.func_70874_b();
+ 
+-                if (i == 0)
+-                {
+-                    this.func_175500_n();
++                if (i < 0) {
++                    ++i;
++                    this.func_70873_a(i);
++
++                    if (i == 0) {
++                        this.func_175500_n();
++                    }
++                } else if (i > 0) {
++                    --i;
++                    this.func_70873_a(i);
+                 }
+             }
+-            else if (i > 0)
+-            {
+-                --i;
+-                this.func_70873_a(i);
+-            }
+-        }
++
+     }
+ 
+     protected void func_175500_n()

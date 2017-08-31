@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Random;
 
 import com.google.common.base.Predicate;
+import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.Entity;
@@ -118,6 +119,14 @@ import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.common.eventhandler.Event;
 import net.minecraftforge.fml.common.eventhandler.Event.Result;
+import org.bukkit.Material;
+import org.bukkit.craftbukkit.CraftChunk;
+import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.block.CraftBlockState;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.entity.Player;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.player.PlayerPickupItemEvent;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -154,8 +163,20 @@ public class ForgeEventFactory
 
     public static PlaceEvent onPlayerBlockPlace(@Nonnull EntityPlayer player, @Nonnull BlockSnapshot blockSnapshot, @Nonnull EnumFacing direction, @Nonnull EnumHand hand)
     {
-        IBlockState placedAgainst = blockSnapshot.getWorld().getBlockState(blockSnapshot.getPos().offset(direction.getOpposite()));
+        //MCPCRevive start
+        BlockPos diragainst = blockSnapshot.getPos().offset(direction.getOpposite());
+        IBlockState placedAgainst = blockSnapshot.getWorld().getBlockState(diragainst);
         PlaceEvent event = new PlaceEvent(blockSnapshot, placedAgainst, player, hand);
+        CraftBlock blockcurrent = new CraftBlock(new CraftChunk(blockSnapshot.getWorld().getChunkFromBlockCoords(blockSnapshot.getPos())),blockSnapshot.getPos().getX(),blockSnapshot.getPos().getY(),blockSnapshot.getPos().getZ());
+        CraftBlockState blockReplaced = new CraftBlockState(Material.getMaterial(Block.getIdFromBlock(blockSnapshot.getReplacedBlock().getBlock())));
+        org.bukkit.block.Block blockagainst = blockcurrent.getWorld().getBlockAt(diragainst.getX(),diragainst.getY(),diragainst.getZ());
+        BlockPlaceEvent e = CraftEventFactory.callBlockPlaceEvent(blockSnapshot.getWorld(),player,hand,blockReplaced,diragainst.getX(),diragainst.getY(),diragainst.getZ());
+        if(e.isCancelled())
+        {
+            event.setCanceled(true);
+            return event;
+        }
+        //MCPCRevive end
         MinecraftForge.EVENT_BUS.post(event);
         return event;
     }
@@ -438,8 +459,15 @@ public class ForgeEventFactory
     public static int onItemPickup(EntityItem entityItem, EntityPlayer entityIn, ItemStack itemstack)
     {
         Event event = new EntityItemPickupEvent(entityIn, entityItem);
+        PlayerPickupItemEvent event1 = new PlayerPickupItemEvent((Player) entityIn.getBukkitEntity(), (org.bukkit.entity.Item) entityItem.getBukkitEntity(),0);
+        CraftEventFactory.callEvent(event1);
+        if(event.isCanceled())
+        {
+            return 0;
+        }
         if (MinecraftForge.EVENT_BUS.post(event)) return -1;
         return event.getResult() == Result.ALLOW ? 1 : 0;
+
     }
 
     public static void onPlayerDrops(EntityPlayer player, DamageSource cause, List<EntityItem> capturedDrops, boolean recentlyHit)

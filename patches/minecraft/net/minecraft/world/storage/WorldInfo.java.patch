@@ -1,6 +1,24 @@
 --- ../src-base/minecraft/net/minecraft/world/storage/WorldInfo.java
 +++ ../src-work/minecraft/net/minecraft/world/storage/WorldInfo.java
-@@ -64,8 +64,9 @@
+@@ -14,14 +14,11 @@
+ import net.minecraft.util.datafix.IDataFixer;
+ import net.minecraft.util.datafix.IDataWalker;
+ import net.minecraft.util.math.BlockPos;
+-import net.minecraft.world.DimensionType;
+-import net.minecraft.world.EnumDifficulty;
+-import net.minecraft.world.GameRules;
+-import net.minecraft.world.GameType;
+-import net.minecraft.world.WorldSettings;
+-import net.minecraft.world.WorldType;
++import net.minecraft.world.*;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
++import org.bukkit.Bukkit;
++import org.bukkit.event.weather.WeatherChangeEvent;
+ 
+ public class WorldInfo
+ {
+@@ -64,8 +61,10 @@
      private double field_176153_H = 0.2D;
      private int field_176154_I = 5;
      private int field_176155_J = 15;
@@ -8,10 +26,11 @@
 +    private final Map<Integer, NBTTagCompound> field_186348_N = Maps.newHashMap();
      private GameRules field_82577_x = new GameRules();
 +    private java.util.Map<String, net.minecraft.nbt.NBTBase> additionalProperties;
++    public WorldServer world; // CraftBukkit
  
      protected WorldInfo()
      {
-@@ -252,7 +253,7 @@
+@@ -252,7 +251,7 @@
  
              for (String s : nbttagcompound1.func_150296_c())
              {
@@ -20,7 +39,7 @@
              }
          }
      }
-@@ -335,6 +336,7 @@
+@@ -335,6 +334,7 @@
          nbttagcompound.func_74757_a("Snapshot", false);
          p_76064_1_.func_74782_a("Version", nbttagcompound);
          p_76064_1_.func_74768_a("DataVersion", 922);
@@ -28,7 +47,7 @@
          p_76064_1_.func_74772_a("RandomSeed", this.field_76100_a);
          p_76064_1_.func_74778_a("generatorName", this.field_76098_b.func_77127_a());
          p_76064_1_.func_74768_a("generatorVersion", this.field_76098_b.func_77131_c());
-@@ -377,9 +379,10 @@
+@@ -377,9 +377,10 @@
          p_76064_1_.func_74782_a("GameRules", this.field_82577_x.func_82770_a());
          NBTTagCompound nbttagcompound1 = new NBTTagCompound();
  
@@ -41,7 +60,27 @@
          }
  
          p_76064_1_.func_74782_a("DimensionData", nbttagcompound1);
-@@ -709,6 +712,7 @@
+@@ -529,6 +530,19 @@
+ 
+     public void func_76084_b(boolean p_76084_1_)
+     {
++
++        // CraftBukkit start
++        org.bukkit.World world = Bukkit.getWorld(func_76065_j());
++        if (world != null) {
++            WeatherChangeEvent weather = new WeatherChangeEvent(world, p_76084_1_);
++            Bukkit.getServer().getPluginManager().callEvent(weather);
++            if (weather.isCancelled()) {
++                return;
++            }
++
++            func_76080_g(0); // Will force a time reset
++        }
++        // CraftBukkit end
+         this.field_76104_m = p_76084_1_;
+     }
+ 
+@@ -709,6 +723,7 @@
  
      public void func_176144_a(EnumDifficulty p_176144_1_)
      {
@@ -49,7 +88,7 @@
          this.field_176158_z = p_176144_1_;
      }
  
-@@ -807,17 +811,49 @@
+@@ -807,17 +822,49 @@
          });
      }
  
@@ -101,3 +140,15 @@
      @SideOnly(Side.CLIENT)
      public int func_186344_K()
      {
+@@ -835,4 +882,11 @@
+     {
+         return this.field_186349_b;
+     }
++    // CraftBukkit start - Check if the name stored in NBT is the correct one
++    public void checkName( String name ) {
++        if ( !this.field_76106_k.equals( name ) ) {
++            this.field_76106_k = name;
++        }
++    }
++    // CraftBukkit end
+ }

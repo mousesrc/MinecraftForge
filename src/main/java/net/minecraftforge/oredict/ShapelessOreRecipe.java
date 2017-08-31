@@ -32,6 +32,7 @@ import net.minecraft.item.crafting.ShapelessRecipes;
 import net.minecraft.util.NonNullList;
 import net.minecraft.world.World;
 import net.minecraftforge.common.ForgeHooks;
+import org.bukkit.inventory.Recipe;
 
 import javax.annotation.Nonnull;
 
@@ -176,5 +177,10 @@ public class ShapelessOreRecipe implements IRecipe
     public NonNullList<ItemStack> getRemainingItems(InventoryCrafting inv) //getRecipeLeftovers
     {
         return ForgeHooks.defaultRecipeGetRemainingItems(inv);
+    }
+
+    @Override
+    public Recipe toBukkitRecipe() {
+        return null;
     }
 }

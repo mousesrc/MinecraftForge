@@ -1,16 +1,1039 @@
 --- ../src-base/minecraft/net/minecraft/entity/monster/EntityShulker.java
 +++ ../src-work/minecraft/net/minecraft/entity/monster/EntityShulker.java
-@@ -426,6 +426,13 @@
+@@ -45,224 +45,228 @@
+ import net.minecraft.world.EnumDifficulty;
+ import net.minecraft.world.World;
+ import net.minecraft.world.storage.loot.LootTableList;
++import net.minecraftforge.common.MinecraftForge;
++import net.minecraftforge.event.entity.living.EnderTeleportEvent;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
++import org.bukkit.Location;
++import org.bukkit.event.entity.EntityTeleportEvent;
+ 
+ public class EntityShulker extends EntityGolem implements IMob
+ {
+-    private static final UUID field_184703_bv = UUID.fromString("7E0292F2-9434-48D5-A29F-9583AF7DF27F");
+-    private static final AttributeModifier field_184704_bw = (new AttributeModifier(field_184703_bv, "Covered armor bonus", 20.0D, 0)).func_111168_a(false);
+-    protected static final DataParameter<EnumFacing> field_184700_a = EntityDataManager.<EnumFacing>func_187226_a(EntityShulker.class, DataSerializers.field_187202_l);
+-    protected static final DataParameter<Optional<BlockPos>> field_184701_b = EntityDataManager.<Optional<BlockPos>>func_187226_a(EntityShulker.class, DataSerializers.field_187201_k);
+-    protected static final DataParameter<Byte> field_184702_c = EntityDataManager.<Byte>func_187226_a(EntityShulker.class, DataSerializers.field_187191_a);
+-    protected static final DataParameter<Byte> field_190770_bw = EntityDataManager.<Byte>func_187226_a(EntityShulker.class, DataSerializers.field_187191_a);
+-    public static final EnumDyeColor field_190771_bx = EnumDyeColor.PURPLE;
+-    private float field_184705_bx;
+-    private float field_184706_by;
+-    private BlockPos field_184707_bz;
+-    private int field_184708_bA;
++    private static final UUID COVERED_ARMOR_BONUS_ID = UUID.fromString("7E0292F2-9434-48D5-A29F-9583AF7DF27F");
++    private static final AttributeModifier COVERED_ARMOR_BONUS_MODIFIER = (new AttributeModifier(COVERED_ARMOR_BONUS_ID, "Covered armor bonus", 20.0D, 0)).setSaved(false);
++    protected static final DataParameter<EnumFacing> ATTACHED_FACE = EntityDataManager.<EnumFacing>createKey(EntityShulker.class, DataSerializers.FACING);
++    protected static final DataParameter<Optional<BlockPos>> ATTACHED_BLOCK_POS = EntityDataManager.<Optional<BlockPos>>createKey(EntityShulker.class, DataSerializers.OPTIONAL_BLOCK_POS);
++    protected static final DataParameter<Byte> PEEK_TICK = EntityDataManager.<Byte>createKey(EntityShulker.class, DataSerializers.BYTE);
++    public static final DataParameter<Byte> COLOR = EntityDataManager.<Byte>createKey(EntityShulker.class, DataSerializers.BYTE);
++    public static final EnumDyeColor DEFAULT_COLOR = EnumDyeColor.PURPLE;
++    private float prevPeekAmount;
++    private float peekAmount;
++    private BlockPos currentAttachmentPosition;
++    private int clientSideTeleportInterpolation;
+ 
+-    public EntityShulker(World p_i46779_1_)
++    public EntityShulker(World worldIn)
+     {
+-        super(p_i46779_1_);
+-        this.func_70105_a(1.0F, 1.0F);
+-        this.field_70760_ar = 180.0F;
+-        this.field_70761_aq = 180.0F;
+-        this.field_70178_ae = true;
+-        this.field_184707_bz = null;
+-        this.field_70728_aV = 5;
++        super(worldIn);
++        this.setSize(1.0F, 1.0F);
++        this.prevRenderYawOffset = 180.0F;
++        this.renderYawOffset = 180.0F;
++        this.isImmuneToFire = true;
++        this.currentAttachmentPosition = null;
++        this.experienceValue = 5;
+     }
+ 
+     @Nullable
+-    public IEntityLivingData func_180482_a(DifficultyInstance p_180482_1_, @Nullable IEntityLivingData p_180482_2_)
++    public IEntityLivingData onInitialSpawn(DifficultyInstance difficulty, @Nullable IEntityLivingData livingdata)
+     {
+-        this.field_70761_aq = 180.0F;
+-        this.field_70760_ar = 180.0F;
+-        this.field_70177_z = 180.0F;
+-        this.field_70126_B = 180.0F;
+-        this.field_70759_as = 180.0F;
+-        this.field_70758_at = 180.0F;
+-        return super.func_180482_a(p_180482_1_, p_180482_2_);
++        this.renderYawOffset = 180.0F;
++        this.prevRenderYawOffset = 180.0F;
++        this.rotationYaw = 180.0F;
++        this.prevRotationYaw = 180.0F;
++        this.rotationYawHead = 180.0F;
++        this.prevRotationYawHead = 180.0F;
++        return super.onInitialSpawn(difficulty, livingdata);
+     }
+ 
+-    protected void func_184651_r()
++    protected void initEntityAI()
+     {
+-        this.field_70714_bg.func_75776_a(1, new EntityAIWatchClosest(this, EntityPlayer.class, 8.0F));
+-        this.field_70714_bg.func_75776_a(4, new EntityShulker.AIAttack());
+-        this.field_70714_bg.func_75776_a(7, new EntityShulker.AIPeek());
+-        this.field_70714_bg.func_75776_a(8, new EntityAILookIdle(this));
+-        this.field_70715_bh.func_75776_a(1, new EntityAIHurtByTarget(this, true, new Class[0]));
+-        this.field_70715_bh.func_75776_a(2, new EntityShulker.AIAttackNearest(this));
+-        this.field_70715_bh.func_75776_a(3, new EntityShulker.AIDefenseAttack(this));
++        this.tasks.addTask(1, new EntityAIWatchClosest(this, EntityPlayer.class, 8.0F));
++        this.tasks.addTask(4, new EntityShulker.AIAttack());
++        this.tasks.addTask(7, new EntityShulker.AIPeek());
++        this.tasks.addTask(8, new EntityAILookIdle(this));
++        this.targetTasks.addTask(1, new EntityAIHurtByTarget(this, true, new Class[0]));
++        this.targetTasks.addTask(2, new EntityShulker.AIAttackNearest(this));
++        this.targetTasks.addTask(3, new EntityShulker.AIDefenseAttack(this));
+     }
+ 
+-    protected boolean func_70041_e_()
++    protected boolean canTriggerWalking()
+     {
+         return false;
+     }
+ 
+-    public SoundCategory func_184176_by()
++    public SoundCategory getSoundCategory()
+     {
+         return SoundCategory.HOSTILE;
+     }
+ 
+-    protected SoundEvent func_184639_G()
++    protected SoundEvent getAmbientSound()
+     {
+-        return SoundEvents.field_187773_eO;
++        return SoundEvents.ENTITY_SHULKER_AMBIENT;
+     }
+ 
+-    public void func_70642_aH()
++    public void playLivingSound()
+     {
+-        if (!this.func_184686_df())
++        if (!this.isClosed())
+         {
+-            super.func_70642_aH();
++            super.playLivingSound();
+         }
+     }
+ 
+-    protected SoundEvent func_184615_bR()
++    protected SoundEvent getDeathSound()
+     {
+-        return SoundEvents.field_187781_eS;
++        return SoundEvents.ENTITY_SHULKER_DEATH;
+     }
+ 
+-    protected SoundEvent func_184601_bQ()
++    protected SoundEvent getHurtSound()
+     {
+-        return this.func_184686_df() ? SoundEvents.field_187785_eU : SoundEvents.field_187783_eT;
++        return this.isClosed() ? SoundEvents.ENTITY_SHULKER_HURT_CLOSED : SoundEvents.ENTITY_SHULKER_HURT;
+     }
+ 
+-    protected void func_70088_a()
++    protected void entityInit()
+     {
+-        super.func_70088_a();
+-        this.field_70180_af.func_187214_a(field_184700_a, EnumFacing.DOWN);
+-        this.field_70180_af.func_187214_a(field_184701_b, Optional.<BlockPos>absent());
+-        this.field_70180_af.func_187214_a(field_184702_c, Byte.valueOf((byte)0));
+-        this.field_70180_af.func_187214_a(field_190770_bw, Byte.valueOf((byte)field_190771_bx.func_176765_a()));
++        super.entityInit();
++        this.dataManager.register(ATTACHED_FACE, EnumFacing.DOWN);
++        this.dataManager.register(ATTACHED_BLOCK_POS, Optional.<BlockPos>absent());
++        this.dataManager.register(PEEK_TICK, Byte.valueOf((byte)0));
++        this.dataManager.register(COLOR, Byte.valueOf((byte)DEFAULT_COLOR.getMetadata()));
+     }
+ 
+-    protected void func_110147_ax()
++    protected void applyEntityAttributes()
+     {
+-        super.func_110147_ax();
+-        this.func_110148_a(SharedMonsterAttributes.field_111267_a).func_111128_a(30.0D);
++        super.applyEntityAttributes();
++        this.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(30.0D);
+     }
+ 
+-    protected EntityBodyHelper func_184650_s()
++    protected EntityBodyHelper createBodyHelper()
+     {
+         return new EntityShulker.BodyHelper(this);
+     }
+ 
+-    public static void func_189757_b(DataFixer p_189757_0_)
++    public static void registerFixesShulker(DataFixer fixer)
+     {
+-        EntityLiving.func_189752_a(p_189757_0_, EntityShulker.class);
++        EntityLiving.registerFixesMob(fixer, EntityShulker.class);
+     }
+ 
+-    public void func_70037_a(NBTTagCompound p_70037_1_)
++    public void readEntityFromNBT(NBTTagCompound compound)
+     {
+-        super.func_70037_a(p_70037_1_);
+-        this.field_70180_af.func_187227_b(field_184700_a, EnumFacing.func_82600_a(p_70037_1_.func_74771_c("AttachFace")));
+-        this.field_70180_af.func_187227_b(field_184702_c, Byte.valueOf(p_70037_1_.func_74771_c("Peek")));
+-        this.field_70180_af.func_187227_b(field_190770_bw, Byte.valueOf(p_70037_1_.func_74771_c("Color")));
++        super.readEntityFromNBT(compound);
++        this.dataManager.set(ATTACHED_FACE, EnumFacing.getFront(compound.getByte("AttachFace")));
++        this.dataManager.set(PEEK_TICK, Byte.valueOf(compound.getByte("Peek")));
++        this.dataManager.set(COLOR, Byte.valueOf(compound.getByte("Color")));
+ 
+-        if (p_70037_1_.func_74764_b("APX"))
++        if (compound.hasKey("APX"))
+         {
+-            int i = p_70037_1_.func_74762_e("APX");
+-            int j = p_70037_1_.func_74762_e("APY");
+-            int k = p_70037_1_.func_74762_e("APZ");
+-            this.field_70180_af.func_187227_b(field_184701_b, Optional.of(new BlockPos(i, j, k)));
++            int i = compound.getInteger("APX");
++            int j = compound.getInteger("APY");
++            int k = compound.getInteger("APZ");
++            this.dataManager.set(ATTACHED_BLOCK_POS, Optional.of(new BlockPos(i, j, k)));
+         }
+         else
+         {
+-            this.field_70180_af.func_187227_b(field_184701_b, Optional.<BlockPos>absent());
++            this.dataManager.set(ATTACHED_BLOCK_POS, Optional.<BlockPos>absent());
+         }
+     }
+ 
+-    public void func_70014_b(NBTTagCompound p_70014_1_)
++    public void writeEntityToNBT(NBTTagCompound compound)
+     {
+-        super.func_70014_b(p_70014_1_);
+-        p_70014_1_.func_74774_a("AttachFace", (byte)((EnumFacing)this.field_70180_af.func_187225_a(field_184700_a)).func_176745_a());
+-        p_70014_1_.func_74774_a("Peek", ((Byte)this.field_70180_af.func_187225_a(field_184702_c)).byteValue());
+-        p_70014_1_.func_74774_a("Color", ((Byte)this.field_70180_af.func_187225_a(field_190770_bw)).byteValue());
+-        BlockPos blockpos = this.func_184699_da();
++        super.writeEntityToNBT(compound);
++        compound.setByte("AttachFace", (byte)((EnumFacing)this.dataManager.get(ATTACHED_FACE)).getIndex());
++        compound.setByte("Peek", ((Byte)this.dataManager.get(PEEK_TICK)).byteValue());
++        compound.setByte("Color", ((Byte)this.dataManager.get(COLOR)).byteValue());
++        BlockPos blockpos = this.getAttachmentPos();
+ 
+         if (blockpos != null)
+         {
+-            p_70014_1_.func_74768_a("APX", blockpos.func_177958_n());
+-            p_70014_1_.func_74768_a("APY", blockpos.func_177956_o());
+-            p_70014_1_.func_74768_a("APZ", blockpos.func_177952_p());
++            compound.setInteger("APX", blockpos.getX());
++            compound.setInteger("APY", blockpos.getY());
++            compound.setInteger("APZ", blockpos.getZ());
+         }
+     }
+ 
+-    public void func_70071_h_()
++    public void onUpdate()
+     {
+-        super.func_70071_h_();
+-        BlockPos blockpos = (BlockPos)((Optional)this.field_70180_af.func_187225_a(field_184701_b)).orNull();
++        super.onUpdate();
++        BlockPos blockpos = (BlockPos)((Optional)this.dataManager.get(ATTACHED_BLOCK_POS)).orNull();
+ 
+-        if (blockpos == null && !this.field_70170_p.field_72995_K)
++        if (blockpos == null && !this.world.isRemote)
+         {
+             blockpos = new BlockPos(this);
+-            this.field_70180_af.func_187227_b(field_184701_b, Optional.of(blockpos));
++            this.dataManager.set(ATTACHED_BLOCK_POS, Optional.of(blockpos));
+         }
+ 
+-        if (this.func_184218_aH())
++        if (this.isRiding())
+         {
+             blockpos = null;
+-            float f = this.func_184187_bx().field_70177_z;
+-            this.field_70177_z = f;
+-            this.field_70761_aq = f;
+-            this.field_70760_ar = f;
+-            this.field_184708_bA = 0;
++            float f = this.getRidingEntity().rotationYaw;
++            this.rotationYaw = f;
++            this.renderYawOffset = f;
++            this.prevRenderYawOffset = f;
++            this.clientSideTeleportInterpolation = 0;
+         }
+-        else if (!this.field_70170_p.field_72995_K)
++        else if (!this.world.isRemote)
+         {
+-            IBlockState iblockstate = this.field_70170_p.func_180495_p(blockpos);
++            IBlockState iblockstate = this.world.getBlockState(blockpos);
+ 
+-            if (iblockstate.func_185904_a() != Material.field_151579_a)
++            if (iblockstate.getMaterial() != Material.AIR)
+             {
+-                if (iblockstate.func_177230_c() == Blocks.field_180384_M)
++                if (iblockstate.getBlock() == Blocks.PISTON_EXTENSION)
+                 {
+-                    EnumFacing enumfacing = (EnumFacing)iblockstate.func_177229_b(BlockPistonBase.field_176387_N);
++                    EnumFacing enumfacing = (EnumFacing)iblockstate.getValue(BlockPistonBase.FACING);
+ 
+-                    if (this.field_70170_p.func_175623_d(blockpos.func_177972_a(enumfacing)))
++                    if (this.world.isAirBlock(blockpos.offset(enumfacing)))
+                     {
+-                        blockpos = blockpos.func_177972_a(enumfacing);
+-                        this.field_70180_af.func_187227_b(field_184701_b, Optional.of(blockpos));
++                        blockpos = blockpos.offset(enumfacing);
++                        this.dataManager.set(ATTACHED_BLOCK_POS, Optional.of(blockpos));
+                     }
+                     else
+                     {
+-                        this.func_184689_o();
++                        this.tryTeleportToNewPosition();
+                     }
+                 }
+-                else if (iblockstate.func_177230_c() == Blocks.field_150332_K)
++                else if (iblockstate.getBlock() == Blocks.PISTON_HEAD)
+                 {
+-                    EnumFacing enumfacing3 = (EnumFacing)iblockstate.func_177229_b(BlockPistonExtension.field_176387_N);
++                    EnumFacing enumfacing3 = (EnumFacing)iblockstate.getValue(BlockPistonExtension.FACING);
+ 
+-                    if (this.field_70170_p.func_175623_d(blockpos.func_177972_a(enumfacing3)))
++                    if (this.world.isAirBlock(blockpos.offset(enumfacing3)))
+                     {
+-                        blockpos = blockpos.func_177972_a(enumfacing3);
+-                        this.field_70180_af.func_187227_b(field_184701_b, Optional.of(blockpos));
++                        blockpos = blockpos.offset(enumfacing3);
++                        this.dataManager.set(ATTACHED_BLOCK_POS, Optional.of(blockpos));
+                     }
+                     else
+                     {
+-                        this.func_184689_o();
++                        this.tryTeleportToNewPosition();
+                     }
+                 }
+                 else
+                 {
+-                    this.func_184689_o();
++                    this.tryTeleportToNewPosition();
+                 }
+             }
+ 
+-            BlockPos blockpos1 = blockpos.func_177972_a(this.func_184696_cZ());
++            BlockPos blockpos1 = blockpos.offset(this.getAttachmentFacing());
+ 
+-            if (!this.field_70170_p.func_175677_d(blockpos1, false))
++            if (!this.world.isBlockNormalCube(blockpos1, false))
+             {
+                 boolean flag = false;
+ 
+                 for (EnumFacing enumfacing1 : EnumFacing.values())
+                 {
+-                    blockpos1 = blockpos.func_177972_a(enumfacing1);
++                    blockpos1 = blockpos.offset(enumfacing1);
+ 
+-                    if (this.field_70170_p.func_175677_d(blockpos1, false))
++                    if (this.world.isBlockNormalCube(blockpos1, false))
+                     {
+-                        this.field_70180_af.func_187227_b(field_184700_a, enumfacing1);
++                        this.dataManager.set(ATTACHED_FACE, enumfacing1);
+                         flag = true;
+                         break;
+                     }
+@@ -270,99 +274,99 @@
+ 
+                 if (!flag)
+                 {
+-                    this.func_184689_o();
++                    this.tryTeleportToNewPosition();
+                 }
+             }
+ 
+-            BlockPos blockpos2 = blockpos.func_177972_a(this.func_184696_cZ().func_176734_d());
++            BlockPos blockpos2 = blockpos.offset(this.getAttachmentFacing().getOpposite());
+ 
+-            if (this.field_70170_p.func_175677_d(blockpos2, false))
++            if (this.world.isBlockNormalCube(blockpos2, false))
+             {
+-                this.func_184689_o();
++                this.tryTeleportToNewPosition();
+             }
+         }
+ 
+-        float f1 = (float)this.func_184684_db() * 0.01F;
+-        this.field_184705_bx = this.field_184706_by;
++        float f1 = (float)this.getPeekTick() * 0.01F;
++        this.prevPeekAmount = this.peekAmount;
+ 
+-        if (this.field_184706_by > f1)
++        if (this.peekAmount > f1)
+         {
+-            this.field_184706_by = MathHelper.func_76131_a(this.field_184706_by - 0.05F, f1, 1.0F);
++            this.peekAmount = MathHelper.clamp(this.peekAmount - 0.05F, f1, 1.0F);
+         }
+-        else if (this.field_184706_by < f1)
++        else if (this.peekAmount < f1)
+         {
+-            this.field_184706_by = MathHelper.func_76131_a(this.field_184706_by + 0.05F, 0.0F, f1);
++            this.peekAmount = MathHelper.clamp(this.peekAmount + 0.05F, 0.0F, f1);
+         }
+ 
+         if (blockpos != null)
+         {
+-            if (this.field_70170_p.field_72995_K)
++            if (this.world.isRemote)
+             {
+-                if (this.field_184708_bA > 0 && this.field_184707_bz != null)
++                if (this.clientSideTeleportInterpolation > 0 && this.currentAttachmentPosition != null)
+                 {
+-                    --this.field_184708_bA;
++                    --this.clientSideTeleportInterpolation;
+                 }
+                 else
+                 {
+-                    this.field_184707_bz = blockpos;
++                    this.currentAttachmentPosition = blockpos;
+                 }
+             }
+ 
+-            this.field_70165_t = (double)blockpos.func_177958_n() + 0.5D;
+-            this.field_70163_u = (double)blockpos.func_177956_o();
+-            this.field_70161_v = (double)blockpos.func_177952_p() + 0.5D;
+-            this.field_70169_q = this.field_70165_t;
+-            this.field_70167_r = this.field_70163_u;
+-            this.field_70166_s = this.field_70161_v;
+-            this.field_70142_S = this.field_70165_t;
+-            this.field_70137_T = this.field_70163_u;
+-            this.field_70136_U = this.field_70161_v;
+-            double d3 = 0.5D - (double)MathHelper.func_76126_a((0.5F + this.field_184706_by) * (float)Math.PI) * 0.5D;
+-            double d4 = 0.5D - (double)MathHelper.func_76126_a((0.5F + this.field_184705_bx) * (float)Math.PI) * 0.5D;
++            this.posX = (double)blockpos.getX() + 0.5D;
++            this.posY = (double)blockpos.getY();
++            this.posZ = (double)blockpos.getZ() + 0.5D;
++            this.prevPosX = this.posX;
++            this.prevPosY = this.posY;
++            this.prevPosZ = this.posZ;
++            this.lastTickPosX = this.posX;
++            this.lastTickPosY = this.posY;
++            this.lastTickPosZ = this.posZ;
++            double d3 = 0.5D - (double)MathHelper.sin((0.5F + this.peekAmount) * (float)Math.PI) * 0.5D;
++            double d4 = 0.5D - (double)MathHelper.sin((0.5F + this.prevPeekAmount) * (float)Math.PI) * 0.5D;
+             double d5 = d3 - d4;
+             double d0 = 0.0D;
+             double d1 = 0.0D;
+             double d2 = 0.0D;
+-            EnumFacing enumfacing2 = this.func_184696_cZ();
++            EnumFacing enumfacing2 = this.getAttachmentFacing();
+ 
+             switch (enumfacing2)
+             {
+                 case DOWN:
+-                    this.func_174826_a(new AxisAlignedBB(this.field_70165_t - 0.5D, this.field_70163_u, this.field_70161_v - 0.5D, this.field_70165_t + 0.5D, this.field_70163_u + 1.0D + d3, this.field_70161_v + 0.5D));
++                    this.setEntityBoundingBox(new AxisAlignedBB(this.posX - 0.5D, this.posY, this.posZ - 0.5D, this.posX + 0.5D, this.posY + 1.0D + d3, this.posZ + 0.5D));
+                     d1 = d5;
+                     break;
+                 case UP:
+-                    this.func_174826_a(new AxisAlignedBB(this.field_70165_t - 0.5D, this.field_70163_u - d3, this.field_70161_v - 0.5D, this.field_70165_t + 0.5D, this.field_70163_u + 1.0D, this.field_70161_v + 0.5D));
++                    this.setEntityBoundingBox(new AxisAlignedBB(this.posX - 0.5D, this.posY - d3, this.posZ - 0.5D, this.posX + 0.5D, this.posY + 1.0D, this.posZ + 0.5D));
+                     d1 = -d5;
+                     break;
+                 case NORTH:
+-                    this.func_174826_a(new AxisAlignedBB(this.field_70165_t - 0.5D, this.field_70163_u, this.field_70161_v - 0.5D, this.field_70165_t + 0.5D, this.field_70163_u + 1.0D, this.field_70161_v + 0.5D + d3));
++                    this.setEntityBoundingBox(new AxisAlignedBB(this.posX - 0.5D, this.posY, this.posZ - 0.5D, this.posX + 0.5D, this.posY + 1.0D, this.posZ + 0.5D + d3));
+                     d2 = d5;
+                     break;
+                 case SOUTH:
+-                    this.func_174826_a(new AxisAlignedBB(this.field_70165_t - 0.5D, this.field_70163_u, this.field_70161_v - 0.5D - d3, this.field_70165_t + 0.5D, this.field_70163_u + 1.0D, this.field_70161_v + 0.5D));
++                    this.setEntityBoundingBox(new AxisAlignedBB(this.posX - 0.5D, this.posY, this.posZ - 0.5D - d3, this.posX + 0.5D, this.posY + 1.0D, this.posZ + 0.5D));
+                     d2 = -d5;
+                     break;
+                 case WEST:
+-                    this.func_174826_a(new AxisAlignedBB(this.field_70165_t - 0.5D, this.field_70163_u, this.field_70161_v - 0.5D, this.field_70165_t + 0.5D + d3, this.field_70163_u + 1.0D, this.field_70161_v + 0.5D));
++                    this.setEntityBoundingBox(new AxisAlignedBB(this.posX - 0.5D, this.posY, this.posZ - 0.5D, this.posX + 0.5D + d3, this.posY + 1.0D, this.posZ + 0.5D));
+                     d0 = d5;
+                     break;
+                 case EAST:
+-                    this.func_174826_a(new AxisAlignedBB(this.field_70165_t - 0.5D - d3, this.field_70163_u, this.field_70161_v - 0.5D, this.field_70165_t + 0.5D, this.field_70163_u + 1.0D, this.field_70161_v + 0.5D));
++                    this.setEntityBoundingBox(new AxisAlignedBB(this.posX - 0.5D - d3, this.posY, this.posZ - 0.5D, this.posX + 0.5D, this.posY + 1.0D, this.posZ + 0.5D));
+                     d0 = -d5;
+             }
+ 
+             if (d5 > 0.0D)
+             {
+-                List<Entity> list = this.field_70170_p.func_72839_b(this, this.func_174813_aQ());
++                List<Entity> list = this.world.getEntitiesWithinAABBExcludingEntity(this, this.getEntityBoundingBox());
+ 
+                 if (!list.isEmpty())
+                 {
+                     for (Entity entity : list)
+                     {
+-                        if (!(entity instanceof EntityShulker) && !entity.field_70145_X)
++                        if (!(entity instanceof EntityShulker) && !entity.noClip)
+                         {
+-                            entity.func_70091_d(MoverType.SHULKER, d0, d1, d2);
++                            entity.move(MoverType.SHULKER, d0, d1, d2);
+                         }
+                     }
+                 }
+@@ -370,66 +374,82 @@
+         }
+     }
+ 
+-    public void func_70091_d(MoverType p_70091_1_, double p_70091_2_, double p_70091_4_, double p_70091_6_)
++    public void move(MoverType type, double x, double y, double z)
+     {
+-        if (p_70091_1_ == MoverType.SHULKER_BOX)
++        if (type == MoverType.SHULKER_BOX)
+         {
+-            this.func_184689_o();
++            this.tryTeleportToNewPosition();
+         }
+         else
+         {
+-            super.func_70091_d(p_70091_1_, p_70091_2_, p_70091_4_, p_70091_6_);
++            super.move(type, x, y, z);
+         }
+     }
+ 
+-    public void func_70107_b(double p_70107_1_, double p_70107_3_, double p_70107_5_)
++    public void setPosition(double x, double y, double z)
+     {
+-        super.func_70107_b(p_70107_1_, p_70107_3_, p_70107_5_);
++        super.setPosition(x, y, z);
+ 
+-        if (this.field_70180_af != null && this.field_70173_aa != 0)
++        if (this.dataManager != null && this.ticksExisted != 0)
+         {
+-            Optional<BlockPos> optional = (Optional)this.field_70180_af.func_187225_a(field_184701_b);
+-            Optional<BlockPos> optional1 = Optional.<BlockPos>of(new BlockPos(p_70107_1_, p_70107_3_, p_70107_5_));
++            Optional<BlockPos> optional = (Optional)this.dataManager.get(ATTACHED_BLOCK_POS);
++            Optional<BlockPos> optional1 = Optional.<BlockPos>of(new BlockPos(x, y, z));
+ 
+             if (!optional1.equals(optional))
+             {
+-                this.field_70180_af.func_187227_b(field_184701_b, optional1);
+-                this.field_70180_af.func_187227_b(field_184702_c, Byte.valueOf((byte)0));
+-                this.field_70160_al = true;
++                this.dataManager.set(ATTACHED_BLOCK_POS, optional1);
++                this.dataManager.set(PEEK_TICK, Byte.valueOf((byte)0));
++                this.isAirBorne = true;
+             }
+         }
+     }
+ 
+-    protected boolean func_184689_o()
++    protected boolean tryTeleportToNewPosition()
+     {
+-        if (!this.func_175446_cd() && this.func_70089_S())
++        if (!this.isAIDisabled() && this.isEntityAlive())
+         {
+             BlockPos blockpos = new BlockPos(this);
+ 
+             for (int i = 0; i < 5; ++i)
+             {
+-                BlockPos blockpos1 = blockpos.func_177982_a(8 - this.field_70146_Z.nextInt(17), 8 - this.field_70146_Z.nextInt(17), 8 - this.field_70146_Z.nextInt(17));
++                BlockPos blockpos1 = blockpos.add(8 - this.rand.nextInt(17), 8 - this.rand.nextInt(17), 8 - this.rand.nextInt(17));
+ 
+-                if (blockpos1.func_177956_o() > 0 && this.field_70170_p.func_175623_d(blockpos1) && this.field_70170_p.func_191503_g(this) && this.field_70170_p.func_184144_a(this, new AxisAlignedBB(blockpos1)).isEmpty())
++                if (blockpos1.getY() > 0 && this.world.isAirBlock(blockpos1) && this.world.func_191503_g(this) && this.world.getCollisionBoxes(this, new AxisAlignedBB(blockpos1)).isEmpty())
+                 {
+                     boolean flag = false;
+ 
+                     for (EnumFacing enumfacing : EnumFacing.values())
+                     {
+-                        if (this.field_70170_p.func_175677_d(blockpos1.func_177972_a(enumfacing), false))
++                        if (this.world.isBlockNormalCube(blockpos1.offset(enumfacing), false))
+                         {
+-                            this.field_70180_af.func_187227_b(field_184700_a, enumfacing);
+-                            flag = true;
++                            // CraftBukkit start
++                            EntityTeleportEvent teleport = new EntityTeleportEvent(this.getBukkitEntity(), this.getBukkitEntity().getLocation(), new Location(this.world.getWorld(), blockpos.getX(), blockpos.getY(), blockpos.getZ()));
++                            this.world.getServer().getPluginManager().callEvent(teleport);
++                            if (!teleport.isCancelled()) {
++                                Location to = teleport.getTo();
++                                blockpos = new BlockPos(to.getX(), to.getY(), to.getZ());
++
++                                this.dataManager.set(net.minecraft.entity.monster.EntityShulker.ATTACHED_FACE, enumfacing);
++                                flag = true;
++                            }
++                            // CraftBukkit end
+                             break;
+                         }
+                     }
  
                      if (flag)
                      {
-+                        net.minecraftforge.event.entity.living.EnderTeleportEvent event = new net.minecraftforge.event.entity.living.EnderTeleportEvent(this, blockpos1.func_177958_n(), blockpos1.func_177956_o(), blockpos1.func_177952_p(), 0);
-+                        if (net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(event)) flag = false;
+-                        this.func_184185_a(SoundEvents.field_187791_eX, 1.0F, 1.0F);
+-                        this.field_70180_af.func_187227_b(field_184701_b, Optional.of(blockpos1));
+-                        this.field_70180_af.func_187227_b(field_184702_c, Byte.valueOf((byte)0));
+-                        this.func_70624_b((EntityLivingBase)null);
++                        EnderTeleportEvent event = new EnderTeleportEvent(this, blockpos1.getX(), blockpos1.getY(), blockpos1.getZ(), 0);
++                        if (MinecraftForge.EVENT_BUS.post(event)) flag = false;
 +                        blockpos1 = new BlockPos(event.getTargetX(), event.getTargetY(), event.getTargetZ());
 +                    }
 +
 +                    if (flag)
 +                    {
-                         this.func_184185_a(SoundEvents.field_187791_eX, 1.0F, 1.0F);
-                         this.field_70180_af.func_187227_b(field_184701_b, Optional.of(blockpos1));
-                         this.field_70180_af.func_187227_b(field_184702_c, Byte.valueOf((byte)0));
++                        this.playSound(SoundEvents.ENTITY_SHULKER_TELEPORT, 1.0F, 1.0F);
++                        this.dataManager.set(ATTACHED_BLOCK_POS, Optional.of(blockpos1));
++                        this.dataManager.set(PEEK_TICK, Byte.valueOf((byte)0));
++                        this.setAttackTarget((EntityLivingBase)null);
+                         return true;
+                     }
+                 }
+@@ -443,60 +463,60 @@
+         }
+     }
+ 
+-    public void func_70636_d()
++    public void onLivingUpdate()
+     {
+-        super.func_70636_d();
+-        this.field_70159_w = 0.0D;
+-        this.field_70181_x = 0.0D;
+-        this.field_70179_y = 0.0D;
+-        this.field_70760_ar = 180.0F;
+-        this.field_70761_aq = 180.0F;
+-        this.field_70177_z = 180.0F;
++        super.onLivingUpdate();
++        this.motionX = 0.0D;
++        this.motionY = 0.0D;
++        this.motionZ = 0.0D;
++        this.prevRenderYawOffset = 180.0F;
++        this.renderYawOffset = 180.0F;
++        this.rotationYaw = 180.0F;
+     }
+ 
+-    public void func_184206_a(DataParameter<?> p_184206_1_)
++    public void notifyDataManagerChange(DataParameter<?> key)
+     {
+-        if (field_184701_b.equals(p_184206_1_) && this.field_70170_p.field_72995_K && !this.func_184218_aH())
++        if (ATTACHED_BLOCK_POS.equals(key) && this.world.isRemote && !this.isRiding())
+         {
+-            BlockPos blockpos = this.func_184699_da();
++            BlockPos blockpos = this.getAttachmentPos();
+ 
+             if (blockpos != null)
+             {
+-                if (this.field_184707_bz == null)
++                if (this.currentAttachmentPosition == null)
+                 {
+-                    this.field_184707_bz = blockpos;
++                    this.currentAttachmentPosition = blockpos;
+                 }
+                 else
+                 {
+-                    this.field_184708_bA = 6;
++                    this.clientSideTeleportInterpolation = 6;
+                 }
+ 
+-                this.field_70165_t = (double)blockpos.func_177958_n() + 0.5D;
+-                this.field_70163_u = (double)blockpos.func_177956_o();
+-                this.field_70161_v = (double)blockpos.func_177952_p() + 0.5D;
+-                this.field_70169_q = this.field_70165_t;
+-                this.field_70167_r = this.field_70163_u;
+-                this.field_70166_s = this.field_70161_v;
+-                this.field_70142_S = this.field_70165_t;
+-                this.field_70137_T = this.field_70163_u;
+-                this.field_70136_U = this.field_70161_v;
++                this.posX = (double)blockpos.getX() + 0.5D;
++                this.posY = (double)blockpos.getY();
++                this.posZ = (double)blockpos.getZ() + 0.5D;
++                this.prevPosX = this.posX;
++                this.prevPosY = this.posY;
++                this.prevPosZ = this.posZ;
++                this.lastTickPosX = this.posX;
++                this.lastTickPosY = this.posY;
++                this.lastTickPosZ = this.posZ;
+             }
+         }
+ 
+-        super.func_184206_a(p_184206_1_);
++        super.notifyDataManagerChange(key);
+     }
+ 
+     @SideOnly(Side.CLIENT)
+-    public void func_180426_a(double p_180426_1_, double p_180426_3_, double p_180426_5_, float p_180426_7_, float p_180426_8_, int p_180426_9_, boolean p_180426_10_)
++    public void setPositionAndRotationDirect(double x, double y, double z, float yaw, float pitch, int posRotationIncrements, boolean teleport)
+     {
+-        this.field_70716_bi = 0;
++        this.newPosRotationIncrements = 0;
+     }
+ 
+-    public boolean func_70097_a(DamageSource p_70097_1_, float p_70097_2_)
++    public boolean attackEntityFrom(DamageSource source, float amount)
+     {
+-        if (this.func_184686_df())
++        if (this.isClosed())
+         {
+-            Entity entity = p_70097_1_.func_76364_f();
++            Entity entity = source.getSourceOfDamage();
+ 
+             if (entity instanceof EntityArrow)
+             {
+@@ -504,11 +524,11 @@
+             }
+         }
+ 
+-        if (super.func_70097_a(p_70097_1_, p_70097_2_))
++        if (super.attackEntityFrom(source, amount))
+         {
+-            if ((double)this.func_110143_aJ() < (double)this.func_110138_aP() * 0.5D && this.field_70146_Z.nextInt(4) == 0)
++            if ((double)this.getHealth() < (double)this.getMaxHealth() * 0.5D && this.rand.nextInt(4) == 0)
+             {
+-                this.func_184689_o();
++                this.tryTeleportToNewPosition();
+             }
+ 
+             return true;
+@@ -519,197 +539,197 @@
+         }
+     }
+ 
+-    private boolean func_184686_df()
++    private boolean isClosed()
+     {
+-        return this.func_184684_db() == 0;
++        return this.getPeekTick() == 0;
+     }
+ 
+     @Nullable
+-    public AxisAlignedBB func_70046_E()
++    public AxisAlignedBB getCollisionBoundingBox()
+     {
+-        return this.func_70089_S() ? this.func_174813_aQ() : null;
++        return this.isEntityAlive() ? this.getEntityBoundingBox() : null;
+     }
+ 
+-    public EnumFacing func_184696_cZ()
++    public EnumFacing getAttachmentFacing()
+     {
+-        return (EnumFacing)this.field_70180_af.func_187225_a(field_184700_a);
++        return (EnumFacing)this.dataManager.get(ATTACHED_FACE);
+     }
+ 
+     @Nullable
+-    public BlockPos func_184699_da()
++    public BlockPos getAttachmentPos()
+     {
+-        return (BlockPos)((Optional)this.field_70180_af.func_187225_a(field_184701_b)).orNull();
++        return (BlockPos)((Optional)this.dataManager.get(ATTACHED_BLOCK_POS)).orNull();
+     }
+ 
+-    public void func_184694_g(@Nullable BlockPos p_184694_1_)
++    public void setAttachmentPos(@Nullable BlockPos pos)
+     {
+-        this.field_70180_af.func_187227_b(field_184701_b, Optional.fromNullable(p_184694_1_));
++        this.dataManager.set(ATTACHED_BLOCK_POS, Optional.fromNullable(pos));
+     }
+ 
+-    public int func_184684_db()
++    public int getPeekTick()
+     {
+-        return ((Byte)this.field_70180_af.func_187225_a(field_184702_c)).byteValue();
++        return ((Byte)this.dataManager.get(PEEK_TICK)).byteValue();
+     }
+ 
+-    public void func_184691_a(int p_184691_1_)
++    public void updateArmorModifier(int p_184691_1_)
+     {
+-        if (!this.field_70170_p.field_72995_K)
++        if (!this.world.isRemote)
+         {
+-            this.func_110148_a(SharedMonsterAttributes.field_188791_g).func_111124_b(field_184704_bw);
++            this.getEntityAttribute(SharedMonsterAttributes.ARMOR).removeModifier(COVERED_ARMOR_BONUS_MODIFIER);
+ 
+             if (p_184691_1_ == 0)
+             {
+-                this.func_110148_a(SharedMonsterAttributes.field_188791_g).func_111121_a(field_184704_bw);
+-                this.func_184185_a(SoundEvents.field_187779_eR, 1.0F, 1.0F);
++                this.getEntityAttribute(SharedMonsterAttributes.ARMOR).applyModifier(COVERED_ARMOR_BONUS_MODIFIER);
++                this.playSound(SoundEvents.ENTITY_SHULKER_CLOSE, 1.0F, 1.0F);
+             }
+             else
+             {
+-                this.func_184185_a(SoundEvents.field_187787_eV, 1.0F, 1.0F);
++                this.playSound(SoundEvents.ENTITY_SHULKER_OPEN, 1.0F, 1.0F);
+             }
+         }
+ 
+-        this.field_70180_af.func_187227_b(field_184702_c, Byte.valueOf((byte)p_184691_1_));
++        this.dataManager.set(PEEK_TICK, Byte.valueOf((byte)p_184691_1_));
+     }
+ 
+     @SideOnly(Side.CLIENT)
+-    public float func_184688_a(float p_184688_1_)
++    public float getClientPeekAmount(float p_184688_1_)
+     {
+-        return this.field_184705_bx + (this.field_184706_by - this.field_184705_bx) * p_184688_1_;
++        return this.prevPeekAmount + (this.peekAmount - this.prevPeekAmount) * p_184688_1_;
+     }
+ 
+     @SideOnly(Side.CLIENT)
+-    public int func_184693_dc()
++    public int getClientTeleportInterp()
+     {
+-        return this.field_184708_bA;
++        return this.clientSideTeleportInterpolation;
+     }
+ 
+     @SideOnly(Side.CLIENT)
+-    public BlockPos func_184692_dd()
++    public BlockPos getOldAttachPos()
+     {
+-        return this.field_184707_bz;
++        return this.currentAttachmentPosition;
+     }
+ 
+-    public float func_70047_e()
++    public float getEyeHeight()
+     {
+         return 0.5F;
+     }
+ 
+-    public int func_70646_bf()
++    public int getVerticalFaceSpeed()
+     {
+         return 180;
+     }
+ 
+-    public int func_184649_cE()
++    public int getHorizontalFaceSpeed()
+     {
+         return 180;
+     }
+ 
+-    public void func_70108_f(Entity p_70108_1_)
++    public void applyEntityCollision(Entity entityIn)
+     {
+     }
+ 
+-    public float func_70111_Y()
++    public float getCollisionBorderSize()
+     {
+         return 0.0F;
+     }
+ 
+     @SideOnly(Side.CLIENT)
+-    public boolean func_184697_de()
++    public boolean isAttachedToBlock()
+     {
+-        return this.field_184707_bz != null && this.func_184699_da() != null;
++        return this.currentAttachmentPosition != null && this.getAttachmentPos() != null;
+     }
+ 
+     @Nullable
+-    protected ResourceLocation func_184647_J()
++    protected ResourceLocation getLootTable()
+     {
+-        return LootTableList.field_186442_x;
++        return LootTableList.ENTITIES_SHULKER;
+     }
+ 
+     @SideOnly(Side.CLIENT)
+-    public EnumDyeColor func_190769_dn()
++    public EnumDyeColor getColor()
+     {
+-        return EnumDyeColor.func_176764_b(((Byte)this.field_70180_af.func_187225_a(field_190770_bw)).byteValue());
++        return EnumDyeColor.byMetadata(((Byte)this.dataManager.get(COLOR)).byteValue());
+     }
+ 
+     class AIAttack extends EntityAIBase
+     {
+-        private int field_188520_b;
++        private int attackTime;
+ 
+         public AIAttack()
+         {
+-            this.func_75248_a(3);
++            this.setMutexBits(3);
+         }
+ 
+-        public boolean func_75250_a()
++        public boolean shouldExecute()
+         {
+-            EntityLivingBase entitylivingbase = EntityShulker.this.func_70638_az();
+-            return entitylivingbase != null && entitylivingbase.func_70089_S() ? EntityShulker.this.field_70170_p.func_175659_aa() != EnumDifficulty.PEACEFUL : false;
++            EntityLivingBase entitylivingbase = EntityShulker.this.getAttackTarget();
++            return entitylivingbase != null && entitylivingbase.isEntityAlive() ? EntityShulker.this.world.getDifficulty() != EnumDifficulty.PEACEFUL : false;
+         }
+ 
+-        public void func_75249_e()
++        public void startExecuting()
+         {
+-            this.field_188520_b = 20;
+-            EntityShulker.this.func_184691_a(100);
++            this.attackTime = 20;
++            EntityShulker.this.updateArmorModifier(100);
+         }
+ 
+-        public void func_75251_c()
++        public void resetTask()
+         {
+-            EntityShulker.this.func_184691_a(0);
++            EntityShulker.this.updateArmorModifier(0);
+         }
+ 
+-        public void func_75246_d()
++        public void updateTask()
+         {
+-            if (EntityShulker.this.field_70170_p.func_175659_aa() != EnumDifficulty.PEACEFUL)
++            if (EntityShulker.this.world.getDifficulty() != EnumDifficulty.PEACEFUL)
+             {
+-                --this.field_188520_b;
+-                EntityLivingBase entitylivingbase = EntityShulker.this.func_70638_az();
+-                EntityShulker.this.func_70671_ap().func_75651_a(entitylivingbase, 180.0F, 180.0F);
+-                double d0 = EntityShulker.this.func_70068_e(entitylivingbase);
++                --this.attackTime;
++                EntityLivingBase entitylivingbase = EntityShulker.this.getAttackTarget();
++                EntityShulker.this.getLookHelper().setLookPositionWithEntity(entitylivingbase, 180.0F, 180.0F);
++                double d0 = EntityShulker.this.getDistanceSqToEntity(entitylivingbase);
+ 
+                 if (d0 < 400.0D)
+                 {
+-                    if (this.field_188520_b <= 0)
++                    if (this.attackTime <= 0)
+                     {
+-                        this.field_188520_b = 20 + EntityShulker.this.field_70146_Z.nextInt(10) * 20 / 2;
+-                        EntityShulkerBullet entityshulkerbullet = new EntityShulkerBullet(EntityShulker.this.field_70170_p, EntityShulker.this, entitylivingbase, EntityShulker.this.func_184696_cZ().func_176740_k());
+-                        EntityShulker.this.field_70170_p.func_72838_d(entityshulkerbullet);
+-                        EntityShulker.this.func_184185_a(SoundEvents.field_187789_eW, 2.0F, (EntityShulker.this.field_70146_Z.nextFloat() - EntityShulker.this.field_70146_Z.nextFloat()) * 0.2F + 1.0F);
++                        this.attackTime = 20 + EntityShulker.this.rand.nextInt(10) * 20 / 2;
++                        EntityShulkerBullet entityshulkerbullet = new EntityShulkerBullet(EntityShulker.this.world, EntityShulker.this, entitylivingbase, EntityShulker.this.getAttachmentFacing().getAxis());
++                        EntityShulker.this.world.spawnEntity(entityshulkerbullet);
++                        EntityShulker.this.playSound(SoundEvents.ENTITY_SHULKER_SHOOT, 2.0F, (EntityShulker.this.rand.nextFloat() - EntityShulker.this.rand.nextFloat()) * 0.2F + 1.0F);
+                     }
+                 }
+                 else
+                 {
+-                    EntityShulker.this.func_70624_b((EntityLivingBase)null);
++                    EntityShulker.this.setAttackTarget((EntityLivingBase)null);
+                 }
+ 
+-                super.func_75246_d();
++                super.updateTask();
+             }
+         }
+     }
+ 
+     class AIAttackNearest extends EntityAINearestAttackableTarget<EntityPlayer>
+     {
+-        public AIAttackNearest(EntityShulker p_i47060_2_)
++        public AIAttackNearest(EntityShulker shulker)
+         {
+-            super(p_i47060_2_, EntityPlayer.class, true);
++            super(shulker, EntityPlayer.class, true);
+         }
+ 
+-        public boolean func_75250_a()
++        public boolean shouldExecute()
+         {
+-            return EntityShulker.this.field_70170_p.func_175659_aa() == EnumDifficulty.PEACEFUL ? false : super.func_75250_a();
++            return EntityShulker.this.world.getDifficulty() == EnumDifficulty.PEACEFUL ? false : super.shouldExecute();
+         }
+ 
+-        protected AxisAlignedBB func_188511_a(double p_188511_1_)
++        protected AxisAlignedBB getTargetableArea(double targetDistance)
+         {
+-            EnumFacing enumfacing = ((EntityShulker)this.field_75299_d).func_184696_cZ();
+-            return enumfacing.func_176740_k() == EnumFacing.Axis.X ? this.field_75299_d.func_174813_aQ().func_72314_b(4.0D, p_188511_1_, p_188511_1_) : (enumfacing.func_176740_k() == EnumFacing.Axis.Z ? this.field_75299_d.func_174813_aQ().func_72314_b(p_188511_1_, p_188511_1_, 4.0D) : this.field_75299_d.func_174813_aQ().func_72314_b(p_188511_1_, 4.0D, p_188511_1_));
++            EnumFacing enumfacing = ((EntityShulker)this.taskOwner).getAttachmentFacing();
++            return enumfacing.getAxis() == EnumFacing.Axis.X ? this.taskOwner.getEntityBoundingBox().expand(4.0D, targetDistance, targetDistance) : (enumfacing.getAxis() == EnumFacing.Axis.Z ? this.taskOwner.getEntityBoundingBox().expand(targetDistance, targetDistance, 4.0D) : this.taskOwner.getEntityBoundingBox().expand(targetDistance, 4.0D, targetDistance));
+         }
+     }
+ 
+     static class AIDefenseAttack extends EntityAINearestAttackableTarget<EntityLivingBase>
+         {
+-            public AIDefenseAttack(EntityShulker p_i47061_1_)
++            public AIDefenseAttack(EntityShulker shulker)
+             {
+-                super(p_i47061_1_, EntityLivingBase.class, 10, true, false, new Predicate<EntityLivingBase>()
++                super(shulker, EntityLivingBase.class, 10, true, false, new Predicate<EntityLivingBase>()
+                 {
+                     public boolean apply(@Nullable EntityLivingBase p_apply_1_)
+                     {
+@@ -718,64 +738,64 @@
+                 });
+             }
+ 
+-            public boolean func_75250_a()
++            public boolean shouldExecute()
+             {
+-                return this.field_75299_d.func_96124_cp() == null ? false : super.func_75250_a();
++                return this.taskOwner.getTeam() == null ? false : super.shouldExecute();
+             }
+ 
+-            protected AxisAlignedBB func_188511_a(double p_188511_1_)
++            protected AxisAlignedBB getTargetableArea(double targetDistance)
+             {
+-                EnumFacing enumfacing = ((EntityShulker)this.field_75299_d).func_184696_cZ();
+-                return enumfacing.func_176740_k() == EnumFacing.Axis.X ? this.field_75299_d.func_174813_aQ().func_72314_b(4.0D, p_188511_1_, p_188511_1_) : (enumfacing.func_176740_k() == EnumFacing.Axis.Z ? this.field_75299_d.func_174813_aQ().func_72314_b(p_188511_1_, p_188511_1_, 4.0D) : this.field_75299_d.func_174813_aQ().func_72314_b(p_188511_1_, 4.0D, p_188511_1_));
++                EnumFacing enumfacing = ((EntityShulker)this.taskOwner).getAttachmentFacing();
++                return enumfacing.getAxis() == EnumFacing.Axis.X ? this.taskOwner.getEntityBoundingBox().expand(4.0D, targetDistance, targetDistance) : (enumfacing.getAxis() == EnumFacing.Axis.Z ? this.taskOwner.getEntityBoundingBox().expand(targetDistance, targetDistance, 4.0D) : this.taskOwner.getEntityBoundingBox().expand(targetDistance, 4.0D, targetDistance));
+             }
+         }
+ 
+     class AIPeek extends EntityAIBase
+     {
+-        private int field_188522_b;
++        private int peekTime;
+ 
+         private AIPeek()
+         {
+         }
+ 
+-        public boolean func_75250_a()
++        public boolean shouldExecute()
+         {
+-            return EntityShulker.this.func_70638_az() == null && EntityShulker.this.field_70146_Z.nextInt(40) == 0;
++            return EntityShulker.this.getAttackTarget() == null && EntityShulker.this.rand.nextInt(40) == 0;
+         }
+ 
+-        public boolean func_75253_b()
++        public boolean continueExecuting()
+         {
+-            return EntityShulker.this.func_70638_az() == null && this.field_188522_b > 0;
++            return EntityShulker.this.getAttackTarget() == null && this.peekTime > 0;
+         }
+ 
+-        public void func_75249_e()
++        public void startExecuting()
+         {
+-            this.field_188522_b = 20 * (1 + EntityShulker.this.field_70146_Z.nextInt(3));
+-            EntityShulker.this.func_184691_a(30);
++            this.peekTime = 20 * (1 + EntityShulker.this.rand.nextInt(3));
++            EntityShulker.this.updateArmorModifier(30);
+         }
+ 
+-        public void func_75251_c()
++        public void resetTask()
+         {
+-            if (EntityShulker.this.func_70638_az() == null)
++            if (EntityShulker.this.getAttackTarget() == null)
+             {
+-                EntityShulker.this.func_184691_a(0);
++                EntityShulker.this.updateArmorModifier(0);
+             }
+         }
+ 
+-        public void func_75246_d()
++        public void updateTask()
+         {
+-            --this.field_188522_b;
++            --this.peekTime;
+         }
+     }
+ 
+     class BodyHelper extends EntityBodyHelper
+     {
+-        public BodyHelper(EntityLivingBase p_i47062_2_)
++        public BodyHelper(EntityLivingBase theEntity)
+         {
+-            super(p_i47062_2_);
++            super(theEntity);
+         }
+ 
+-        public void func_75664_a()
++        public void updateRenderAngles()
+         {
+         }
+     }

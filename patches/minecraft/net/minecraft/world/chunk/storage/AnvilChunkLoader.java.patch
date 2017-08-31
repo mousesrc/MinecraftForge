@@ -66,7 +66,7 @@
          if (!p_75822_4_.func_150297_b("Level", 10))
          {
              field_151505_a.error("Chunk file at {},{} is missing level data, skipping", new Object[] {Integer.valueOf(p_75822_2_), Integer.valueOf(p_75822_3_)});
-@@ -103,10 +143,29 @@
+@@ -103,10 +143,40 @@
                      field_151505_a.error("Chunk file at {},{} is in the wrong location; relocating. (Expected {}, {}, got {}, {})", new Object[] {Integer.valueOf(p_75822_2_), Integer.valueOf(p_75822_3_), Integer.valueOf(p_75822_2_), Integer.valueOf(p_75822_3_), Integer.valueOf(chunk.field_76635_g), Integer.valueOf(chunk.field_76647_h)});
                      nbttagcompound.func_74768_a("xPos", p_75822_2_);
                      nbttagcompound.func_74768_a("zPos", p_75822_3_);
@@ -79,11 +79,22 @@
 +                        for (int te = 0; te < _tileEntities.func_74745_c(); te++)
 +                        {
 +                            NBTTagCompound _nbt = (NBTTagCompound) _tileEntities.func_150305_b(te);
-+                            _nbt.func_74768_a("x", p_75822_2_ * 16 + (_nbt.func_74762_e("x") - chunk.field_76635_g * 16));
-+                            _nbt.func_74768_a("z", p_75822_3_ * 16 + (_nbt.func_74762_e("z") - chunk.field_76647_h * 16));
++                            _nbt.func_74768_a("x", p_75822_2_ << 4 + (_nbt.func_74762_e("x") - chunk.field_76635_g << 4));
++                            _nbt.func_74768_a("z", p_75822_3_ << 4 + (_nbt.func_74762_e("z") - chunk.field_76647_h << 4));
 +                        }
 +                    }
-+
++                    // CraftBukkit start - Have to move tile entities since we don't load them at this stage
++                    NBTTagList tileEntities = nbttagcompound.func_74775_l("Level").func_150295_c("TileEntities", 10);
++                    if (tileEntities != null) {
++                        for (int te = 0; te < tileEntities.func_74745_c(); te++) {
++                            NBTTagCompound tileEntity = (NBTTagCompound) tileEntities.func_150305_b(te);
++                            int x1 = tileEntity.func_74762_e("x") - chunk.field_76635_g << 4;
++                            int z1 = tileEntity.func_74762_e("z") - chunk.field_76647_h << 4;
++                            tileEntity.func_74768_a("x", p_75822_2_ << 4 + x1);
++                            tileEntity.func_74768_a("z", p_75822_3_ << 4 + z1);
++                        }
++                    }
++                    // CraftBukkit end
                      chunk = this.func_75823_a(p_75822_1_, nbttagcompound);
                  }
  
@@ -97,7 +108,7 @@
              }
          }
      }
-@@ -121,7 +180,9 @@
+@@ -121,7 +191,9 @@
              NBTTagCompound nbttagcompound1 = new NBTTagCompound();
              nbttagcompound.func_74782_a("Level", nbttagcompound1);
              nbttagcompound.func_74768_a("DataVersion", 922);
@@ -107,7 +118,7 @@
              this.func_75824_a(p_75816_2_.func_76632_l(), nbttagcompound);
          }
          catch (Exception exception)
-@@ -305,11 +366,19 @@
+@@ -305,11 +377,19 @@
              {
                  NBTTagCompound nbttagcompound2 = new NBTTagCompound();
  
@@ -127,7 +138,7 @@
              }
          }
  
-@@ -318,8 +387,16 @@
+@@ -318,8 +398,16 @@
  
          for (TileEntity tileentity : p_75820_1_.func_177434_r().values())
          {
@@ -144,7 +155,7 @@
          }
  
          p_75820_3_.func_74782_a("TileEntities", nbttaglist2);
-@@ -388,6 +465,12 @@
+@@ -388,6 +476,12 @@
              chunk.func_76616_a(p_75823_2_.func_74770_j("Biomes"));
          }
  
@@ -157,7 +168,7 @@
          NBTTagList nbttaglist1 = p_75823_2_.func_150295_c("Entities", 10);
  
          for (int j1 = 0; j1 < nbttaglist1.func_74745_c(); ++j1)
-@@ -431,8 +514,6 @@
+@@ -431,8 +525,6 @@
                  p_75823_1_.func_180497_b(new BlockPos(nbttagcompound3.func_74762_e("x"), nbttagcompound3.func_74762_e("y"), nbttagcompound3.func_74762_e("z")), block, nbttagcompound3.func_74762_e("t"), nbttagcompound3.func_74762_e("p"));
              }
          }

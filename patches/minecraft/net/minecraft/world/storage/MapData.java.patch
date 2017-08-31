@@ -1,6 +1,21 @@
 --- ../src-base/minecraft/net/minecraft/world/storage/MapData.java
 +++ ../src-work/minecraft/net/minecraft/world/storage/MapData.java
-@@ -21,7 +21,7 @@
+@@ -4,6 +4,7 @@
+ import com.google.common.collect.Maps;
+ import java.util.List;
+ import java.util.Map;
++import java.util.UUID;
+ import javax.annotation.Nullable;
+ import net.minecraft.entity.item.EntityItemFrame;
+ import net.minecraft.entity.player.EntityPlayer;
+@@ -16,12 +17,14 @@
+ import net.minecraft.util.math.MathHelper;
+ import net.minecraft.world.World;
+ import net.minecraft.world.WorldSavedData;
++import org.bukkit.craftbukkit.CraftServer;
++import org.bukkit.craftbukkit.map.CraftMapView;
+ 
+ public class MapData extends WorldSavedData
  {
      public int field_76201_a;
      public int field_76199_b;
@@ -9,7 +24,27 @@
      public boolean field_186210_e;
      public boolean field_191096_f;
      public byte field_76197_d;
-@@ -46,7 +46,7 @@
+@@ -29,10 +32,18 @@
+     public List<MapData.MapInfo> field_76196_g = Lists.<MapData.MapInfo>newArrayList();
+     private final Map<EntityPlayer, MapData.MapInfo> field_76202_j = Maps.<EntityPlayer, MapData.MapInfo>newHashMap();
+     public Map<String, MapDecoration> field_76203_h = Maps.<String, MapDecoration>newLinkedHashMap();
+-
++    // CraftBukkit start
++    public final CraftMapView mapView;
++    private CraftServer server;
++    private UUID uniqueId = null;
++    // CraftBukkit end
+     public MapData(String p_i2140_1_)
+     {
+         super(p_i2140_1_);
++        // CraftBukkit start
++        mapView = new CraftMapView(this);
++        server = (CraftServer) org.bukkit.Bukkit.getServer();
++        // CraftBukkit end
+     }
+ 
+     public void func_176054_a(double p_176054_1_, double p_176054_3_, int p_176054_5_)
+@@ -46,7 +57,7 @@
  
      public void func_76184_a(NBTTagCompound p_76184_1_)
      {
@@ -18,7 +53,7 @@
          this.field_76201_a = p_76184_1_.func_74762_e("xCenter");
          this.field_76199_b = p_76184_1_.func_74762_e("zCenter");
          this.field_76197_d = p_76184_1_.func_74771_c("scale");
-@@ -98,7 +98,7 @@
+@@ -98,7 +109,7 @@
  
      public NBTTagCompound func_189551_b(NBTTagCompound p_189551_1_)
      {
@@ -27,7 +62,7 @@
          p_189551_1_.func_74768_a("xCenter", this.field_76201_a);
          p_189551_1_.func_74768_a("zCenter", this.field_76199_b);
          p_189551_1_.func_74774_a("scale", this.field_76197_d);
-@@ -209,9 +209,9 @@
+@@ -209,9 +220,9 @@
              p_191095_8_ = p_191095_8_ + (p_191095_8_ < 0.0D ? -8.0D : 8.0D);
              b2 = (byte)((int)(p_191095_8_ * 16.0D / 360.0D));
  

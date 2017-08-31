@@ -1,8 +1,64 @@
 --- ../src-base/minecraft/net/minecraft/tileentity/TileEntityLockable.java
 +++ ../src-work/minecraft/net/minecraft/tileentity/TileEntityLockable.java
-@@ -48,4 +48,27 @@
+@@ -9,43 +9,72 @@
+ 
+ public abstract class TileEntityLockable extends TileEntity implements ILockableContainer
+ {
+-    private LockCode field_174901_a = LockCode.field_180162_a;
++    private LockCode code = LockCode.EMPTY_CODE;
+ 
+-    public void func_145839_a(NBTTagCompound p_145839_1_)
++    public void readFromNBT(NBTTagCompound compound)
      {
-         return (ITextComponent)(this.func_145818_k_() ? new TextComponentString(this.func_70005_c_()) : new TextComponentTranslation(this.func_70005_c_(), new Object[0]));
+-        super.func_145839_a(p_145839_1_);
+-        this.field_174901_a = LockCode.func_180158_b(p_145839_1_);
++        super.readFromNBT(compound);
++        this.code = LockCode.fromNBT(compound);
+     }
+ 
+-    public NBTTagCompound func_189515_b(NBTTagCompound p_189515_1_)
++    public NBTTagCompound writeToNBT(NBTTagCompound compound)
+     {
+-        super.func_189515_b(p_189515_1_);
++        super.writeToNBT(compound);
+ 
+-        if (this.field_174901_a != null)
++        if (this.code != null)
+         {
+-            this.field_174901_a.func_180157_a(p_189515_1_);
++            this.code.toNBT(compound);
+         }
+ 
+-        return p_189515_1_;
++        return compound;
+     }
+ 
+-    public boolean func_174893_q_()
++    public boolean isLocked()
+     {
+-        return this.field_174901_a != null && !this.field_174901_a.func_180160_a();
++        return this.code != null && !this.code.isEmpty();
+     }
+ 
+-    public LockCode func_174891_i()
++    public LockCode getLockCode()
+     {
+-        return this.field_174901_a;
++        return this.code;
+     }
+ 
+-    public void func_174892_a(LockCode p_174892_1_)
++    public void setLockCode(LockCode code)
+     {
+-        this.field_174901_a = p_174892_1_;
++        this.code = code;
+     }
+ 
+-    public ITextComponent func_145748_c_()
++    public ITextComponent getDisplayName()
+     {
+-        return (ITextComponent)(this.func_145818_k_() ? new TextComponentString(this.func_70005_c_()) : new TextComponentTranslation(this.func_70005_c_(), new Object[0]));
++        return (ITextComponent)(this.hasCustomName() ? new TextComponentString(this.getName()) : new TextComponentTranslation(this.getName(), new Object[0]));
      }
 +
 +    private net.minecraftforge.items.IItemHandler itemHandler;
@@ -27,4 +83,10 @@
 +    {
 +        return capability == net.minecraftforge.items.CapabilityItemHandler.ITEM_HANDLER_CAPABILITY || super.hasCapability(capability, facing);
 +    }
++    // CraftBukkit start
++    @Override
++    public org.bukkit.Location getLocation() {
++        return new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ());
++    }
++    // CraftBukkit end
  }

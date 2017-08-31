@@ -1,0 +1,17 @@
+--- ../src-base/minecraft/net/minecraft/item/crafting/IRecipe.java
++++ ../src-work/minecraft/net/minecraft/item/crafting/IRecipe.java
+@@ -4,6 +4,7 @@
+ import net.minecraft.item.ItemStack;
+ import net.minecraft.util.NonNullList;
+ import net.minecraft.world.World;
++import org.bukkit.inventory.Recipe;
+ 
+ public interface IRecipe
+ {
+@@ -16,4 +17,6 @@
+     ItemStack func_77571_b();
+ 
+     NonNullList<ItemStack> func_179532_b(InventoryCrafting p_179532_1_);
++
++    Recipe toBukkitRecipe();
+ }

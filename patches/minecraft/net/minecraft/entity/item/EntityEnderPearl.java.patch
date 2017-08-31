@@ -1,25 +1,196 @@
 --- ../src-base/minecraft/net/minecraft/entity/item/EntityEnderPearl.java
 +++ ../src-work/minecraft/net/minecraft/entity/item/EntityEnderPearl.java
-@@ -90,6 +90,9 @@
+@@ -13,53 +13,61 @@
+ import net.minecraft.util.math.BlockPos;
+ import net.minecraft.util.math.RayTraceResult;
+ import net.minecraft.world.World;
++import net.minecraftforge.common.MinecraftForge;
++import net.minecraftforge.event.entity.living.EnderTeleportEvent;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
++import org.bukkit.Bukkit;
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.entity.CraftPlayer;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.CreatureSpawnEvent;
++import org.bukkit.event.player.PlayerTeleportEvent;
  
-                 if (entityplayermp.field_71135_a.func_147362_b().func_150724_d() && entityplayermp.field_70170_p == this.field_70170_p && !entityplayermp.func_70608_bn())
+ public class EntityEnderPearl extends EntityThrowable
+ {
+-    private EntityLivingBase field_181555_c;
++    private EntityLivingBase thrower;
+ 
+-    public EntityEnderPearl(World p_i46455_1_)
++    public EntityEnderPearl(World worldIn)
+     {
+-        super(p_i46455_1_);
++        super(worldIn);
+     }
+ 
+-    public EntityEnderPearl(World p_i1783_1_, EntityLivingBase p_i1783_2_)
++    public EntityEnderPearl(World worldIn, EntityLivingBase throwerIn)
+     {
+-        super(p_i1783_1_, p_i1783_2_);
+-        this.field_181555_c = p_i1783_2_;
++        super(worldIn, throwerIn);
++        this.thrower = throwerIn;
+     }
+ 
+     @SideOnly(Side.CLIENT)
+-    public EntityEnderPearl(World p_i1784_1_, double p_i1784_2_, double p_i1784_4_, double p_i1784_6_)
++    public EntityEnderPearl(World worldIn, double x, double y, double z)
+     {
+-        super(p_i1784_1_, p_i1784_2_, p_i1784_4_, p_i1784_6_);
++        super(worldIn, x, y, z);
+     }
+ 
+-    public static void func_189663_a(DataFixer p_189663_0_)
++    public static void registerFixesEnderPearl(DataFixer fixer)
+     {
+-        EntityThrowable.func_189661_a(p_189663_0_, "ThrownEnderpearl");
++        EntityThrowable.registerFixesThrowable(fixer, "ThrownEnderpearl");
+     }
+ 
+-    protected void func_70184_a(RayTraceResult p_70184_1_)
++    protected void onImpact(RayTraceResult result)
+     {
+-        EntityLivingBase entitylivingbase = this.func_85052_h();
++        EntityLivingBase entitylivingbase = this.getThrower();
+ 
+-        if (p_70184_1_.field_72308_g != null)
++        if (result.entityHit != null)
+         {
+-            if (p_70184_1_.field_72308_g == this.field_181555_c)
++            if (result.entityHit == this.thrower)
+             {
+                 return;
+             }
+ 
+-            p_70184_1_.field_72308_g.func_70097_a(DamageSource.func_76356_a(this, entitylivingbase), 0.0F);
++            result.entityHit.attackEntityFrom(DamageSource.causeThrownDamage(this, entitylivingbase), 0.0F);
+         }
+ 
+-        if (p_70184_1_.field_72313_a == RayTraceResult.Type.BLOCK)
++        if (result.typeOfHit == RayTraceResult.Type.BLOCK)
+         {
+-            BlockPos blockpos = p_70184_1_.func_178782_a();
+-            TileEntity tileentity = this.field_70170_p.func_175625_s(blockpos);
++            BlockPos blockpos = result.getBlockPos();
++            TileEntity tileentity = this.world.getTileEntity(blockpos);
+ 
+             if (tileentity instanceof TileEntityEndGateway)
+             {
+@@ -67,68 +75,85 @@
+ 
+                 if (entitylivingbase != null)
                  {
-+                    net.minecraftforge.event.entity.living.EnderTeleportEvent event = new net.minecraftforge.event.entity.living.EnderTeleportEvent(entityplayermp, this.field_70165_t, this.field_70163_u, this.field_70161_v, 5.0F);
-+                    if (!net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(event))
+-                    tileentityendgateway.func_184306_a(entitylivingbase);
+-                    this.func_70106_y();
++                    tileentityendgateway.teleportEntity(entitylivingbase);
++                    this.setDead();
+                     return;
+                 }
+ 
+-                tileentityendgateway.func_184306_a(this);
++                tileentityendgateway.teleportEntity(this);
+                 return;
+             }
+         }
+ 
+         for (int i = 0; i < 32; ++i)
+         {
+-            this.field_70170_p.func_175688_a(EnumParticleTypes.PORTAL, this.field_70165_t, this.field_70163_u + this.field_70146_Z.nextDouble() * 2.0D, this.field_70161_v, this.field_70146_Z.nextGaussian(), 0.0D, this.field_70146_Z.nextGaussian(), new int[0]);
++            this.world.spawnParticle(EnumParticleTypes.PORTAL, this.posX, this.posY + this.rand.nextDouble() * 2.0D, this.posZ, this.rand.nextGaussian(), 0.0D, this.rand.nextGaussian(), new int[0]);
+         }
+ 
+-        if (!this.field_70170_p.field_72995_K)
++        if (!this.world.isRemote)
+         {
+             if (entitylivingbase instanceof EntityPlayerMP)
+             {
+                 EntityPlayerMP entityplayermp = (EntityPlayerMP)entitylivingbase;
+ 
+-                if (entityplayermp.field_71135_a.func_147362_b().func_150724_d() && entityplayermp.field_70170_p == this.field_70170_p && !entityplayermp.func_70608_bn())
++                if (entityplayermp.connection.getNetworkManager().isChannelOpen() && entityplayermp.world == this.world && !entityplayermp.isPlayerSleeping())
+                 {
+-                    if (this.field_70146_Z.nextFloat() < 0.05F && this.field_70170_p.func_82736_K().func_82766_b("doMobSpawning"))
+-                    {
+-                        EntityEndermite entityendermite = new EntityEndermite(this.field_70170_p);
+-                        entityendermite.func_175496_a(true);
+-                        entityendermite.func_70012_b(entitylivingbase.field_70165_t, entitylivingbase.field_70163_u, entitylivingbase.field_70161_v, entitylivingbase.field_70177_z, entitylivingbase.field_70125_A);
+-                        this.field_70170_p.func_72838_d(entityendermite);
+-                    }
++                    EnderTeleportEvent event = new EnderTeleportEvent(entityplayermp, this.posX, this.posY, this.posZ, 5.0F);
++                    if (!MinecraftForge.EVENT_BUS.post(event))
 +                    { // Don't indent to lower patch size
-                     if (this.field_70146_Z.nextFloat() < 0.05F && this.field_70170_p.func_82736_K().func_82766_b("doMobSpawning"))
-                     {
-                         EntityEndermite entityendermite = new EntityEndermite(this.field_70170_p);
-@@ -103,9 +106,10 @@
-                         entitylivingbase.func_184210_p();
-                     }
++                        // CraftBukkit start - Fire PlayerTeleportEvent
++                        CraftPlayer player = (CraftPlayer) entityplayermp.getBukkitEntity();
++                        Location location = getBukkitEntity().getLocation();
++                        location.setPitch(player.getLocation().getPitch());
++                        location.setYaw(player.getLocation().getYaw());
+ 
+-                    if (entitylivingbase.func_184218_aH())
+-                    {
+-                        entitylivingbase.func_184210_p();
+-                    }
++                        PlayerTeleportEvent teleEvent = new PlayerTeleportEvent(player, player.getLocation(), location, PlayerTeleportEvent.TeleportCause.ENDER_PEARL);
++                        Bukkit.getPluginManager().callEvent(teleEvent);
  
 -                    entitylivingbase.func_70634_a(this.field_70165_t, this.field_70163_u, this.field_70161_v);
-+                    entitylivingbase.func_70634_a(event.getTargetX(), event.getTargetY(), event.getTargetZ());
-                     entitylivingbase.field_70143_R = 0.0F;
+-                    entitylivingbase.field_70143_R = 0.0F;
 -                    entitylivingbase.func_70097_a(DamageSource.field_76379_h, 5.0F);
-+                    entitylivingbase.func_70097_a(DamageSource.field_76379_h, event.getAttackDamage());
++                        if (!teleEvent.isCancelled() && !entityplayermp.connection.isDisconnected()) {
++                            if (this.rand.nextFloat() < 0.05F && this.world.getGameRules().getBoolean("doMobSpawning")) {
++                                EntityEndermite entityendermite = new EntityEndermite(this.world);
++
++                                entityendermite.setSpawnedByPlayer(true);
++                                entityendermite.setLocationAndAngles(entitylivingbase.posX, entitylivingbase.posY, entitylivingbase.posZ, entitylivingbase.rotationYaw, entitylivingbase.rotationPitch);
++                                this.world.addEntity(entityendermite, CreatureSpawnEvent.SpawnReason.ENDER_PEARL);
++                            }
++
++                            if (entitylivingbase.isRiding()) {
++                                entitylivingbase.dismountRidingEntity();
++                            }
++
++                            entityplayermp.connection.teleport(teleEvent.getTo());
++                            entitylivingbase.fallDistance = 0.0F;
++                            CraftEventFactory.entityDamage = this;
++                            entitylivingbase.attackEntityFrom(DamageSource.FALL, 5.0F);
++                            CraftEventFactory.entityDamage = null;
++                        }
++                        // CraftBukkit end
 +                    }
                  }
              }
              else if (entitylivingbase != null)
+             {
+-                entitylivingbase.func_70634_a(this.field_70165_t, this.field_70163_u, this.field_70161_v);
+-                entitylivingbase.field_70143_R = 0.0F;
++                entitylivingbase.setPositionAndUpdate(this.posX, this.posY, this.posZ);
++                entitylivingbase.fallDistance = 0.0F;
+             }
+ 
+-            this.func_70106_y();
++            this.setDead();
+         }
+     }
+ 
+-    public void func_70071_h_()
++    public void onUpdate()
+     {
+-        EntityLivingBase entitylivingbase = this.func_85052_h();
++        EntityLivingBase entitylivingbase = this.getThrower();
+ 
+-        if (entitylivingbase != null && entitylivingbase instanceof EntityPlayer && !entitylivingbase.func_70089_S())
++        if (entitylivingbase != null && entitylivingbase instanceof EntityPlayer && !entitylivingbase.isEntityAlive())
+         {
+-            this.func_70106_y();
++            this.setDead();
+         }
+         else
+         {
+-            super.func_70071_h_();
++            super.onUpdate();
+         }
+     }
+ }

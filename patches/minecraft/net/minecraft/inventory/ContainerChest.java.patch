@@ -1,0 +1,61 @@
+--- ../src-base/minecraft/net/minecraft/inventory/ContainerChest.java
++++ ../src-work/minecraft/net/minecraft/inventory/ContainerChest.java
+@@ -1,19 +1,50 @@
+ package net.minecraft.inventory;
+ 
+ import net.minecraft.entity.player.EntityPlayer;
++import net.minecraft.entity.player.InventoryPlayer;
+ import net.minecraft.item.ItemStack;
++import org.bukkit.craftbukkit.inventory.CraftInventory;
++import org.bukkit.craftbukkit.inventory.CraftInventoryView;
++import net.minecraft.inventory.*;
+ 
+ public class ContainerChest extends Container
+ {
+     private final IInventory field_75155_e;
+     private final int field_75154_f;
++    // CraftBukkit start
++    private CraftInventoryView bukkitEntity = null;
++    private InventoryPlayer player;
+ 
++    @Override
++    public CraftInventoryView getBukkitView() {
++        if (bukkitEntity != null) {
++            return bukkitEntity;
++        }
++
++        CraftInventory inventory;
++        if (this.field_75155_e instanceof InventoryPlayer) {
++            inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryPlayer((InventoryPlayer) this.field_75155_e);
++        } else if (this.field_75155_e instanceof net.minecraft.inventory.InventoryLargeChest) {
++            inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest((net.minecraft.inventory.InventoryLargeChest) this.field_75155_e);
++        } else {
++            inventory = new CraftInventory(this.field_75155_e);
++        }
++
++        bukkitEntity = new CraftInventoryView(this.player.field_70458_d.getBukkitEntity(), inventory, this);
++        return bukkitEntity;
++    }
++    // CraftBukkit end
+     public ContainerChest(IInventory p_i45801_1_, IInventory p_i45801_2_, EntityPlayer p_i45801_3_)
+     {
++
+         this.field_75155_e = p_i45801_2_;
+         this.field_75154_f = p_i45801_2_.func_70302_i_() / 9;
+         p_i45801_2_.func_174889_b(p_i45801_3_);
+         int i = (this.field_75154_f - 4) * 18;
++        // CraftBukkit start - Save player
++        // TODO: Should we check to make sure it really is an InventoryPlayer?
++        this.player = (InventoryPlayer) p_i45801_1_;
++        // CraftBukkit end
+ 
+         for (int j = 0; j < this.field_75154_f; ++j)
+         {
+@@ -39,6 +70,7 @@
+ 
+     public boolean func_75145_c(EntityPlayer p_75145_1_)
+     {
++        if (!this.checkReachable) return true; // CraftBukkit
+         return this.field_75155_e.func_70300_a(p_75145_1_);
+     }
+ 

@@ -1,6 +1,22 @@
 --- ../src-base/minecraft/net/minecraft/world/border/WorldBorder.java
 +++ ../src-work/minecraft/net/minecraft/world/border/WorldBorder.java
-@@ -277,4 +277,9 @@
+@@ -6,6 +6,7 @@
+ import net.minecraft.util.math.AxisAlignedBB;
+ import net.minecraft.util.math.BlockPos;
+ import net.minecraft.util.math.ChunkPos;
++import net.minecraft.world.WorldServer;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
+ 
+@@ -23,6 +24,7 @@
+     private double field_177760_j;
+     private int field_177761_k;
+     private int field_177759_l;
++    public WorldServer world; // CraftBukkit
+ 
+     public WorldBorder()
+     {
+@@ -277,4 +279,9 @@
              iborderlistener.func_177690_b(this, p_177747_1_);
          }
      }

@@ -40,6 +40,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ClassInheritanceMultiMap;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.MathHelper;
@@ -811,6 +812,7 @@ public class ForgeChunkManager
         }
         ticket.requestedChunks.add(chunk);
         MinecraftForge.EVENT_BUS.post(new ForceChunkEvent(ticket, chunk));
+        MinecraftServer.forcechunkmanager4bukkit.put(ticket.world,ticket);
 
         ImmutableSetMultimap<ChunkPos, Ticket> newMap = ImmutableSetMultimap.<ChunkPos,Ticket>builder().putAll(forcedChunks.get(ticket.world)).put(chunk, ticket).build();
         forcedChunks.put(ticket.world, newMap);
@@ -856,6 +858,8 @@ public class ForgeChunkManager
         copy.remove(chunk, ticket);
         ImmutableSetMultimap<ChunkPos, Ticket> newMap = ImmutableSetMultimap.copyOf(copy);
         forcedChunks.put(ticket.world,newMap);
+        MinecraftServer.forcechunkmanager4bukkit.remove(ticket.world);
+
     }
 
     static void loadConfiguration()

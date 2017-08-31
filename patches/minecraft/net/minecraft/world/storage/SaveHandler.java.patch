@@ -1,6 +1,37 @@
 --- ../src-base/minecraft/net/minecraft/world/storage/SaveHandler.java
 +++ ../src-work/minecraft/net/minecraft/world/storage/SaveHandler.java
-@@ -119,7 +119,7 @@
+@@ -1,11 +1,7 @@
+ package net.minecraft.world.storage;
+ 
+-import java.io.DataInputStream;
+-import java.io.DataOutputStream;
+-import java.io.File;
+-import java.io.FileInputStream;
+-import java.io.FileOutputStream;
+-import java.io.IOException;
++import java.io.*;
++import java.util.UUID;
+ import javax.annotation.Nullable;
+ import net.minecraft.entity.player.EntityPlayer;
+ import net.minecraft.nbt.CompressedStreamTools;
+@@ -30,6 +26,7 @@
+     private final String field_75767_f;
+     private final TemplateManager field_186342_h;
+     protected final DataFixer field_186341_a;
++    private UUID uuid = null; // CraftBukkit
+ 
+     public SaveHandler(File p_i46648_1_, String p_i46648_2_, boolean p_i46648_3_, DataFixer p_i46648_4_)
+     {
+@@ -50,7 +47,7 @@
+         {
+             this.field_186342_h = null;
+         }
+-
++        getUUID();
+         this.func_75766_h();
+     }
+ 
+@@ -119,7 +116,7 @@
  
          if (file1.exists())
          {
@@ -9,7 +40,7 @@
  
              if (worldinfo != null)
              {
-@@ -127,8 +127,9 @@
+@@ -127,8 +124,9 @@
              }
          }
  
@@ -20,7 +51,7 @@
      }
  
      public void func_75755_a(WorldInfo p_75755_1_, @Nullable NBTTagCompound p_75755_2_)
-@@ -137,6 +138,8 @@
+@@ -137,6 +135,8 @@
          NBTTagCompound nbttagcompound1 = new NBTTagCompound();
          nbttagcompound1.func_74782_a("Data", nbttagcompound);
  
@@ -29,7 +60,7 @@
          try
          {
              File file1 = new File(this.field_75770_b, "level.dat_new");
-@@ -189,6 +192,7 @@
+@@ -189,6 +189,7 @@
              }
  
              file1.renameTo(file2);
@@ -37,7 +68,7 @@
          }
          catch (Exception var5)
          {
-@@ -220,6 +224,7 @@
+@@ -220,6 +221,7 @@
              p_75752_1_.func_70020_e(this.field_186341_a.func_188257_a(FixTypes.PLAYER, nbttagcompound));
          }
  
@@ -45,7 +76,7 @@
          return nbttagcompound;
      }
  
-@@ -261,4 +266,22 @@
+@@ -261,4 +263,83 @@
      {
          return this.field_186342_h;
      }
@@ -67,4 +98,65 @@
 +        }
 +        return null;
 +    }
++    // CraftBukkit start
++    public UUID getUUID() {
++        if (uuid != null) return uuid;
++        File file1 = new File(this.field_75770_b, "uid.dat");
++        if (file1.exists()) {
++            DataInputStream dis = null;
++            try {
++                dis = new DataInputStream(new FileInputStream(file1));
++                return uuid = new UUID(dis.readLong(), dis.readLong());
++            } catch (IOException ex) {
++                field_151478_a.warn("Failed to read " + file1 + ", generating new random UUID", ex);
++            } finally {
++                if (dis != null) {
++                    try {
++                        dis.close();
++                    } catch (IOException ex) {
++                        // NOOP
++                    }
++                }
++            }
++        }
++        uuid = UUID.randomUUID();
++        DataOutputStream dos = null;
++        try {
++            dos = new DataOutputStream(new FileOutputStream(file1));
++            dos.writeLong(uuid.getMostSignificantBits());
++            dos.writeLong(uuid.getLeastSignificantBits());
++        } catch (IOException ex) {
++            field_151478_a.warn("Failed to write " + file1, ex);
++        } finally {
++            if (dos != null) {
++                try {
++                    dos.close();
++                } catch (IOException ex) {
++                    // NOOP
++                }
++            }
++        }
++        return uuid;
++    }
++    // CraftBukkit start
++
++    public File getPlayerDir() {
++        return field_75771_c;
++    }
++    public NBTTagCompound getPlayerData(String s) {
++        try {
++            File file1 = new File(this.field_75771_c, s + ".dat");
++
++            if (file1.exists()) {
++                return CompressedStreamTools.func_74796_a((InputStream) (new FileInputStream(file1)));
++            }
++        } catch (Exception exception) {
++            field_151478_a.warn("Failed to load player data for " + s);
++        }
++
++        return null;
++    }
++    // CraftBukkit end
++
++
  }
