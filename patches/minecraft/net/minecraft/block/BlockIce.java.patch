@@ -1,6 +1,14 @@
 --- ../src-base/minecraft/net/minecraft/block/BlockIce.java
 +++ ../src-work/minecraft/net/minecraft/block/BlockIce.java
-@@ -41,9 +41,14 @@
+@@ -19,6 +19,7 @@
+ import net.minecraft.world.World;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
+ 
+ public class BlockIce extends BlockBreakable
+ {
+@@ -41,9 +42,14 @@
          p_180657_2_.func_71029_a(StatList.func_188055_a(this));
          p_180657_2_.func_71020_j(0.005F);
  
@@ -17,7 +25,7 @@
          }
          else
          {
-@@ -54,7 +59,9 @@
+@@ -54,7 +60,9 @@
              }
  
              int i = EnchantmentHelper.func_77506_a(Enchantments.field_185308_t, p_180657_6_);
@@ -27,3 +35,15 @@
              Material material = p_180657_1_.func_180495_p(p_180657_3_.func_177977_b()).func_185904_a();
  
              if (material.func_76230_c() || material.func_76224_d())
+@@ -85,6 +93,11 @@
+         }
+         else
+         {
++            // CraftBukkit start
++            if (CraftEventFactory.callBlockFadeEvent(p_185679_1_.getWorld().getBlockAt(p_185679_2_.func_177958_n(), p_185679_2_.func_177956_o(), p_185679_2_.func_177952_p()), p_185679_1_.field_73011_w.func_177500_n() ? Blocks.field_150350_a : Blocks.field_150355_j).isCancelled()) {
++                return;
++            }
++            // CraftBukkit end
+             this.func_176226_b(p_185679_1_, p_185679_2_, p_185679_1_.func_180495_p(p_185679_2_), 0);
+             p_185679_1_.func_175656_a(p_185679_2_, Blocks.field_150355_j.func_176223_P());
+             p_185679_1_.func_190524_a(p_185679_2_, Blocks.field_150355_j, p_185679_2_);

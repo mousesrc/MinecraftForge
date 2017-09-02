@@ -1,6 +1,18 @@
 --- ../src-base/minecraft/net/minecraft/block/BlockDynamicLiquid.java
 +++ ../src-work/minecraft/net/minecraft/block/BlockDynamicLiquid.java
-@@ -26,7 +26,7 @@
+@@ -9,6 +9,11 @@
+ import net.minecraft.util.EnumFacing;
+ import net.minecraft.util.math.BlockPos;
+ import net.minecraft.world.World;
++import net.minecraftforge.event.ForgeEventFactory;
++import org.bukkit.block.BlockFace;
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.block.BlockFromToEvent;
+ 
+ public class BlockDynamicLiquid extends BlockLiquid
+ {
+@@ -26,7 +31,7 @@
  
      public void func_180650_b(World p_180650_1_, BlockPos p_180650_2_, IBlockState p_180650_3_, Random p_180650_4_)
      {
@@ -9,7 +21,7 @@
          int j = 1;
  
          if (this.field_149764_J == Material.field_151587_i && !p_180650_1_.field_73011_w.func_177500_n())
-@@ -34,9 +34,9 @@
+@@ -34,9 +39,9 @@
              j = 2;
          }
  
@@ -21,16 +33,16 @@
          {
              int l = -100;
              this.field_149815_a = 0;
-@@ -67,7 +67,7 @@
+@@ -67,7 +72,7 @@
                  }
              }
  
 -            if (this.field_149815_a >= 2 && this.field_149764_J == Material.field_151586_h)
-+            if (this.field_149815_a >= 2 && net.minecraftforge.event.ForgeEventFactory.canCreateFluidSource(p_180650_1_, p_180650_2_, p_180650_3_, this.field_149764_J == Material.field_151586_h))
++            if (this.field_149815_a >= 2 && ForgeEventFactory.canCreateFluidSource(p_180650_1_, p_180650_2_, p_180650_3_, this.field_149764_J == Material.field_151586_h))
              {
                  IBlockState iblockstate = p_180650_1_.func_180495_p(p_180650_2_.func_177977_b());
  
-@@ -81,18 +81,18 @@
+@@ -81,18 +86,18 @@
                  }
              }
  
@@ -53,7 +65,7 @@
  
                  if (i1 < 0)
                  {
-@@ -102,7 +102,7 @@
+@@ -102,7 +107,7 @@
                  {
                      p_180650_3_ = p_180650_3_.func_177226_a(field_176367_b, Integer.valueOf(i1));
                      p_180650_1_.func_180501_a(p_180650_2_, p_180650_3_, 2);
@@ -62,7 +74,32 @@
                      p_180650_1_.func_175685_c(p_180650_2_, this, false);
                  }
              }
-@@ -123,21 +123,21 @@
+@@ -113,31 +118,43 @@
+         }
+ 
+         IBlockState iblockstate1 = p_180650_1_.func_180495_p(p_180650_2_.func_177977_b());
+-
++        org.bukkit.block.Block source = p_180650_1_.getWorld().getBlockAt(p_180650_2_.func_177958_n(), p_180650_2_.func_177956_o(), p_180650_2_.func_177952_p()); // CraftBukkit
+         if (this.func_176373_h(p_180650_1_, p_180650_2_.func_177977_b(), iblockstate1))
+         {
++            // CraftBukkit start
++            BlockFromToEvent event = new BlockFromToEvent(source, BlockFace.DOWN);
++            p_180650_1_.getServer().getPluginManager().callEvent(event);
++
++            if (event.isCancelled()) {
++                return;
++            }
++            // CraftBukkit end
++
+             if (this.field_149764_J == Material.field_151587_i && p_180650_1_.func_180495_p(p_180650_2_.func_177977_b()).func_185904_a() == Material.field_151586_h)
+             {
+-                p_180650_1_.func_175656_a(p_180650_2_.func_177977_b(), Blocks.field_150348_b.func_176223_P());
+-                this.func_180688_d(p_180650_1_, p_180650_2_.func_177977_b());
++                // CraftBukkit start
++                if (CraftEventFactory.handleBlockFormEvent(p_180650_1_, p_180650_2_.func_177977_b(), Blocks.field_150348_b, null)) {
++                    this.func_180688_d(p_180650_1_, p_180650_2_.func_177977_b());
++                }
++                // CraftBukkit end
                  return;
              }
  
@@ -90,7 +127,31 @@
              {
                  k1 = 1;
              }
-@@ -166,6 +166,7 @@
+@@ -149,14 +166,21 @@
+ 
+             for (EnumFacing enumfacing1 : set)
+             {
+-                this.func_176375_a(p_180650_1_, p_180650_2_.func_177972_a(enumfacing1), p_180650_1_.func_180495_p(p_180650_2_.func_177972_a(enumfacing1)), k1);
++                // CraftBukkit start
++                BlockFromToEvent event = new BlockFromToEvent(source, CraftBlock.notchToBlockFace(enumfacing1));
++                p_180650_1_.getServer().getPluginManager().callEvent(event);
++
++                if (!event.isCancelled()) {
++                    this.func_176375_a(p_180650_1_, p_180650_2_.func_177972_a(enumfacing1), p_180650_1_.func_180495_p(p_180650_2_.func_177972_a(enumfacing1)), k1);
++                }
++                // CraftBukkit end
+             }
+         }
+     }
+ 
+     private void func_176375_a(World p_176375_1_, BlockPos p_176375_2_, IBlockState p_176375_3_, int p_176375_4_)
+     {
+-        if (this.func_176373_h(p_176375_1_, p_176375_2_, p_176375_3_))
++        if (p_176375_1_.func_175667_e(p_176375_2_) && this.func_176373_h(p_176375_1_, p_176375_2_, p_176375_3_))
+         {
+             if (p_176375_3_.func_185904_a() != Material.field_151579_a)
+             {
+@@ -166,6 +190,7 @@
                  }
                  else
                  {

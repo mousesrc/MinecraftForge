@@ -1,6 +1,14 @@
 --- ../src-base/minecraft/net/minecraft/block/BlockDoor.java
 +++ ../src-work/minecraft/net/minecraft/block/BlockDoor.java
-@@ -107,7 +107,7 @@
+@@ -28,6 +28,7 @@
+ import net.minecraft.world.World;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
++import org.bukkit.event.block.BlockRedstoneEvent;
+ 
+ public class BlockDoor extends Block
+ {
+@@ -107,7 +108,7 @@
      {
          if (this.field_149764_J == Material.field_151573_f)
          {
@@ -9,7 +17,16 @@
          }
          else
          {
-@@ -175,7 +175,7 @@
+@@ -149,7 +150,7 @@
+ 
+     public void func_189540_a(IBlockState p_189540_1_, World p_189540_2_, BlockPos p_189540_3_, Block p_189540_4_, BlockPos p_189540_5_)
+     {
+-        if (p_189540_1_.func_177229_b(field_176523_O) == BlockDoor.EnumDoorHalf.UPPER)
++        if (p_189540_1_.func_177229_b(field_176523_O) == EnumDoorHalf.UPPER)
+         {
+             BlockPos blockpos = p_189540_3_.func_177977_b();
+             IBlockState iblockstate = p_189540_2_.func_180495_p(blockpos);
+@@ -175,7 +176,7 @@
                  flag1 = true;
              }
  
@@ -18,7 +35,33 @@
              {
                  p_189540_2_.func_175698_g(p_189540_3_);
                  flag1 = true;
-@@ -219,7 +219,7 @@
+@@ -195,10 +196,22 @@
+             }
+             else
+             {
+-                boolean flag = p_189540_2_.func_175640_z(p_189540_3_) || p_189540_2_.func_175640_z(blockpos1);
++                // CraftBukkit start
++                org.bukkit.World bworld = p_189540_2_.getWorld();
++                org.bukkit.block.Block bukkitBlock = bworld.getBlockAt(p_189540_3_.func_177958_n(), p_189540_3_.func_177956_o(), p_189540_3_.func_177952_p());
++                org.bukkit.block.Block blockTop = bworld.getBlockAt(blockpos1.func_177958_n(), blockpos1.func_177956_o(), blockpos1.func_177952_p());
+ 
+-                if (p_189540_4_ != this && (flag || p_189540_4_.func_176223_P().func_185897_m()) && flag != ((Boolean)iblockstate1.func_177229_b(field_176522_N)).booleanValue())
+-                {
++                int power = bukkitBlock.getBlockPower();
++                int powerTop = blockTop.getBlockPower();
++                if (powerTop > power) power = powerTop;
++                int oldPower = (Boolean) iblockstate1.func_177229_b(BlockDoor.field_176522_N) ? 15 : 0;
++
++                if (oldPower == 0 ^ power == 0) {
++                    BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(bukkitBlock, oldPower, power);
++                    p_189540_2_.getServer().getPluginManager().callEvent(eventRedstone);
++
++                    boolean flag = eventRedstone.getNewCurrent() > 0;
++                    // CraftBukkit end
+                     p_189540_2_.func_180501_a(blockpos1, iblockstate1.func_177226_a(field_176522_N, Boolean.valueOf(flag)), 2);
+ 
+                     if (flag != ((Boolean)p_189540_1_.func_177229_b(field_176519_b)).booleanValue())
+@@ -219,7 +232,7 @@
  
      public boolean func_176196_c(World p_176196_1_, BlockPos p_176196_2_)
      {

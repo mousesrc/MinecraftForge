@@ -1,0 +1,38 @@
+--- ../src-base/minecraft/net/minecraft/block/BlockCommandBlock.java
++++ ../src-work/minecraft/net/minecraft/block/BlockCommandBlock.java
+@@ -24,6 +24,7 @@
+ import net.minecraft.util.StringUtils;
+ import net.minecraft.util.math.BlockPos;
+ import net.minecraft.world.World;
++import org.bukkit.event.block.BlockRedstoneEvent;
+ 
+ public class BlockCommandBlock extends BlockContainer
+ {
+@@ -55,9 +56,16 @@
+                 boolean flag = p_189540_2_.func_175640_z(p_189540_3_);
+                 boolean flag1 = tileentitycommandblock.func_184255_d();
+                 boolean flag2 = tileentitycommandblock.func_184254_e();
++                 // CraftBukkit start
++                org.bukkit.block.Block bukkitBlock = p_189540_2_.getWorld().getBlockAt(p_189540_3_.func_177958_n(), p_189540_3_.func_177956_o(), p_189540_3_.func_177952_p());
++                int old = flag1 ? 15 : 0;
++                int current = flag ? 15 : 0;
+ 
+-                if (flag && !flag1)
+-                {
++                BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(bukkitBlock, old, current);
++                p_189540_2_.getServer().getPluginManager().callEvent(eventRedstone);
++                // CraftBukkit end
++
++                if (eventRedstone.getNewCurrent() > 0 && !(eventRedstone.getOldCurrent() > 0)) { // CraftBukkit
+                     tileentitycommandblock.func_184250_a(true);
+ 
+                     if (tileentitycommandblock.func_184251_i() != TileEntityCommandBlock.Mode.SEQUENCE && !flag2)
+@@ -72,7 +80,7 @@
+                         }
+                     }
+                 }
+-                else if (!flag && flag1)
++                else if (!flag && flag1 && !(eventRedstone.getNewCurrent() > 0) && eventRedstone.getOldCurrent() > 0)
+                 {
+                     tileentitycommandblock.func_184250_a(false);
+                 }

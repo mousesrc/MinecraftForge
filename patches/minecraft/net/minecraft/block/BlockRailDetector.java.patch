@@ -1,6 +1,34 @@
 --- ../src-base/minecraft/net/minecraft/block/BlockRailDetector.java
 +++ ../src-work/minecraft/net/minecraft/block/BlockRailDetector.java
-@@ -156,6 +156,8 @@
+@@ -22,6 +22,9 @@
+ import net.minecraft.util.math.BlockPos;
+ import net.minecraft.world.IBlockAccess;
+ import net.minecraft.world.World;
++import org.bukkit.block.*;
++import org.bukkit.block.Block;
++import org.bukkit.event.block.BlockRedstoneEvent;
+ 
+ public class BlockRailDetector extends BlockRailBase
+ {
+@@ -94,7 +97,17 @@
+         {
+             flag1 = true;
+         }
++        // CraftBukkit start
++        if (flag != flag1) {
++            Block block = p_176570_1_.getWorld().getBlockAt(p_176570_2_.func_177958_n(), p_176570_2_.func_177956_o(), p_176570_2_.func_177952_p());
+ 
++            BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, flag ? 15 : 0, flag1 ? 15 : 0);
++            p_176570_1_.getServer().getPluginManager().callEvent(eventRedstone);
++
++            flag1 = eventRedstone.getNewCurrent() > 0;
++        }
++        // CraftBukkit end
++
+         if (flag1 && !flag)
+         {
+             p_176570_1_.func_180501_a(p_176570_2_, p_176570_3_.func_177226_a(field_176574_M, Boolean.valueOf(true)), 3);
+@@ -156,6 +169,8 @@
      {
          if (((Boolean)p_180641_1_.func_177229_b(field_176574_M)).booleanValue())
          {

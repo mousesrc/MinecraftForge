@@ -1,6 +1,17 @@
 --- ../src-base/minecraft/net/minecraft/network/play/client/CPacketClickWindow.java
 +++ ../src-work/minecraft/net/minecraft/network/play/client/CPacketClickWindow.java
-@@ -55,7 +55,7 @@
+@@ -21,7 +21,9 @@
+     public CPacketClickWindow()
+     {
+     }
+-
++                                                                //MouseButton
++                                                                //0 for left
++                                                                //1 for right
+     @SideOnly(Side.CLIENT)
+     public CPacketClickWindow(int p_i46882_1_, int p_i46882_2_, int p_i46882_3_, ClickType p_i46882_4_, ItemStack p_i46882_5_, short p_i46882_6_)
+     {
+@@ -55,7 +57,7 @@
          p_148840_1_.writeByte(this.field_149553_c);
          p_148840_1_.writeShort(this.field_149550_d);
          p_148840_1_.func_179249_a(this.field_149549_f);

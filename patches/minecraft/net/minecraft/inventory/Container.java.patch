@@ -68,30 +68,34 @@
                  this.field_75153_a.set(i, itemstack1);
  
                  for (int j = 0; j < this.field_75149_d.size(); ++j)
-@@ -117,229 +141,209 @@
+@@ -117,229 +141,212 @@
      public ItemStack func_82846_b(EntityPlayer p_82846_1_, int p_82846_2_)
      {
          Slot slot = (Slot)this.field_75151_b.get(p_82846_2_);
 -        return slot != null ? slot.func_75211_c() : ItemStack.field_190927_a;
 +        return slot != null ? slot.func_75211_c() : field_190927_a;
      }
- 
+-
 -    public ItemStack func_184996_a(int p_184996_1_, int p_184996_2_, ClickType p_184996_3_, EntityPlayer p_184996_4_)
 -    {
 -        ItemStack itemstack = ItemStack.field_190927_a;
++                                            //左键？右键？          //按键要干什么
 +    public ItemStack func_184996_a(int p_184996_1_, int p_184996_2_, ClickType p_184996_3_, EntityPlayer p_184996_4_) {
 +        ItemStack itemstack = field_190927_a;
          InventoryPlayer inventoryplayer = p_184996_4_.field_71071_by;
  
 -        if (p_184996_3_ == ClickType.QUICK_CRAFT)
 -        {
+-            int i = this.field_94536_g;
 +        if (p_184996_3_ == ClickType.QUICK_CRAFT) {
-             int i = this.field_94536_g;
++            //快速合成
++            //如果拖动状态变化或者拖动不是按左键，则重置拖动
++            int oldDragEvent = this.field_94536_g;
              this.field_94536_g = func_94532_c(p_184996_2_);
- 
+-
 -            if ((i != 1 || this.field_94536_g != 2) && i != this.field_94536_g)
 -            {
-+            if ((i != 1 || this.field_94536_g != 2) && i != this.field_94536_g) {
++            if ((oldDragEvent != 1 || this.field_94536_g != 2) && oldDragEvent != this.field_94536_g) {
                  this.func_94533_d();
 -            }
 -            else if (inventoryplayer.func_70445_o().func_190926_b())
@@ -102,10 +106,12 @@
 -            else if (this.field_94536_g == 0)
 -            {
 +            } else if (this.field_94536_g == 0) {
++                //左键：进入"额外拖动模式"
                  this.field_94535_f = func_94529_b(p_184996_2_);
- 
+-
 -                if (func_180610_a(this.field_94535_f, p_184996_4_))
 -                {
++                //如果不可用则回到右键模式
 +                if (func_180610_a(this.field_94535_f, p_184996_4_)) {
                      this.field_94536_g = 1;
                      this.field_94537_h.clear();
@@ -119,13 +125,15 @@
 -            else if (this.field_94536_g == 1)
 -            {
 -                Slot slot = (Slot)this.field_75151_b.get(p_184996_1_);
+-                ItemStack itemstack1 = inventoryplayer.func_70445_o();
 +            } else if (this.field_94536_g == 1) {
++                //右键拖动
 +                Slot slot = (Slot) this.field_75151_b.get(p_184996_1_);
-                 ItemStack itemstack1 = inventoryplayer.func_70445_o();
++                ItemStack currentSelected = inventoryplayer.func_70445_o();
  
 -                if (slot != null && func_94527_a(slot, itemstack1, true) && slot.func_75214_a(itemstack1) && (this.field_94535_f == 2 || itemstack1.func_190916_E() > this.field_94537_h.size()) && this.func_94531_b(slot))
 -                {
-+                if (slot != null && func_94527_a(slot, itemstack1, true) && slot.func_75214_a(itemstack1) && (this.field_94535_f == 2 || itemstack1.func_190916_E() > this.field_94537_h.size()) && this.func_94531_b(slot)) {
++                if (slot != null && func_94527_a(slot, currentSelected, true) && slot.func_75214_a(currentSelected) && (this.field_94535_f == 2 || currentSelected.func_190916_E() > this.field_94537_h.size()) && this.func_94531_b(slot)) {
                      this.field_94537_h.add(slot);
                  }
 -            }
@@ -402,7 +410,7 @@
                                  }
  
                                  slot7.func_190901_a(p_184996_4_, inventoryplayer.func_70445_o());
-@@ -348,118 +352,98 @@
+@@ -348,118 +355,98 @@
                      }
  
                      slot7.func_75218_e();
@@ -563,7 +571,7 @@
                                  }
  
                                  slot8.func_190901_a(p_184996_4_, itemstack4);
-@@ -468,10 +452,8 @@
+@@ -468,10 +455,8 @@
                      }
                  }
              }
@@ -574,7 +582,7 @@
          return itemstack;
      }
  
-@@ -492,7 +474,7 @@
+@@ -492,7 +477,7 @@
          if (!inventoryplayer.func_70445_o().func_190926_b())
          {
              p_75134_1_.func_71019_a(inventoryplayer.func_70445_o(), false);
@@ -583,7 +591,7 @@
          }
      }
  
-@@ -578,18 +560,19 @@
+@@ -578,18 +563,19 @@
                  if (!itemstack.func_190926_b() && itemstack.func_77973_b() == p_75135_1_.func_77973_b() && (!p_75135_1_.func_77981_g() || p_75135_1_.func_77960_j() == itemstack.func_77960_j()) && ItemStack.func_77970_a(p_75135_1_, itemstack))
                  {
                      int j = itemstack.func_190916_E() + p_75135_1_.func_190916_E();
@@ -607,7 +615,19 @@
                          slot.func_75218_e();
                          flag = true;
                      }
-@@ -708,7 +691,7 @@
+@@ -671,6 +657,11 @@
+ 
+     public static int func_94532_c(int p_94532_0_)
+     {
++        //3 -> 11
++        //clickedButton -> 00 01 10
++        //0 为按下左键拖动
++        //1 为按下右键拖动
++        //2 就是按着中拖动
+         return p_94532_0_ & 3;
+     }
+ 
+@@ -708,7 +699,7 @@
                  p_94525_2_.func_190920_e(1);
                  break;
              case 2:

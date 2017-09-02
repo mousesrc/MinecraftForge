@@ -1,6 +1,46 @@
 --- ../src-base/minecraft/net/minecraft/block/BlockPistonBase.java
 +++ ../src-work/minecraft/net/minecraft/block/BlockPistonBase.java
-@@ -240,7 +240,7 @@
+@@ -1,6 +1,9 @@
+ package net.minecraft.block;
+ 
++import com.google.common.collect.ImmutableList;
+ import com.google.common.collect.Lists;
++
++import java.util.AbstractList;
+ import java.util.List;
+ import javax.annotation.Nullable;
+ import net.minecraft.block.material.EnumPushReaction;
+@@ -27,6 +30,10 @@
+ import net.minecraft.util.math.BlockPos;
+ import net.minecraft.world.IBlockAccess;
+ import net.minecraft.world.World;
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.event.block.BlockPistonEvent;
++import org.bukkit.event.block.BlockPistonExtendEvent;
++import org.bukkit.event.block.BlockPistonRetractEvent;
+ 
+ public class BlockPistonBase extends BlockDirectional
+ {
+@@ -141,6 +148,18 @@
+         }
+         else if (!flag && ((Boolean)p_176316_3_.func_177229_b(field_176320_b)).booleanValue())
+         {
++            // CraftBukkit start
++            if (!this.field_150082_a) {
++                org.bukkit.block.Block block = p_176316_1_.getWorld().getBlockAt(p_176316_2_.func_177958_n(), p_176316_2_.func_177956_o(), p_176316_2_.func_177952_p());
++                BlockPistonRetractEvent event = new BlockPistonRetractEvent(block, ImmutableList.<org.bukkit.block.Block>of(), CraftBlock.notchToBlockFace(enumfacing));
++                p_176316_1_.getServer().getPluginManager().callEvent(event);
++
++                if (event.isCancelled()) {
++                    return;
++                }
++            }
++            // PAIL: checkME - what happened to setTypeAndData?
++            // CraftBukkit end
+             p_176316_1_.func_175641_c(p_176316_2_, this, 1, enumfacing.func_176745_a());
+         }
+     }
+@@ -240,7 +259,7 @@
                      }
                  }
  
@@ -9,7 +49,7 @@
                  {
                      this.func_176319_a(p_189539_2_, p_189539_3_, enumfacing, false);
                  }
-@@ -306,7 +306,7 @@
+@@ -306,7 +325,7 @@
                      return false;
                  }
  
@@ -18,7 +58,62 @@
              }
              else
              {
-@@ -352,7 +352,9 @@
+@@ -344,15 +363,64 @@
+             }
+ 
+             List<BlockPos> list2 = blockpistonstructurehelper.func_177252_d();
++
+             int k = list.size() + list2.size();
+             IBlockState[] aiblockstate = new IBlockState[k];
+             EnumFacing enumfacing = p_176319_4_ ? p_176319_3_ : p_176319_3_.func_176734_d();
+ 
++
++            // CraftBukkit start
++            final org.bukkit.block.Block bblock = p_176319_1_.getWorld().getBlockAt(p_176319_2_.func_177958_n(), p_176319_2_.func_177956_o(), p_176319_2_.func_177952_p());
++
++            final List<BlockPos> moved = blockpistonstructurehelper.func_177254_c();
++            final List<BlockPos> broken = blockpistonstructurehelper.func_177252_d();
++
++            List<org.bukkit.block.Block> blocks = new AbstractList<org.bukkit.block.Block>() {
++
++                @Override
++                public int size() {
++                    return moved.size() + broken.size();
++                }
++
++                @Override
++                public org.bukkit.block.Block get(int index) {
++                    if (index >= size() || index < 0) {
++                        throw new ArrayIndexOutOfBoundsException(index);
++                    }
++                    BlockPos pos = (BlockPos) (index < moved.size() ? moved.get(index) : broken.get(index - moved.size()));
++                    return bblock.getWorld().getBlockAt(pos.func_177958_n(), pos.func_177956_o(), pos.func_177952_p());
++                }
++            };
++            BlockPistonEvent event;
++            if (p_176319_4_) {
++                event = new BlockPistonExtendEvent(bblock, blocks, CraftBlock.notchToBlockFace(enumfacing));
++            } else {
++                event = new BlockPistonRetractEvent(bblock, blocks, CraftBlock.notchToBlockFace(enumfacing));
++            }
++            p_176319_1_.getServer().getPluginManager().callEvent(event);
++
++            if (event.isCancelled()) {
++                for (BlockPos b : broken) {
++                    p_176319_1_.func_184138_a(b, Blocks.field_150350_a.func_176223_P(), p_176319_1_.func_180495_p(b), 3);
++                }
++                for (BlockPos b : moved) {
++                    p_176319_1_.func_184138_a(b, Blocks.field_150350_a.func_176223_P(), p_176319_1_.func_180495_p(b), 3);
++                    b = b.func_177972_a(enumfacing);
++                    p_176319_1_.func_184138_a(b, Blocks.field_150350_a.func_176223_P(), p_176319_1_.func_180495_p(b), 3);
++                }
++                return false;
++            }
++            // CraftBukkit end
++
++
++
+             for (int j = list2.size() - 1; j >= 0; --j)
              {
                  BlockPos blockpos1 = (BlockPos)list2.get(j);
                  IBlockState iblockstate = p_176319_1_.func_180495_p(blockpos1);
@@ -29,7 +124,7 @@
                  p_176319_1_.func_180501_a(blockpos1, Blocks.field_150350_a.func_176223_P(), 4);
                  --k;
                  aiblockstate[k] = iblockstate;
-@@ -432,4 +434,11 @@
+@@ -432,4 +500,11 @@
      {
          return new BlockStateContainer(this, new IProperty[] {field_176387_N, field_176320_b});
      }

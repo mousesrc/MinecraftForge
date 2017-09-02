@@ -23,7 +23,15 @@
  import net.minecraft.command.CommandBase;
  import net.minecraft.command.CommandResultStats;
  import net.minecraft.command.ICommandManager;
-@@ -54,6 +51,7 @@
+@@ -43,6 +40,7 @@
+ import net.minecraft.command.ServerCommandManager;
+ import net.minecraft.crash.CrashReport;
+ import net.minecraft.crash.ICrashReportDetail;
++import net.minecraft.enchantment.Enchantment;
+ import net.minecraft.entity.Entity;
+ import net.minecraft.entity.player.EntityPlayer;
+ import net.minecraft.entity.player.EntityPlayerMP;
+@@ -54,6 +52,7 @@
  import net.minecraft.profiler.Profiler;
  import net.minecraft.profiler.Snooper;
  import net.minecraft.server.dedicated.DedicatedServer;
@@ -31,7 +39,7 @@
  import net.minecraft.server.management.PlayerList;
  import net.minecraft.server.management.PlayerProfileCache;
  import net.minecraft.util.IProgressUpdate;
-@@ -77,20 +75,28 @@
+@@ -77,20 +76,28 @@
  import net.minecraft.world.WorldServerMulti;
  import net.minecraft.world.WorldSettings;
  import net.minecraft.world.WorldType;
@@ -61,7 +69,7 @@
      public static final File field_152367_a = new File("usercache.json");
      public final ISaveFormat field_71310_m;
      private final Snooper field_71307_n = new Snooper("server", this, func_130071_aq());
-@@ -105,7 +111,7 @@
+@@ -105,7 +112,7 @@
      @SideOnly(Side.SERVER)
      private String field_71320_r;
      private int field_71319_s = -1;
@@ -70,7 +78,7 @@
      private PlayerList field_71318_t;
      private boolean field_71317_u = true;
      private boolean field_71316_v;
-@@ -123,7 +129,8 @@
+@@ -123,7 +130,8 @@
      private int field_71280_D;
      private int field_143008_E;
      public final long[] field_71311_j = new long[100];
@@ -80,7 +88,7 @@
      private KeyPair field_71292_I;
      private String field_71293_J;
      private String field_71294_K;
-@@ -148,7 +155,23 @@
+@@ -148,7 +156,23 @@
      private long field_175591_ab = func_130071_aq();
      @SideOnly(Side.CLIENT)
      private boolean field_184111_ab;
@@ -104,7 +112,7 @@
      public MinecraftServer(File p_i47054_1_, Proxy p_i47054_2_, DataFixer p_i47054_3_, YggdrasilAuthenticationService p_i47054_4_, MinecraftSessionService p_i47054_5_, GameProfileRepository p_i47054_6_, PlayerProfileCache p_i47054_7_)
      {
          this.field_110456_c = p_i47054_2_;
-@@ -161,8 +184,35 @@
+@@ -161,8 +185,35 @@
          this.field_71321_q = this.func_175582_h();
          this.field_71310_m = new AnvilSaveConverter(p_i47054_1_, p_i47054_3_);
          this.field_184112_s = p_i47054_3_;
@@ -140,7 +148,7 @@
      public ServerCommandManager func_175582_h()
      {
          return new ServerCommandManager(this);
-@@ -222,8 +272,6 @@
+@@ -222,8 +273,6 @@
      {
          this.func_71237_c(p_71247_1_);
          this.func_71192_d("menu.loadingLevel");
@@ -149,7 +157,7 @@
          ISaveHandler isavehandler = this.field_71310_m.func_75804_a(p_71247_1_, true);
          this.func_175584_a(this.func_71270_I(), isavehandler);
          WorldInfo worldinfo = isavehandler.func_75757_d();
-@@ -253,83 +301,66 @@
+@@ -253,83 +302,66 @@
              worldinfo.func_76062_a(p_71247_2_);
              worldsettings = new WorldSettings(worldinfo);
          }
@@ -275,7 +283,7 @@
          this.func_71243_i();
      }
  
-@@ -375,6 +406,8 @@
+@@ -375,6 +407,8 @@
      {
          this.field_71302_d = null;
          this.field_71303_e = 0;
@@ -284,7 +292,7 @@
      }
  
      public void func_71267_a(boolean p_71267_1_)
-@@ -399,10 +432,23 @@
+@@ -399,10 +433,23 @@
              }
          }
      }
@@ -309,7 +317,7 @@
  
          if (this.func_147137_ag() != null)
          {
-@@ -411,9 +457,16 @@
+@@ -411,9 +458,16 @@
  
          if (this.field_71318_t != null)
          {
@@ -326,7 +334,7 @@
          }
  
          if (this.field_71305_c != null)
-@@ -434,9 +487,16 @@
+@@ -434,9 +488,16 @@
              {
                  if (worldserver1 != null)
                  {
@@ -343,7 +351,7 @@
          }
  
          if (this.field_71307_n.func_76468_d())
-@@ -461,12 +521,13 @@
+@@ -461,12 +522,13 @@
          {
              if (this.func_71197_b())
              {
@@ -358,7 +366,7 @@
                  while (this.field_71317_u)
                  {
                      long k = func_130071_aq();
-@@ -487,7 +548,14 @@
+@@ -487,7 +549,14 @@
  
                      i += j;
                      this.field_175591_ab = k;
@@ -374,7 +382,7 @@
                      if (this.field_71305_c[0].func_73056_e())
                      {
                          this.func_71217_p();
-@@ -497,6 +565,8 @@
+@@ -497,6 +566,8 @@
                      {
                          while (i > 50L)
                          {
@@ -383,7 +391,7 @@
                              i -= 50L;
                              this.func_71217_p();
                          }
-@@ -505,12 +575,20 @@
+@@ -505,12 +576,20 @@
                      Thread.sleep(Math.max(1L, 50L - i));
                      this.field_71296_Q = true;
                  }
@@ -404,7 +412,7 @@
          catch (Throwable throwable1)
          {
              field_147145_h.error("Encountered an unexpected exception", throwable1);
-@@ -536,21 +614,32 @@
+@@ -536,21 +615,32 @@
                  field_147145_h.error("We were unable to save this crash report to disk.");
              }
  
@@ -437,7 +445,7 @@
                  this.func_71240_o();
              }
          }
-@@ -615,9 +704,10 @@
+@@ -615,9 +705,10 @@
      {
      }
  
@@ -449,7 +457,7 @@
          ++this.field_71315_w;
  
          if (this.field_71295_T)
-@@ -644,16 +734,17 @@
+@@ -644,16 +735,17 @@
  
              Collections.shuffle(Arrays.asList(agameprofile));
              this.field_147147_p.func_151318_b().func_151330_a(agameprofile);
@@ -469,7 +477,7 @@
          this.field_71304_b.func_76320_a("tallying");
          this.field_71311_j[this.field_71315_w % 100] = System.nanoTime() - i;
          this.field_71304_b.func_76319_b();
-@@ -671,10 +762,12 @@
+@@ -671,10 +763,12 @@
  
          this.field_71304_b.func_76319_b();
          this.field_71304_b.func_76319_b();
@@ -482,7 +490,7 @@
          this.field_71304_b.func_76320_a("jobs");
  
          synchronized (this.field_175589_i)
-@@ -684,26 +777,45 @@
+@@ -684,26 +778,45 @@
                  Util.func_181617_a((FutureTask)this.field_175589_i.poll(), field_147145_h);
              }
          }
@@ -532,7 +540,7 @@
  
                  try
                  {
-@@ -727,6 +839,7 @@
+@@ -727,6 +840,7 @@
                      throw new ReportedException(crashreport1);
                  }
  
@@ -540,7 +548,7 @@
                  this.field_71304_b.func_76319_b();
                  this.field_71304_b.func_76320_a("tracker");
                  worldserver.func_73039_n().func_72788_a();
-@@ -734,9 +847,11 @@
+@@ -734,9 +848,11 @@
                  this.field_71304_b.func_76319_b();
              }
  
@@ -553,7 +561,7 @@
          this.field_71304_b.func_76318_c("connection");
          this.func_147137_ag().func_151269_c();
          this.field_71304_b.func_76318_c("players");
-@@ -758,8 +873,10 @@
+@@ -758,8 +874,10 @@
  
      public void func_71256_s()
      {
@@ -565,7 +573,7 @@
      }
  
      public File func_71209_f(String p_71209_1_)
-@@ -774,7 +891,13 @@
+@@ -774,7 +892,13 @@
  
      public WorldServer func_71218_a(int p_71218_1_)
      {
@@ -580,7 +588,7 @@
      }
  
      public String func_71249_w()
-@@ -804,7 +927,7 @@
+@@ -804,7 +928,7 @@
  
      public String getServerModName()
      {
@@ -589,7 +597,7 @@
      }
  
      public CrashReport func_71230_b(CrashReport p_71230_1_)
-@@ -833,22 +956,23 @@
+@@ -833,22 +957,23 @@
  
      public List<String> func_184104_a(ICommandSender p_184104_1_, String p_184104_2_, @Nullable BlockPos p_184104_3_, boolean p_184104_4_)
      {
@@ -619,7 +627,7 @@
                  {
                      list.add(s1);
                  }
-@@ -858,8 +982,8 @@
+@@ -858,8 +983,8 @@
          }
          else
          {
@@ -630,7 +638,7 @@
  
              if (!list1.isEmpty())
              {
-@@ -877,7 +1001,8 @@
+@@ -877,7 +1002,8 @@
              }
  
              return list;
@@ -640,7 +648,19 @@
      }
  
      public boolean func_175578_N()
-@@ -1574,7 +1699,7 @@
+@@ -1510,7 +1636,10 @@
+             {
+                 dedicatedserver.func_120011_ar();
+             }
+-
++            /*
++                   Register bukkit elements
++            */
++            registerBukkitElements();
+             dedicatedserver.func_71256_s();
+             Runtime.getRuntime().addShutdownHook(new Thread("Server Shutdown Thread")
+             {
+@@ -1574,7 +1703,7 @@
      @SideOnly(Side.SERVER)
      public int func_82357_ak()
      {
@@ -649,10 +669,24 @@
      }
  
      @SideOnly(Side.SERVER)
-@@ -1594,4 +1719,6 @@
+@@ -1594,4 +1723,20 @@
      {
          return this.field_175590_aa;
      }
 +    public static Map<World,ForgeChunkManager.Ticket> forcechunkmanager4bukkit = new HashMap<World, ForgeChunkManager.Ticket>();
-+   
++    protected static boolean registeredBukkitElements = false;
++    protected static void registerBukkitElements()
++    {
++        // CraftBukkit start
++        //Enchantment part
++        if(registeredBukkitElements)
++        {
++            return;
++        }
++        registeredBukkitElements = true;
++        for (Object enchantment : Enchantment.field_185264_b) {
++            org.bukkit.enchantments.Enchantment.registerEnchantment(new org.bukkit.craftbukkit.enchantments.CraftEnchantment((Enchantment) enchantment));
++        }
++        // CraftBukkit end
++    }
  }

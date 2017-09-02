@@ -11,6 +11,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Functions;
 
 
+import net.minecraft.network.play.server.SPacketCloseWindow;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Server;

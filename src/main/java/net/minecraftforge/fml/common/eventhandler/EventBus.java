@@ -337,9 +337,19 @@ public class EventBus implements IEventExceptionHandler
                     thisevent = new BlockBreakEvent(event1.getWorld().getWorld().getBlockAt(event1.getPos().getX(), event1.getPos().getY(), event1.getPos().getZ()), (Player) event1.getHarvester().getBukkitEntity());
                 }
             }
-            else if(event instanceof BlockEvent.CropGrowEvent)
+            else if(event instanceof BlockEvent.CropGrowEvent.Post)
             {
-               // Block pos = ((BlockEvent.CropGrowEvent) event).getPos();
+                IBlockState last = ((BlockEvent.CropGrowEvent.Post) event).getOriginalState();
+                IBlockState current = ((BlockEvent.CropGrowEvent.Post) event).getState();
+                World world = ((BlockEvent.CropGrowEvent.Post) event).getWorld();
+                BlockPos blockposition = ((BlockEvent.CropGrowEvent.Post) event).getPos();
+                Block farmblock = last.getBlock();
+                org.bukkit.block.Block block = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(),blockposition.getZ());
+                CraftBlockState state = (CraftBlockState) block.getState();
+                state.setTypeId(net.minecraft.block.Block.getIdFromBlock(farmblock));
+                state.setRawData((byte) farmblock.getMetaFromState(last));
+                thisevent = new BlockGrowEvent(block, state);
+                // Block pos = ((BlockEvent.CropGrowEvent) event).getPos();
                // event.
                // thisevent = new BlockGrowEvent()
             }

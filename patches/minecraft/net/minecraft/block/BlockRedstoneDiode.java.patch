@@ -1,6 +1,35 @@
 --- ../src-base/minecraft/net/minecraft/block/BlockRedstoneDiode.java
 +++ ../src-work/minecraft/net/minecraft/block/BlockRedstoneDiode.java
-@@ -204,6 +204,8 @@
+@@ -14,6 +14,7 @@
+ import net.minecraft.world.World;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
+ 
+ public abstract class BlockRedstoneDiode extends BlockHorizontal
+ {
+@@ -58,10 +59,20 @@
+ 
+             if (this.field_149914_a && !flag)
+             {
++                // CraftBukkit start
++                if (CraftEventFactory.callRedstoneChange(p_180650_1_, p_180650_2_.func_177958_n(), p_180650_2_.func_177956_o(), p_180650_2_.func_177952_p(), 15, 0).getNewCurrent() != 0) {
++                    return;
++                }
++                // CraftBukkit end
+                 p_180650_1_.func_180501_a(p_180650_2_, this.func_180675_k(p_180650_3_), 2);
+             }
+             else if (!this.field_149914_a)
+             {
++                // CraftBukkit start
++                if (CraftEventFactory.callRedstoneChange(p_180650_1_, p_180650_2_.func_177958_n(), p_180650_2_.func_177956_o(), p_180650_2_.func_177952_p(), 0, 15).getNewCurrent() != 15) {
++                    return;
++                }
++                // CraftBukkit end
+                 p_180650_1_.func_180501_a(p_180650_2_, this.func_180674_e(p_180650_3_), 2);
+ 
+                 if (!flag)
+@@ -204,6 +215,8 @@
      {
          EnumFacing enumfacing = (EnumFacing)p_176400_3_.func_177229_b(field_185512_D);
          BlockPos blockpos = p_176400_2_.func_177972_a(enumfacing.func_176734_d());
@@ -9,7 +38,7 @@
          p_176400_1_.func_190524_a(blockpos, this, p_176400_2_);
          p_176400_1_.func_175695_a(blockpos, this, enumfacing);
      }
-@@ -275,4 +277,23 @@
+@@ -275,4 +288,23 @@
      {
          return BlockRenderLayer.CUTOUT;
      }

@@ -1,0 +1,11 @@
+--- ../src-base/minecraft/net/minecraft/network/play/client/CPacketCloseWindow.java
++++ ../src-work/minecraft/net/minecraft/network/play/client/CPacketCloseWindow.java
+@@ -15,7 +15,7 @@
+     {
+     }
+ 
+-    @SideOnly(Side.CLIENT)
++    //@SideOnly(Side.CLIENT) //Uncommented @Sideonly to get Bukkit use it
+     public CPacketCloseWindow(int p_i46881_1_)
+     {
+         this.field_149556_a = p_i46881_1_;

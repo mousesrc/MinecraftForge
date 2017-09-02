@@ -1,6 +1,11 @@
 --- ../src-base/minecraft/net/minecraft/block/BlockRedstoneTorch.java
 +++ ../src-work/minecraft/net/minecraft/block/BlockRedstoneTorch.java
-@@ -23,7 +23,7 @@
+@@ -20,10 +20,12 @@
+ import net.minecraft.world.World;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
++import org.bukkit.event.block.BlockRedstoneEvent;
++import org.bukkit.plugin.PluginManager;
  
  public class BlockRedstoneTorch extends BlockTorch
  {
@@ -9,3 +14,25 @@
      private final boolean field_150113_a;
  
      private boolean func_176598_a(World p_176598_1_, BlockPos p_176598_2_, boolean p_176598_3_)
+@@ -112,13 +114,19 @@
+     public void func_180650_b(World p_180650_1_, BlockPos p_180650_2_, IBlockState p_180650_3_, Random p_180650_4_)
+     {
+         boolean flag = this.func_176597_g(p_180650_1_, p_180650_2_, p_180650_3_);
+-        List<BlockRedstoneTorch.Toggle> list = (List)field_150112_b.get(p_180650_1_);
++        List<Toggle> list = (List)field_150112_b.get(p_180650_1_);
+ 
+-        while (list != null && !list.isEmpty() && p_180650_1_.func_82737_E() - ((BlockRedstoneTorch.Toggle)list.get(0)).field_150844_d > 60L)
++        while (list != null && !list.isEmpty() && p_180650_1_.func_82737_E() - ((Toggle)list.get(0)).field_150844_d > 60L)
+         {
+             list.remove(0);
+         }
++        // CraftBukkit start
++        PluginManager manager = p_180650_1_.getServer().getPluginManager();
++        org.bukkit.block.Block block = p_180650_1_.getWorld().getBlockAt(p_180650_2_.func_177958_n(), p_180650_2_.func_177956_o(), p_180650_2_.func_177952_p());
++        int oldCurrent = this.field_150113_a ? 15 : 0;
+ 
++        BlockRedstoneEvent event = new BlockRedstoneEvent(block, oldCurrent, oldCurrent);
++        // CraftBukkit end
+         if (this.field_150113_a)
+         {
+             if (flag)

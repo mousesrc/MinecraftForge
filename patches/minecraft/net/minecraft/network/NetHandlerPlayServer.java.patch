@@ -21,11 +21,19 @@
  import net.minecraft.entity.IJumpingMount;
  import net.minecraft.entity.MoverType;
  import net.minecraft.entity.item.EntityBoat;
-@@ -38,10 +43,9 @@
- import net.minecraft.inventory.EntityEquipmentSlot;
- import net.minecraft.inventory.IInventory;
- import net.minecraft.inventory.Slot;
+@@ -31,17 +36,10 @@
+ import net.minecraft.init.Blocks;
+ import net.minecraft.init.Items;
+ import net.minecraft.init.MobEffects;
+-import net.minecraft.inventory.Container;
+-import net.minecraft.inventory.ContainerBeacon;
+-import net.minecraft.inventory.ContainerMerchant;
+-import net.minecraft.inventory.ContainerRepair;
+-import net.minecraft.inventory.EntityEquipmentSlot;
+-import net.minecraft.inventory.IInventory;
+-import net.minecraft.inventory.Slot;
 -import net.minecraft.item.ItemElytra;
++import net.minecraft.inventory.*;
 +import net.minecraft.item.*;
  import net.minecraft.item.ItemStack;
 -import net.minecraft.item.ItemWritableBook;
@@ -34,7 +42,7 @@
  import net.minecraft.nbt.NBTTagCompound;
  import net.minecraft.nbt.NBTTagList;
  import net.minecraft.nbt.NBTTagString;
-@@ -73,17 +77,7 @@
+@@ -73,17 +71,7 @@
  import net.minecraft.network.play.client.CPacketUpdateSign;
  import net.minecraft.network.play.client.CPacketUseEntity;
  import net.minecraft.network.play.client.CPacketVehicleMove;
@@ -53,7 +61,7 @@
  import net.minecraft.server.MinecraftServer;
  import net.minecraft.stats.AchievementList;
  import net.minecraft.tileentity.CommandBlockBaseLogic;
-@@ -102,6 +96,7 @@
+@@ -102,6 +90,7 @@
  import net.minecraft.util.Rotation;
  import net.minecraft.util.math.BlockPos;
  import net.minecraft.util.math.MathHelper;
@@ -61,7 +69,7 @@
  import net.minecraft.util.math.Vec3d;
  import net.minecraft.util.text.ITextComponent;
  import net.minecraft.util.text.TextComponentString;
-@@ -109,9 +104,30 @@
+@@ -109,10 +98,36 @@
  import net.minecraft.util.text.TextFormatting;
  import net.minecraft.world.GameType;
  import net.minecraft.world.WorldServer;
@@ -69,11 +77,13 @@
  import org.apache.commons.lang3.StringUtils;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
++import org.bukkit.Bukkit;
 +import org.bukkit.Location;
 +import org.bukkit.craftbukkit.block.CraftBlock;
 +import org.bukkit.craftbukkit.block.CraftSign;
 +import org.bukkit.craftbukkit.entity.CraftPlayer;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.craftbukkit.inventory.CraftInventory;
 +import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.craftbukkit.util.CraftChatMessage;
@@ -85,14 +95,18 @@
 +import org.bukkit.event.block.Action;
 +import org.bukkit.event.block.SignChangeEvent;
 +import org.bukkit.event.inventory.*;
++import org.bukkit.event.inventory.ClickType;
 +import org.bukkit.event.player.*;
 +import org.bukkit.inventory.*;
 +import org.bukkit.util.Vector;
 +import net.minecraft.network.*;
  
++import static org.bukkit.event.inventory.InventoryAction.*;
++
  public class NetHandlerPlayServer implements INetHandlerPlayServer, ITickable
  {
-@@ -148,6 +164,11 @@
+     private static final Logger field_147370_c = LogManager.getLogger();
+@@ -148,6 +163,11 @@
      private int field_184346_E;
      private int field_184347_F;
      private int field_184348_G;
@@ -104,7 +118,7 @@
  
      public NetHandlerPlayServer(MinecraftServer p_i1530_1_, NetworkManager p_i1530_2_, EntityPlayerMP p_i1530_3_)
      {
-@@ -156,14 +177,40 @@
+@@ -156,14 +176,40 @@
          p_i1530_2_.func_150719_a(this);
          this.field_147369_b = p_i1530_3_;
          p_i1530_3_.field_71135_a = this;
@@ -145,7 +159,7 @@
          this.field_184348_G = this.field_184347_F;
  
          if (this.field_184344_B)
-@@ -251,7 +298,79 @@
+@@ -251,7 +297,79 @@
          this.field_184353_p = this.field_147369_b.field_70163_u;
          this.field_184354_q = this.field_147369_b.field_70161_v;
      }
@@ -225,7 +239,7 @@
      public NetworkManager func_147362_b()
      {
          return this.field_147371_a;
-@@ -259,6 +378,25 @@
+@@ -259,6 +377,25 @@
  
      public void func_147360_c(String p_147360_1_)
      {
@@ -251,7 +265,7 @@
          final TextComponentString textcomponentstring = new TextComponentString(p_147360_1_);
          this.field_147371_a.func_179288_a(new SPacketDisconnect(textcomponentstring), new GenericFutureListener < Future <? super Void >> ()
          {
-@@ -362,7 +500,62 @@
+@@ -362,7 +499,62 @@
                      this.field_147371_a.func_179290_a(new SPacketMoveVehicle(entity));
                      return;
                  }
@@ -314,7 +328,7 @@
                  this.field_147367_d.func_184103_al().func_72358_d(this.field_147369_b);
                  this.field_147369_b.func_71000_j(this.field_147369_b.field_70165_t - d0, this.field_147369_b.field_70163_u - d1, this.field_147369_b.field_70161_v - d2);
                  this.field_184345_D = d11 >= -0.03125D && !this.field_147367_d.func_71231_X() && !worldserver.func_72829_c(entity.func_174813_aQ().func_186662_g(0.0625D).func_72321_a(0.0D, -0.55D, 0.0D));
-@@ -372,7 +565,53 @@
+@@ -372,7 +564,53 @@
              }
          }
      }
@@ -368,7 +382,7 @@
      public void func_184339_a(CPacketConfirmTeleport p_184339_1_)
      {
          PacketThreadUtil.func_180031_a(p_184339_1_, this, this.field_147369_b.func_71121_q());
-@@ -403,17 +642,21 @@
+@@ -403,17 +641,21 @@
          }
          else
          {
@@ -391,7 +405,7 @@
                      if (this.field_147368_e - this.field_184343_A > 20)
                      {
                          this.field_184343_A = this.field_147368_e;
-@@ -431,24 +674,36 @@
+@@ -431,24 +673,36 @@
                      }
                      else
                      {
@@ -443,7 +457,7 @@
                              {
                                  this.func_147364_a(this.field_147369_b.field_70165_t, this.field_147369_b.field_70163_u, this.field_147369_b.field_70161_v, p_147347_1_.func_186999_a(this.field_147369_b.field_70177_z), p_147347_1_.func_186998_b(this.field_147369_b.field_70125_A));
                              }
-@@ -456,59 +711,68 @@
+@@ -456,59 +710,68 @@
                          else
                          {
                              ++this.field_184347_F;
@@ -535,7 +549,7 @@
  
                              if (!this.field_147369_b.field_70145_X && !this.field_147369_b.func_70608_bn())
                              {
-@@ -516,11 +780,73 @@
+@@ -516,11 +779,73 @@
  
                                  if (flag2 && (flag || !flag1))
                                  {
@@ -610,7 +624,7 @@
                              this.field_184344_B = d12 >= -0.03125D;
                              this.field_184344_B &= !this.field_147367_d.func_71231_X() && !this.field_147369_b.field_71075_bZ.field_75101_c;
                              this.field_184344_B &= !this.field_147369_b.func_70644_a(MobEffects.field_188424_y) && !this.field_147369_b.func_184613_cA() && !worldserver.func_72829_c(this.field_147369_b.func_174813_aQ().func_186662_g(0.0625D).func_72321_a(0.0D, -0.55D, 0.0D));
-@@ -585,7 +911,15 @@
+@@ -585,7 +910,15 @@
                  if (!this.field_147369_b.func_175149_v())
                  {
                      ItemStack itemstack = this.field_147369_b.func_184586_b(EnumHand.OFF_HAND);
@@ -627,7 +641,7 @@
                      this.field_147369_b.func_184611_a(EnumHand.MAIN_HAND, itemstack);
                  }
  
-@@ -594,6 +928,21 @@
+@@ -594,6 +927,21 @@
  
                  if (!this.field_147369_b.func_175149_v())
                  {
@@ -649,7 +663,7 @@
                      this.field_147369_b.func_71040_bB(false);
                  }
  
-@@ -617,7 +966,10 @@
+@@ -617,7 +965,10 @@
                  double d2 = this.field_147369_b.field_70161_v - ((double)blockpos.func_177952_p() + 0.5D);
                  double d3 = d0 * d0 + d1 * d1 + d2 * d2;
  
@@ -661,7 +675,7 @@
                  {
                      return;
                  }
-@@ -635,7 +987,15 @@
+@@ -635,7 +986,15 @@
                          }
                          else
                          {
@@ -677,7 +691,7 @@
                          }
                      }
                      else
-@@ -675,7 +1035,9 @@
+@@ -675,7 +1034,9 @@
  
          if (blockpos.func_177956_o() < this.field_147367_d.func_71207_Z() - 1 || enumfacing != EnumFacing.UP && blockpos.func_177956_o() < this.field_147367_d.func_71207_Z())
          {
@@ -688,10 +702,11 @@
              {
                  this.field_147369_b.field_71134_c.func_187251_a(this.field_147369_b, worldserver, itemstack, enumhand, blockpos, enumfacing, p_184337_1_.func_187026_d(), p_184337_1_.func_187025_e(), p_184337_1_.func_187020_f());
              }
-@@ -701,6 +1063,45 @@
+@@ -701,7 +1062,46 @@
  
          if (!itemstack.func_190926_b())
          {
+-            this.field_147369_b.field_71134_c.func_187250_a(this.field_147369_b, worldserver, itemstack, enumhand);
 +            // CraftBukkit start
 +            // Raytrace to look for 'rogue armswings'
 +            float f1 = this.field_147369_b.field_70125_A;
@@ -731,10 +746,11 @@
 +                this.field_147369_b.field_71134_c.func_187250_a(this.field_147369_b, worldserver, itemstack, enumhand);
 +            }
 +            // CraftBukkit end
-             this.field_147369_b.field_71134_c.func_187250_a(this.field_147369_b, worldserver, itemstack, enumhand);
++            //this.playerEntity.interactionManager.processRightClick(this.playerEntity, worldserver, itemstack, enumhand);
          }
      }
-@@ -813,7 +1214,14 @@
+ 
+@@ -813,7 +1213,14 @@
                  return;
              }
          }
@@ -750,7 +766,7 @@
          try
          {
              this.field_147371_a.func_179290_a(p_147359_1_);
-@@ -839,6 +1247,14 @@
+@@ -839,6 +1246,14 @@
  
          if (p_147355_1_.func_149614_c() >= 0 && p_147355_1_.func_149614_c() < InventoryPlayer.func_70451_h())
          {
@@ -765,7 +781,7 @@
              this.field_147369_b.field_71071_by.field_70461_c = p_147355_1_.func_149614_c();
              this.field_147369_b.func_143004_u();
          }
-@@ -850,8 +1266,15 @@
+@@ -850,8 +1265,15 @@
  
      public void func_147354_a(CPacketChatMessage p_147354_1_)
      {
@@ -782,7 +798,7 @@
          if (this.field_147369_b.func_147096_v() == EntityPlayer.EnumChatVisibility.HIDDEN)
          {
              TextComponentTranslation textcomponenttranslation = new TextComponentTranslation("chat.cannotSend", new Object[0]);
-@@ -879,7 +1302,9 @@
+@@ -879,7 +1301,9 @@
              }
              else
              {
@@ -793,7 +809,7 @@
                  this.field_147367_d.func_184103_al().func_148544_a(itextcomponent, false);
              }
  
-@@ -894,13 +1319,67 @@
+@@ -894,13 +1318,67 @@
  
      private void func_147361_d(String p_147361_1_)
      {
@@ -862,7 +878,7 @@
          this.field_147369_b.func_184609_a(p_175087_1_.func_187018_a());
      }
  
-@@ -911,18 +1390,42 @@
+@@ -911,18 +1389,42 @@
  
          switch (p_147357_1_.func_180764_b())
          {
@@ -905,7 +921,7 @@
              case STOP_SLEEPING:
  
                  if (this.field_147369_b.func_70608_bn())
-@@ -1004,6 +1507,37 @@
+@@ -1004,6 +1506,37 @@
  
              if (this.field_147369_b.func_70068_e(entity) < d0)
              {
@@ -943,7 +959,7 @@
                  if (p_147340_1_.func_149565_c() == CPacketUseEntity.Action.INTERACT)
                  {
                      EnumHand enumhand = p_147340_1_.func_186994_b();
-@@ -1012,6 +1546,7 @@
+@@ -1012,6 +1545,7 @@
                  else if (p_147340_1_.func_149565_c() == CPacketUseEntity.Action.INTERACT_AT)
                  {
                      EnumHand enumhand1 = p_147340_1_.func_186994_b();
@@ -951,7 +967,7 @@
                      entity.func_184199_a(this.field_147369_b, p_147340_1_.func_179712_b(), enumhand1);
                  }
                  else if (p_147340_1_.func_149565_c() == CPacketUseEntity.Action.ATTACK)
-@@ -1051,7 +1586,7 @@
+@@ -1051,7 +1585,7 @@
                          return;
                      }
  
@@ -960,7 +976,7 @@
  
                      if (this.field_147367_d.func_71199_h())
                      {
-@@ -1074,7 +1609,6 @@
+@@ -1074,7 +1608,6 @@
          PacketThreadUtil.func_180031_a(p_147356_1_, this, this.field_147369_b.func_71121_q());
          this.field_147369_b.func_71128_l();
      }
@@ -968,20 +984,329 @@
      public void func_147351_a(CPacketClickWindow p_147351_1_)
      {
          PacketThreadUtil.func_180031_a(p_147351_1_, this, this.field_147369_b.func_71121_q());
-@@ -1097,7 +1631,7 @@
+@@ -1095,10 +1628,315 @@
+             }
+             else
              {
-                 ItemStack itemstack2 = this.field_147369_b.field_71070_bA.func_184996_a(p_147351_1_.func_149544_d(), p_147351_1_.func_149543_e(), p_147351_1_.func_186993_f(), this.field_147369_b);
+-                ItemStack itemstack2 = this.field_147369_b.field_71070_bA.func_184996_a(p_147351_1_.func_149544_d(), p_147351_1_.func_149543_e(), p_147351_1_.func_186993_f(), this.field_147369_b);
++                //我们要在这里发送什么事件？
++                //InventoryClickEvent
++                //CraftItemEvent
++                int slot = p_147351_1_.func_149544_d();
++                int keycode = p_147351_1_.func_149543_e();
++                InventoryView BukkitInventoryView = field_147369_b.field_71070_bA.getBukkitView();
++                InventoryType.SlotType BukkitSlotType = CraftInventoryView.getSlotType(BukkitInventoryView,slot);
++                InventoryAction BUKKIT_ACTION = InventoryAction.NOTHING;
++                net.minecraft.inventory.ClickType MCClickType = p_147351_1_.func_186993_f();
++                ClickType BUKKIT_CLICKTYPE = ClickType.UNKNOWN;
++                if(keycode == 0)
++                {
++                    BUKKIT_CLICKTYPE = ClickType.LEFT;
++                }
++                else if(keycode == 1)
++                {
++                    BUKKIT_CLICKTYPE = ClickType.RIGHT;
++                }
++                switch (MCClickType)
++                {
++                    case PICKUP: {
++                        ClickType Press = ClickType.UNKNOWN;
++                        if(keycode == 0)
++                        {
++                            Press = ClickType.LEFT;
++                        }
++                        else if(keycode == 1)
++                        {
++                            Press = ClickType.RIGHT;
++                        }
++                        if(Press == ClickType.LEFT || Press == ClickType.RIGHT )
++                        {
++                            if(slot == -999)
++                            {
++                                BUKKIT_ACTION = Press == ClickType.LEFT ? InventoryAction.DROP_ALL_CURSOR : InventoryAction.DROP_ONE_CURSOR;
++                            }
++                            else
++                            {
++                                if(slot >= 0)
++                                {
++                                    Slot targetSlot = field_147369_b.field_71070_bA.func_75139_a(slot);
++                                    if(targetSlot != null) {
++                                        ItemStack targetItem = field_147369_b.field_71071_by.func_70445_o();// 如果我们点击了物品栏里面的一个存在的位置
++                                        ItemStack cursor = p_147351_1_.func_149546_g();       //这是粘在我们鼠标指针的物品
++                                        if (targetItem.func_190926_b()) {
++                                            if (!cursor.func_190926_b())
++                                                //目标为空
++                                                //此时直接把我们的物品转移
++                                                BUKKIT_ACTION = Press == ClickType.LEFT ? InventoryAction.PLACE_ALL : InventoryAction.PLACE_ONE;
++                                        } else {
++                                            //此时目标处有东西
++                                            //如果目标出的东西能拿出来
++                                            if(targetSlot.func_82869_a(field_147369_b)) {
++                                                //一种情况是，鼠标指针没有粘着东西
++                                                if (cursor.func_190926_b()) {
++                                                    BUKKIT_ACTION = Press == ClickType.LEFT ? PICKUP_ALL : InventoryAction.PICKUP_HALF;
++                                                }
++                                                //另一种情况是，鼠标上有东西
++                                                else
++                                                {
++                                                    //如果是完全一样的东西，能够合并（NBT,META等完全一致，并且可堆叠)
++                                                    if(targetItem.func_77969_a(cursor) && ItemStack.func_77970_a(targetItem,cursor))
++                                                    {
++                                                        //比较手头物品和目标物品的数量，以及最大堆叠数
++                                                        //
++                                                        int targetMaxStack = targetItem.func_77976_d();
++                                                        int cursorMaxStack = cursor.func_77976_d();
++                                                        int remain =  targetMaxStack - targetItem.func_190916_E();
++                                                        int place = Press == ClickType.LEFT ? cursor.func_190916_E() : 1;
++                                                        place = Math.min(place, cursor.func_77976_d() - cursor.func_190916_E());
++                                                        place = Math.min(place, remain);
++                                                        if(place == 1)
++                                                        {
++                                                            //只放一个
++                                                            BUKKIT_ACTION = InventoryAction.PLACE_ONE;
++                                                        }
++                                                        else if(place > 1)
++                                                        {
++                                                            //如果放置数量超过了剩余，放一部分，否则放所有
++                                                            BUKKIT_ACTION = place >= cursor.func_190916_E() ? InventoryAction.PLACE_ALL : InventoryAction.PLACE_SOME;
++                                                        }
++                                                        else if(place < 0)
++                                                        {
++                                                            //出现了溢出时，如果正好目标比鼠标大1，则鼠标从目标取1个，否则取一些
++                                                            BUKKIT_ACTION = place != -1 ? InventoryAction.PICKUP_SOME : InventoryAction.PICKUP_ONE;
++                                                        }
++                                                    }
++                                                    else
++                                                    {
++                                                        BUKKIT_ACTION = InventoryAction.SWAP_WITH_CURSOR;
++                                                    }
++                                                }
++                                            }
  
 -                if (ItemStack.func_77989_b(p_147351_1_.func_149546_g(), itemstack2))
-+                if (ItemStack.areItemStacksEqualUsingNBTShareTag(p_147351_1_.func_149546_g(), itemstack2))
++                                        }
++                                    }
++                                }
++                            }
++                        }
++                    };break;
++                    case PICKUP_ALL:
++                    {
++                        //双击鼠标左键使得物品栏所有的同类物品聚集到cursor
++                        //检查物品栏有没有同类物品，有则action为collect_to_cursor
++                        ItemStack cursor = p_147351_1_.func_149546_g();
++                        org.bukkit.Material itemMaterial = org.bukkit.Material.getMaterial(Item.func_150891_b(cursor.func_77973_b()));
++                        if(BukkitInventoryView.getTopInventory().contains(itemMaterial) && BukkitInventoryView.getBottomInventory().contains(itemMaterial))
++                        {
++                            BUKKIT_ACTION = InventoryAction.COLLECT_TO_CURSOR;
++                            BUKKIT_CLICKTYPE = ClickType.DOUBLE_CLICK;
++                        }
++                        break;
++                    }
++                    case SWAP:
++                    {
++                        BUKKIT_CLICKTYPE = ClickType.NUMBER_KEY;
++                        //包括两种可能，一种是在物品栏交换两个物品（指针和目标），一种是将指针的物品转移到另一处
++                        ItemStack cursor = p_147351_1_.func_149546_g();
++                        //另外swap这个动作不存在鼠标左右键点，0-8对应着物品栏列
++                        Slot clicked = field_147369_b.field_71070_bA.func_75139_a(slot);
++                        if(clicked.func_82869_a(field_147369_b))
++                        {
++                            //如果有东西
++                            //如果slot可操作
++                            ItemStack target = field_147369_b.field_71071_by.func_70301_a(keycode);
++                            if(clicked.func_75216_d())
++                            {
++                                if(!target.func_190926_b() || (clicked.field_75224_c == field_147369_b.field_71071_by) && clicked.func_75214_a(cursor))
++                                {
++                                    BUKKIT_ACTION = InventoryAction.HOTBAR_SWAP;
++                                }
++                                else
++                                {
++                                    BUKKIT_ACTION = InventoryAction.HOTBAR_MOVE_AND_READD;
++                                }
++                            }
++                            else if(!clicked.func_75216_d() && !target.func_190926_b() && clicked.func_75214_a(cursor))
++                            {
++                                BUKKIT_ACTION = InventoryAction.HOTBAR_SWAP;
++                            }
++                        }
++                        //
++                    }break;
++                    case CLONE:{
++                        //一个然并卵的操作
++                        //按住中键划过可以得到满的itemstack
++                        //但随后会被刷掉
++                        //(创造有效)
++                        if(keycode == 2)
++                        {
++                            BUKKIT_CLICKTYPE = ClickType.MIDDLE;
++                            //操作不能出窗体
++                            if(keycode != -999)
++                            {
++                                ItemStack stack = p_147351_1_.func_149546_g();
++                                Slot clicked = field_147369_b.field_71070_bA.func_75139_a(slot);
++                                if(clicked != null && field_147369_b.field_71075_bZ.field_75098_d && stack != null && !stack.func_190926_b())
++                                {
++                                    BUKKIT_ACTION = InventoryAction.CLONE_STACK;
++                                }
++                            }
++                        }
++                        break;
++                    }
++                    case THROW:
++                    {
++                        //扔东西，左键是一起，右键一个个
++                        if(slot > 0)
++                        {
++                            Slot clicked = field_147369_b.field_71070_bA.func_75139_a(slot);
++                            if(keycode == 0)
++                            {
++                                BUKKIT_CLICKTYPE = ClickType.DROP;
++                                if(clicked != null && clicked.func_82869_a(field_147369_b) && !clicked.func_75211_c().func_190926_b() && clicked.func_75211_c().func_77973_b() != Item.func_150898_a(Blocks.field_150350_a))
++                                {
++                                    //当这个物品不是空气，不是0堆叠并且slot可以访问
++                                    BUKKIT_ACTION = InventoryAction.DROP_ALL_SLOT;
++                                }
++                            }
++                            else if(keycode == 1)
++                            {
++                                BUKKIT_CLICKTYPE = ClickType.CONTROL_DROP;
++                                if(clicked != null && clicked.func_82869_a(field_147369_b) && !clicked.func_75211_c().func_190926_b() && clicked.func_75211_c().func_77973_b() != Item.func_150898_a(Blocks.field_150350_a))
++                                {
++                                    //当这个物品不是空气，不是0堆叠并且slot可以访问
++                                    BUKKIT_ACTION = InventoryAction.DROP_ONE_SLOT;
++                                }
++                            }
++                        }
++                        break;
++                    }
++                    case QUICK_CRAFT:{
++                        //快速合成，直接跳过，就是上面的ItemStack2
++                        //没有对应的bukkit Inventory action
++                    }break;
++                    case QUICK_MOVE:{
++                        if (keycode == 0 || keycode == 1) {
++                            if(keycode == 0)
++                            {
++                                BUKKIT_CLICKTYPE = ClickType.SHIFT_LEFT;
++                            }
++                            else
++                            {
++                                BUKKIT_CLICKTYPE = ClickType.SHIFT_RIGHT;
++                            }
++                            if (p_147351_1_.func_149544_d() < 0) {
++                                BUKKIT_ACTION = InventoryAction.NOTHING;
++                            } else {
++                                Slot clicked = this.field_147369_b.field_71070_bA.func_75139_a(slot);
++                                if (clicked != null && clicked.func_82869_a(this.field_147369_b) && clicked.func_75216_d()) {
++                                    BUKKIT_ACTION = InventoryAction.MOVE_TO_OTHER_INVENTORY;
++                                }
++                            }
++                        }
++                    }break;
++                }
++                InventoryClickEvent event = null;
++                if(BUKKIT_CLICKTYPE != ClickType.UNKNOWN)
                  {
++                    if(BUKKIT_ACTION != InventoryAction.UNKNOWN)
++                    {
++                        if(p_147351_1_.func_186993_f() != net.minecraft.inventory.ClickType.QUICK_CRAFT)
++                        {
++
++                            if(BUKKIT_CLICKTYPE == ClickType.NUMBER_KEY)
++                            {
++                                event = new InventoryClickEvent(BukkitInventoryView,BukkitSlotType,slot,BUKKIT_CLICKTYPE,BUKKIT_ACTION,keycode);
++                            }
++                            else
++                            {
++                                event = new InventoryClickEvent(BukkitInventoryView,BukkitSlotType,slot,BUKKIT_CLICKTYPE,BUKKIT_ACTION);
++                            }
++                            //首先建立一个简单的click
++                            //检查有没有合成表，有的话改作CraftItemEvent
++                            org.bukkit.inventory.Inventory top = BukkitInventoryView.getTopInventory();
++                            if(slot == 0 && top instanceof CraftingInventory) {
++                                org.bukkit.inventory.Recipe recipe = ((CraftingInventory) top).getRecipe();
++                                if(recipe != null)
++                                {
++                                    if(BUKKIT_CLICKTYPE == ClickType.NUMBER_KEY)
++                                    {
++                                        event = new CraftItemEvent(recipe,BukkitInventoryView,BukkitSlotType,slot,BUKKIT_CLICKTYPE,BUKKIT_ACTION,keycode);
++                                    }
++                                    else
++                                    {
++                                        event = new CraftItemEvent(recipe,BukkitInventoryView,BukkitSlotType,slot,BUKKIT_CLICKTYPE,BUKKIT_ACTION,keycode);
++                                    }
++                                }
++                            }
++                            Container old = field_147369_b.field_71070_bA;
++                            Bukkit.getServer().getPluginManager().callEvent(event);
++                            if(field_147369_b.field_71070_bA != old)
++                            {
++                                return;
++                            }
++                        }
++                    }
++                }
++                if(event != null)
++                {
++                    switch (event.getResult())
++                    {
++                        //暂时不写发包
++                        case ALLOW:
++                        case DEFAULT:break;
++                        case DENY: {
++                            // Modified other slots
++                            switch (BUKKIT_ACTION) {
++                                case PICKUP_ALL:
++                                case MOVE_TO_OTHER_INVENTORY:
++                                case HOTBAR_MOVE_AND_READD:
++                                case HOTBAR_SWAP:
++                                case COLLECT_TO_CURSOR:
++                                case UNKNOWN:
++                                    this.field_147369_b.func_71120_a(this.field_147369_b.field_71070_bA);
++                                    break;
++                                // Modified cursor and clicked
++                                case PICKUP_SOME:
++                                case PICKUP_HALF:
++                                case PICKUP_ONE:
++                                case PLACE_ALL:
++                                case PLACE_SOME:
++                                case PLACE_ONE:
++                                case SWAP_WITH_CURSOR:
++                                    this.field_147369_b.field_71135_a.func_147359_a(new SPacketSetSlot(-1, -1, this.field_147369_b.field_71071_by.func_70445_o()));
++                                    this.field_147369_b.field_71135_a.func_147359_a(new SPacketSetSlot(this.field_147369_b.field_71070_bA.field_75152_c,slot, this.field_147369_b.field_71070_bA.func_75139_a(slot).func_75211_c()));
++                                    break;
++                                // Modified clicked only
++                                case DROP_ALL_SLOT:
++                                case DROP_ONE_SLOT:
++                                    this.field_147369_b.field_71135_a.func_147359_a(new SPacketSetSlot(this.field_147369_b.field_71070_bA.field_75152_c, slot, this.field_147369_b.field_71070_bA.func_75139_a(slot).func_75211_c()));
++                                    break;
++                                // Modified cursor only
++                                case DROP_ALL_CURSOR:
++                                case DROP_ONE_CURSOR:
++                                case CLONE_STACK:
++                                    this.field_147369_b.field_71135_a.func_147359_a(new SPacketSetSlot(-1, -1, this.field_147369_b.field_71071_by.func_70445_o()));
++                                    break;
++                                // Nothing
++                                case NOTHING:
++                                    break;
++                            }
++                        }
++                        return;
++                    }
++                }
++                ItemStack itemstack2 = this.field_147369_b.field_71070_bA.func_184996_a(p_147351_1_.func_149544_d(), p_147351_1_.func_149543_e(), p_147351_1_.func_186993_f(), this.field_147369_b);
++                if (ItemStack.areItemStacksEqualUsingNBTShareTag(p_147351_1_.func_149546_g(), itemstack2))
++                {
                      this.field_147369_b.field_71135_a.func_147359_a(new SPacketConfirmTransaction(p_147351_1_.func_149548_c(), p_147351_1_.func_149547_f(), true));
                      this.field_147369_b.field_71137_h = true;
-@@ -1125,6 +1659,329 @@
+                     this.field_147369_b.field_71070_bA.func_75142_b();
+@@ -1125,6 +1963,368 @@
          }
      }
  
-+    public void original_processClickWindow(CPacketClickWindow packetIn)
++    public void discarded_processClickWindow(CPacketClickWindow packetIn)
 +    {
 +
 +        PacketThreadUtil.func_180031_a(packetIn, this, this.field_147369_b.func_71121_q());
@@ -1015,39 +1340,61 @@
 +                InventoryClickEvent event;
 +                ClickType click = ClickType.UNKNOWN;
 +                InventoryAction action = InventoryAction.UNKNOWN;
-+
++                int buttonUsed = packetIn.func_149543_e();  //0 for leftclick 1 for right, 2 for middle, other wtf
 +                ItemStack itemstack = ItemStack.field_190927_a;
-+
++                int slotID = packetIn.func_149544_d();  //封包传入的slot编号,slot可以是单个栏，可以试多个栏的整体，用getStackInSlot(idx)获取，比如按E有很多slot，包括合成输入，输出，装备，左手，快捷栏，主物品栏
 +                switch (packetIn.func_186993_f()) {
 +                    case PICKUP:
-+                        if (packetIn.func_149543_e() == 0) {
++                        //从物品栏里面拿东西出来
++                        if (buttonUsed == 0) {
 +                            click = ClickType.LEFT;
-+                        } else if (packetIn.func_149543_e() == 1) {
++                        } else if (buttonUsed == 1) {
 +                            click = ClickType.RIGHT;
 +                        }
-+                        if (packetIn.func_149543_e() == 0 || packetIn.func_149543_e() == 1) {
++                        //左键点击还是右键
++                        if (click  == ClickType.LEFT || click == ClickType.RIGHT){ //（只接受左键或者右键，中间不算）
++                            //if (packetIn.getUsedButton() == 0 || packetIn.getUsedButton() == 1) {
 +                            action = InventoryAction.NOTHING; // Don't want to repeat ourselves
-+                            if (packetIn.func_149544_d() == -999) {
++                            //先将action 设定为Nothing
++                            if (slotID == -999) {
++                                //如果传入包的slotID是-999的（也就是丢出去？）
 +                                if (!field_147369_b.field_71071_by.func_70445_o().func_190926_b()) {
-+                                    action = packetIn.func_149543_e() == 0 ? InventoryAction.DROP_ALL_CURSOR : InventoryAction.DROP_ONE_CURSOR;
++                                    //如果玩家的物品栏不是空
++                                    //如果按左键就是把整个物品栏丢了，否则就是只丢一个
++                                    action = click == ClickType.LEFT ? InventoryAction.DROP_ALL_CURSOR : InventoryAction.DROP_ONE_CURSOR;
 +                                }
 +                            } else if (packetIn.func_149544_d() < 0)  {
++                                //无效的ID，放弃
 +                                action = InventoryAction.NOTHING;
 +                            } else {
-+                                Slot slot = this.field_147369_b.field_71070_bA.func_75139_a(packetIn.func_149544_d());
++                                // 0 - 45之间的有效位置
++                                Slot slot = this.field_147369_b.field_71070_bA.func_75139_a(slotID);
++                                //如果这个slot是由东西的
 +                                if (slot != null) {
 +                                    ItemStack clickedItem = slot.func_75211_c();
++                                    //点击目标出的物品
 +                                    ItemStack cursor = field_147369_b.field_71071_by.func_70445_o();
++                                    //拿起来的物品
 +                                    if (clickedItem.func_190926_b()) {
++                                        //如果目标slot是空的
 +                                        if (!cursor.func_190926_b()) {
-+                                            action = packetIn.func_149543_e() == 0 ? InventoryAction.PLACE_ALL : InventoryAction.PLACE_ONE;
++                                            //如果拿起来了一个物品
++                                            //左键是放一个，右键放所有
++                                            action = click == ClickType.LEFT ? InventoryAction.PLACE_ALL : InventoryAction.PLACE_ONE;
 +                                        }
 +                                    } else if (slot.func_82869_a(field_147369_b)) {
++                                        //当你可以把slot的东西拿走的时候（有的slot的东西不能拿，比如商人的展示slot）
++                                        //这里是将拿起的物品放入目标的物品栏，同时将目标物品栏的东西拿起来
 +                                        if (cursor.func_190926_b()) {
-+                                            action = packetIn.func_149543_e() == 0 ? InventoryAction.PICKUP_ALL : InventoryAction.PICKUP_HALF;
++                                            //如果实际上你什么都没拿起来（cursor空的）
++                                            //捡起目标物品栏，左键全拿右键一半
++                                            action = click == ClickType.LEFT ? PICKUP_ALL : InventoryAction.PICKUP_HALF;
 +                                        } else if (slot.func_75214_a(cursor)) {
++                                            //isItemValid -> 你的东西能放到slot里面，比如熔炉和工作台的输出就不能把东西放回去
 +                                            if (clickedItem.func_77969_a(cursor) && ItemStack.func_77970_a(clickedItem, cursor)) {
-+                                                int toPlace = packetIn.func_149543_e() == 0 ? cursor.func_190916_E() : 1;
++                                                //如果拿起的东西和目标的物品和meta/nbt完全一致
++                                                //尝试将手上的东西填入物品栏
++                                                int toPlace = click == ClickType.LEFT ? cursor.func_190916_E() : 1;
 +                                                toPlace = Math.min(toPlace, clickedItem.func_77976_d() - clickedItem.func_190916_E());
 +                                                toPlace = Math.min(toPlace, slot.field_75224_c.func_70297_j_() - clickedItem.func_190916_E());
 +                                                if (toPlace == 1) {
@@ -1055,18 +1402,21 @@
 +                                                } else if (toPlace == cursor.func_190916_E()) {
 +                                                    action = InventoryAction.PLACE_ALL;
 +                                                } else if (toPlace < 0) {
++                                                    //如果你手上的东西超出了物品栏的限制
 +                                                    action = toPlace != -1 ? InventoryAction.PICKUP_SOME : InventoryAction.PICKUP_ONE; // this happens with oversized stacks
 +                                                } else if (toPlace != 0) {
 +                                                    action = InventoryAction.PLACE_SOME;
 +                                                }
 +                                            } else if (cursor.func_190916_E() <= slot.func_75219_a()) {
++                                                //交换手上的和物品栏的
 +                                                action = InventoryAction.SWAP_WITH_CURSOR;
 +                                            }
 +                                        } else if (cursor.func_77973_b() == clickedItem.func_77973_b() && (!cursor.func_77981_g() || cursor.func_77960_j() == clickedItem.func_77960_j()) && ItemStack.func_77970_a(cursor, clickedItem)) {
 +                                            if (clickedItem.func_190916_E() >= 0) {
++                                                //如果玩家无法放回去，就取出来吧
 +                                                if (clickedItem.func_190916_E() + cursor.func_190916_E() <= cursor.func_77976_d()) {
 +                                                    // As of 1.5, this is result slots only
-+                                                    action = InventoryAction.PICKUP_ALL;
++                                                    action = PICKUP_ALL;
 +                                                }
 +                                            }
 +                                        }
@@ -1077,17 +1427,20 @@
 +                        break;
 +                    // TODO check on updates
 +                    case QUICK_MOVE:
-+                        if (packetIn.func_149543_e() == 0) {
++                        //在slot长按住鼠标拖拽，比如工作台合成
++                        if (buttonUsed == 0) {
 +                            click = ClickType.SHIFT_LEFT;
-+                        } else if (packetIn.func_149543_e() == 1) {
++                        } else if (buttonUsed == 1) {
 +                            click = ClickType.SHIFT_RIGHT;
 +                        }
-+                        if (packetIn.func_149543_e() == 0 || packetIn.func_149543_e() == 1) {
-+                            if (packetIn.func_149544_d() < 0) {
++                        if (click == ClickType.LEFT || click == ClickType.RIGHT) {
++                            if (slotID < 0) {
++                                //小于0什么都不做
 +                                action = InventoryAction.NOTHING;
 +                            } else {
-+                                Slot slot = this.field_147369_b.field_71070_bA.func_75139_a(packetIn.func_149544_d());
++                                Slot slot = this.field_147369_b.field_71070_bA.func_75139_a(slotID);
 +                                if (slot != null && slot.func_82869_a(this.field_147369_b) && slot.func_75216_d()) {
++                                    //当slot存在且不是空的，能拿走，并且和玩家的物品栏相同
 +                                    action = InventoryAction.MOVE_TO_OTHER_INVENTORY;
 +                                } else {
 +                                    action = InventoryAction.NOTHING;
@@ -1096,19 +1449,28 @@
 +                        }
 +                        break;
 +                    case SWAP:
-+                        if (packetIn.func_149543_e() >= 0 && packetIn.func_149543_e() < 9) {
++                        //交换物品
++                        //按下了0-9
++                        if (buttonUsed >= 0 && buttonUsed < 9) {
 +                            click = ClickType.NUMBER_KEY;
-+                            Slot clickedSlot = this.field_147369_b.field_71070_bA.func_75139_a(packetIn.func_149544_d());
++                            //得到点击的slot，此时我们手上是已经有了东西
++                            Slot clickedSlot = this.field_147369_b.field_71070_bA.func_75139_a(slotID);
 +                            if (clickedSlot.func_82869_a(field_147369_b)) {
-+                                ItemStack hotbar = this.field_147369_b.field_71071_by.func_70301_a(packetIn.func_149543_e());
++                                //如果可以拿出来
++                                ItemStack hotbar = this.field_147369_b.field_71071_by.func_70301_a(buttonUsed);  //这说明主物品栏和快捷栏共是4个slot，0-3
++                                //如果可以完成交换
 +                                boolean canCleanSwap = hotbar.func_190926_b() || (clickedSlot.field_75224_c == field_147369_b.field_71071_by && clickedSlot.func_75214_a(hotbar)); // the slot will accept the hotbar item
 +                                if (clickedSlot.func_75216_d()) {
++                                    //点击的物品栏有物品
 +                                    if (canCleanSwap) {
++                                        //交换快捷栏物品
 +                                        action = InventoryAction.HOTBAR_SWAP;
 +                                    } else {
++                                        //否则移动其他栏位
 +                                        action = InventoryAction.HOTBAR_MOVE_AND_READD;
 +                                    }
 +                                } else if (!clickedSlot.func_75216_d() && !hotbar.func_190926_b() && clickedSlot.func_75214_a(hotbar)) {
++                                    //
 +                                    action = InventoryAction.HOTBAR_SWAP;
 +                                } else {
 +                                    action = InventoryAction.NOTHING;
@@ -1119,6 +1481,7 @@
 +                        }
 +                        break;
 +                    case CLONE:
++                        //按下中键可以刷出物品栏，然并卵，松开就没了
 +                        if (packetIn.func_149543_e() == 2) {
 +                            click = ClickType.MIDDLE;
 +                            if (packetIn.func_149544_d() == -999) {
@@ -1137,6 +1500,7 @@
 +                        }
 +                        break;
 +                    case THROW:
++                        //扔出去
 +                        if (packetIn.func_149544_d() >= 0) {
 +                            if (packetIn.func_149543_e() == 0) {
 +                                click = ClickType.DROP;
@@ -1165,9 +1529,11 @@
 +                        }
 +                        break;
 +                    case QUICK_CRAFT:
++                        //快速合成（拖动）
 +                        itemstack = this.field_147369_b.field_71070_bA.func_184996_a(packetIn.func_149544_d(), packetIn.func_149543_e(), packetIn.func_186993_f(), this.field_147369_b);
 +                        break;
 +                    case PICKUP_ALL:
++                        //双击，直接捡起所有物品栏同类物品
 +                        click = ClickType.DOUBLE_CLICK;
 +                        action = InventoryAction.NOTHING;
 +                        if (packetIn.func_149544_d() >= 0 && !this.field_147369_b.field_71071_by.func_70445_o().func_190926_b()) {
@@ -1300,20 +1666,18 @@
 +                }
 +            }
 +        }
-+
-+
 +    }
 +
      public void func_147338_a(CPacketEnchantItem p_147338_1_)
      {
          PacketThreadUtil.func_180031_a(p_147338_1_, this, this.field_147369_b.func_71121_q());
-@@ -1143,49 +2000,88 @@
+@@ -1143,49 +2343,88 @@
  
          if (this.field_147369_b.field_71134_c.func_73083_d())
          {
 -            boolean flag = p_147344_1_.func_149627_c() < 0;
 -            ItemStack itemstack = p_147344_1_.func_149625_d();
-+            boolean slotIdInvalid = p_147344_1_.func_149627_c() <= 0 && p_147344_1_.func_149627_c() > 45;
++            boolean slotIdInvalid = p_147344_1_.func_149627_c() <= 0 || p_147344_1_.func_149627_c() > 45;
 +            ItemStack itemIn = p_147344_1_.func_149625_d();
  
 -            if (!itemstack.func_190926_b() && itemstack.func_77942_o() && itemstack.func_77978_p().func_150297_b("BlockEntityTag", 10))
@@ -1367,7 +1731,7 @@
 +                        type = InventoryType.SlotType.CONTAINER;
 +                    }
 +                }
-+                InventoryCreativeEvent event = new InventoryCreativeEvent(inventory, type, slotIdInvalid ? -999 : p_147344_1_.func_149627_c(), item);
++                InventoryCreativeEvent event = new InventoryCreativeEvent(inventory, type, !slotIdInvalid ? -999 : p_147344_1_.func_149627_c(), item);
 +                server.getPluginManager().callEvent(event);
 +
 +                itemIn = CraftItemStack.asNMSCopy(event.getCursor());
@@ -1414,7 +1778,7 @@
  
                  if (entityitem != null)
                  {
-@@ -1233,11 +2129,25 @@
+@@ -1233,11 +2472,25 @@
  
              String[] astring = p_147343_1_.func_187017_b();
  
@@ -1443,7 +1807,7 @@
              tileentitysign.func_70296_d();
              worldserver.func_184138_a(blockpos, iblockstate, iblockstate, 3);
          }
-@@ -1260,12 +2170,28 @@
+@@ -1260,12 +2513,28 @@
      public void func_147348_a(CPacketPlayerAbilities p_147348_1_)
      {
          PacketThreadUtil.func_180031_a(p_147348_1_, this, this.field_147369_b.func_71121_q());
@@ -1473,7 +1837,7 @@
          List<String> list = Lists.<String>newArrayList();
  
          for (String s : this.field_147367_d.func_184104_a(this.field_147369_b, p_147341_1_.func_149419_c(), p_147341_1_.func_179709_b(), p_147341_1_.func_186989_c()))
-@@ -1281,406 +2207,390 @@
+@@ -1281,406 +2550,390 @@
          PacketThreadUtil.func_180031_a(p_147352_1_, this, this.field_147369_b.func_71121_q());
          this.field_147369_b.func_147100_a(p_147352_1_);
      }

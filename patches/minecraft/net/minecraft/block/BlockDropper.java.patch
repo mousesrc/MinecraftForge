@@ -1,11 +1,60 @@
 --- ../src-base/minecraft/net/minecraft/block/BlockDropper.java
 +++ ../src-work/minecraft/net/minecraft/block/BlockDropper.java
-@@ -43,7 +43,7 @@
+@@ -3,6 +3,7 @@
+ import net.minecraft.dispenser.BehaviorDefaultDispenseItem;
+ import net.minecraft.dispenser.IBehaviorDispenseItem;
+ import net.minecraft.inventory.IInventory;
++import net.minecraft.inventory.InventoryLargeChest;
+ import net.minecraft.item.ItemStack;
+ import net.minecraft.tileentity.TileEntity;
+ import net.minecraft.tileentity.TileEntityDispenser;
+@@ -11,6 +12,11 @@
+ import net.minecraft.util.EnumFacing;
+ import net.minecraft.util.math.BlockPos;
+ import net.minecraft.world.World;
++import net.minecraftforge.items.VanillaInventoryCodeHooks;
++import org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.inventory.InventoryMoveItemEvent;
++import org.bukkit.inventory.Inventory;
+ 
+ public class BlockDropper extends BlockDispenser
+ {
+@@ -43,7 +49,7 @@
              {
                  ItemStack itemstack = tileentitydispenser.func_70301_a(i);
  
 -                if (!itemstack.func_190926_b())
-+                if (!itemstack.func_190926_b() && net.minecraftforge.items.VanillaInventoryCodeHooks.dropperInsertHook(p_176439_1_, p_176439_2_, tileentitydispenser, i, itemstack))
++                if (!itemstack.func_190926_b() && VanillaInventoryCodeHooks.dropperInsertHook(p_176439_1_, p_176439_2_, tileentitydispenser, i, itemstack))
                  {
                      EnumFacing enumfacing = (EnumFacing)p_176439_1_.func_180495_p(p_176439_2_).func_177229_b(field_176441_a);
                      BlockPos blockpos = p_176439_2_.func_177972_a(enumfacing);
+@@ -56,10 +62,25 @@
+                     }
+                     else
+                     {
+-                        itemstack1 = TileEntityHopper.func_174918_a(tileentitydispenser, iinventory, itemstack.func_77946_l().func_77979_a(1), enumfacing.func_176734_d());
++                        // CraftBukkit start - Fire event when pushing items into other inventories
++                        CraftItemStack oitemstack = CraftItemStack.asCraftMirror(itemstack.func_77946_l().func_77979_a(1));
+ 
+-                        if (itemstack1.func_190926_b())
+-                        {
++                        Inventory destinationInventory;
++                        // Have to special case large chests as they work oddly
++                        if (iinventory instanceof InventoryLargeChest) {
++                            destinationInventory = new CraftInventoryDoubleChest((InventoryLargeChest) iinventory);
++                        } else {
++                            destinationInventory = iinventory.getOwner().getInventory();
++                        }
++
++                        InventoryMoveItemEvent event = new InventoryMoveItemEvent(tileentitydispenser.getOwner().getInventory(), oitemstack.clone(), destinationInventory, true);
++                        p_176439_1_.getServer().getPluginManager().callEvent(event);
++                        if (event.isCancelled()) {
++                            return;
++                        }
++                        itemstack1 = TileEntityHopper.func_174918_a(tileentitydispenser, iinventory, CraftItemStack.asNMSCopy(event.getItem()), enumfacing.func_176734_d());
++                        if (event.getItem().equals(oitemstack) && itemstack1.func_190926_b()) {
++                            // CraftBukkit end
+                             itemstack1 = itemstack.func_77946_l();
+                             itemstack1.func_190918_g(1);
+                         }

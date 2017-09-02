@@ -239,7 +239,7 @@
 +                    for (Object obj : list) {
 +                        EnchantmentData instance = (EnchantmentData) obj;
 +                        //bukkit getEnchantmentByID returns null??
-+                        enchants.put(new EnchantmentWrapper(Enchantment.func_185258_b(instance.field_76302_b)), instance.field_76303_c);
++                        enchants.put(org.bukkit.enchantments.Enchantment.getById(Enchantment.func_185258_b(instance.field_76302_b)), instance.field_76303_c);
 +                    }
 +                    CraftItemStack item = CraftItemStack.asCraftMirror(itemToEnchant);
  

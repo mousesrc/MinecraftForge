@@ -1,6 +1,34 @@
 --- ../src-base/minecraft/net/minecraft/block/BlockTrapDoor.java
 +++ ../src-work/minecraft/net/minecraft/block/BlockTrapDoor.java
-@@ -244,6 +244,18 @@
+@@ -23,6 +23,7 @@
+ import net.minecraft.world.World;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
++import org.bukkit.event.block.BlockRedstoneEvent;
+ 
+ public class BlockTrapDoor extends Block
+ {
+@@ -129,6 +130,19 @@
+ 
+             if (flag || p_189540_4_.func_176223_P().func_185897_m())
+             {
++                // CraftBukkit start
++                org.bukkit.World bworld = p_189540_2_.getWorld();
++                org.bukkit.block.Block bblock = bworld.getBlockAt(p_189540_3_.func_177958_n(), p_189540_3_.func_177956_o(), p_189540_3_.func_177952_p());
++
++                int power = bblock.getBlockPower();
++                int oldPower = (Boolean) p_189540_1_.func_177229_b(field_176283_b) ? 15 : 0;
++
++                if (oldPower == 0 ^ power == 0 || p_189540_4_.func_176223_P().func_185897_m()) {
++                    BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(bblock, oldPower, power);
++                    p_189540_2_.getServer().getPluginManager().callEvent(eventRedstone);
++                    flag = eventRedstone.getNewCurrent() > 0;
++                }
++                // CraftBukkit end
+                 boolean flag1 = ((Boolean)p_189540_1_.func_177229_b(field_176283_b)).booleanValue();
+ 
+                 if (flag1 != flag)
+@@ -244,6 +258,18 @@
          return new BlockStateContainer(this, new IProperty[] {field_176284_a, field_176283_b, field_176285_M});
      }
  

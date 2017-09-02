@@ -1,15 +1,49 @@
 --- ../src-base/minecraft/net/minecraft/block/BlockFarmland.java
 +++ ../src-work/minecraft/net/minecraft/block/BlockFarmland.java
-@@ -70,7 +70,7 @@
+@@ -18,6 +18,10 @@
+ import net.minecraft.world.World;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.block.Action;
++import org.bukkit.event.entity.EntityInteractEvent;
+ 
+ public class BlockFarmland extends Block
+ {
+@@ -70,12 +74,29 @@
  
      public void func_180658_a(World p_180658_1_, BlockPos p_180658_2_, Entity p_180658_3_, float p_180658_4_)
      {
 -        if (!p_180658_1_.field_72995_K && p_180658_1_.field_73012_v.nextFloat() < p_180658_4_ - 0.5F && p_180658_3_ instanceof EntityLivingBase && (p_180658_3_ instanceof EntityPlayer || p_180658_1_.func_82736_K().func_82766_b("mobGriefing")) && p_180658_3_.field_70130_N * p_180658_3_.field_70130_N * p_180658_3_.field_70131_O > 0.512F)
++        super.func_180658_a(p_180658_1_, p_180658_2_, p_180658_3_, p_180658_4_);
 +        if (!p_180658_1_.field_72995_K && p_180658_3_.canTrample(p_180658_1_, this, p_180658_2_, p_180658_4_)) // Forge: Move logic to Entity#canTrample
          {
++            // CraftBukkit start - Interact soil
++            Cancellable cancellable;
++            if (p_180658_3_ instanceof EntityPlayer) {
++                cancellable = CraftEventFactory.callPlayerInteractEvent((EntityPlayer) p_180658_3_, Action.PHYSICAL, p_180658_2_, null, null, null);
++            } else {
++                cancellable = new EntityInteractEvent(p_180658_3_.getBukkitEntity(), p_180658_1_.getWorld().getBlockAt(p_180658_2_.func_177958_n(), p_180658_2_.func_177956_o(), p_180658_2_.func_177952_p()));
++                p_180658_1_.getServer().getPluginManager().callEvent((EntityInteractEvent) cancellable);
++            }
++
++            if (cancellable.isCancelled()) {
++                return;
++            }
++
++            if (CraftEventFactory.callEntityChangeBlockEvent(p_180658_3_, p_180658_2_, Blocks.field_150346_d, 0).isCancelled()) {
++                return;
++            }
++            // CraftBukkit end
              this.func_190970_b(p_180658_1_, p_180658_2_);
          }
-@@ -93,7 +93,7 @@
+ 
+-        super.func_180658_a(p_180658_1_, p_180658_2_, p_180658_3_, p_180658_4_);
+     }
+ 
+     private void func_190970_b(World p_190970_1_, BlockPos p_190970_2_)
+@@ -93,7 +114,7 @@
      private boolean func_176529_d(World p_176529_1_, BlockPos p_176529_2_)
      {
          Block block = p_176529_1_.func_180495_p(p_176529_2_.func_177984_a()).func_177230_c();

@@ -1,0 +1,19 @@
+--- ../src-base/minecraft/net/minecraft/block/BlockDispenser.java
++++ ../src-work/minecraft/net/minecraft/block/BlockDispenser.java
+@@ -38,7 +38,7 @@
+     public static final PropertyBool field_176440_b = PropertyBool.func_177716_a("triggered");
+     public static final RegistryDefaulted<Item, IBehaviorDispenseItem> field_149943_a = new RegistryDefaulted(new BehaviorDefaultDispenseItem());
+     protected Random field_149942_b = new Random();
+-
++    public static boolean eventFired = false; // CraftBukkit
+     protected BlockDispenser()
+     {
+         super(Material.field_151576_e);
+@@ -140,6 +140,7 @@
+ 
+                 if (ibehaviordispenseitem != IBehaviorDispenseItem.field_82483_a)
+                 {
++                    eventFired = false; // CraftBukkit - reset event status
+                     tileentitydispenser.func_70299_a(i, ibehaviordispenseitem.func_82482_a(blocksourceimpl, itemstack));
+                 }
+             }

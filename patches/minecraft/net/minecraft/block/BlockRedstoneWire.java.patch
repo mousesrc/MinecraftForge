@@ -1,6 +1,14 @@
 --- ../src-base/minecraft/net/minecraft/block/BlockRedstoneWire.java
 +++ ../src-work/minecraft/net/minecraft/block/BlockRedstoneWire.java
-@@ -98,15 +98,15 @@
+@@ -30,6 +30,7 @@
+ import net.minecraft.world.World;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
++import org.bukkit.event.block.BlockRedstoneEvent;
+ 
+ public class BlockRedstoneWire extends Block
+ {
+@@ -98,15 +99,15 @@
          BlockPos blockpos = p_176341_2_.func_177972_a(p_176341_3_);
          IBlockState iblockstate = p_176341_1_.func_180495_p(p_176341_2_.func_177972_a(p_176341_3_));
  
@@ -19,7 +27,23 @@
                  {
                      if (iblockstate.func_185898_k())
                      {
-@@ -408,21 +408,16 @@
+@@ -217,7 +218,15 @@
+         {
+             j = k;
+         }
++        // CraftBukkit start
++        if (i != j) {
++            BlockRedstoneEvent event = new BlockRedstoneEvent(p_176345_1_.getWorld().getBlockAt(p_176345_2_.func_177958_n(), p_176345_2_.func_177956_o(), p_176345_2_.func_177952_p()), i, j);
++            p_176345_1_.getServer().getPluginManager().callEvent(event);
+ 
++            j = event.getNewCurrent();
++        }
++        // CraftBukkit end
++
+         if (i != j)
+         {
+             p_176345_4_ = p_176345_4_.func_177226_a(field_176351_O, Integer.valueOf(j));
+@@ -408,21 +417,16 @@
          IBlockState iblockstate = p_176339_1_.func_180495_p(blockpos);
          boolean flag = iblockstate.func_185915_l();
          boolean flag1 = p_176339_1_.func_180495_p(p_176339_2_.func_177984_a()).func_185915_l();
@@ -44,7 +68,7 @@
          Block block = p_176343_0_.func_177230_c();
  
          if (block == Blocks.field_150488_af)
-@@ -436,7 +431,7 @@
+@@ -436,7 +440,7 @@
          }
          else
          {

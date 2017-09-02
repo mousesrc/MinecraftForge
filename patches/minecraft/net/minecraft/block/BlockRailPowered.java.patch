@@ -1,0 +1,32 @@
+--- ../src-base/minecraft/net/minecraft/block/BlockRailPowered.java
++++ ../src-work/minecraft/net/minecraft/block/BlockRailPowered.java
+@@ -11,7 +11,10 @@
+ import net.minecraft.util.Rotation;
+ import net.minecraft.util.math.BlockPos;
+ import net.minecraft.world.World;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
+ 
++import net.minecraft.block.BlockRailBase.EnumRailDirection;
++
+ public class BlockRailPowered extends BlockRailBase
+ {
+     public static final PropertyEnum<BlockRailBase.EnumRailDirection> field_176568_b = PropertyEnum.<BlockRailBase.EnumRailDirection>func_177708_a("shape", BlockRailBase.EnumRailDirection.class, new Predicate<BlockRailBase.EnumRailDirection>()
+@@ -157,10 +160,17 @@
+ 
+         if (flag1 != flag)
+         {
++            // CraftBukkit start
++            int power = (Boolean)p_189541_1_.func_177229_b(field_176569_M) ? 15 : 0;
++            int newPower = CraftEventFactory.callRedstoneChange(p_189541_2_, p_189541_3_.func_177958_n(), p_189541_3_.func_177956_o(), p_189541_3_.func_177952_p(), power, 15 - power).getNewCurrent();
++            if (newPower == power) {
++                return;
++            }
++            // CraftBukkit end
+             p_189541_2_.func_180501_a(p_189541_3_, p_189541_1_.func_177226_a(field_176569_M, Boolean.valueOf(flag1)), 3);
+             p_189541_2_.func_175685_c(p_189541_3_.func_177977_b(), this, false);
+ 
+-            if (((BlockRailBase.EnumRailDirection)p_189541_1_.func_177229_b(field_176568_b)).func_177018_c())
++            if (((EnumRailDirection)p_189541_1_.func_177229_b(field_176568_b)).func_177018_c())
+             {
+                 p_189541_2_.func_175685_c(p_189541_3_.func_177984_a(), this, false);
+             }
