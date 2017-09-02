@@ -54,6 +54,14 @@ public class CraftBlockState implements BlockState {
         chunk = null;
         x = y = z = 0;
     }
+    public CraftBlockState(IBlockState statein,CraftWorld worldin, BlockPos pos) {
+        world = worldin;
+        type = net.minecraft.block.Block.getIdFromBlock(statein.getBlock());
+        chunk = (CraftChunk) worldin.getChunkAt(pos.getX(),pos.getZ());
+        x = pos.getX();
+        y = pos.getY();
+        z = pos.getZ();
+    }
     public static CraftBlockState getBlockState(net.minecraft.world.World world, int x, int y, int z) {
         return new CraftBlockState(world.getWorld().getBlockAt(x, y, z));
     }

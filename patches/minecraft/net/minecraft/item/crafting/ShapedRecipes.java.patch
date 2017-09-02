@@ -1,6 +1,6 @@
 --- ../src-base/minecraft/net/minecraft/item/crafting/ShapedRecipes.java
 +++ ../src-work/minecraft/net/minecraft/item/crafting/ShapedRecipes.java
-@@ -4,66 +4,119 @@
+@@ -4,6 +4,9 @@
  import net.minecraft.item.ItemStack;
  import net.minecraft.util.NonNullList;
  import net.minecraft.world.World;
@@ -10,51 +10,27 @@
  
  public class ShapedRecipes implements IRecipe
  {
--    public final int field_77576_b;
--    public final int field_77577_c;
--    public final ItemStack[] field_77574_d;
--    private final ItemStack field_77575_e;
--    private boolean field_92101_f;
-+    public final int recipeWidth;
-+    public final int recipeHeight;
-+    public final ItemStack[] recipeItems;
-+    private final ItemStack recipeOutput;
-+    private boolean copyIngredientNBT;
- 
--    public ShapedRecipes(int p_i1917_1_, int p_i1917_2_, ItemStack[] p_i1917_3_, ItemStack p_i1917_4_)
-+    public ShapedRecipes(int width, int height, ItemStack[] ingredientsIn, ItemStack output)
-     {
--        this.field_77576_b = p_i1917_1_;
--        this.field_77577_c = p_i1917_2_;
--        this.field_77574_d = p_i1917_3_;
+@@ -18,7 +21,6 @@
+         this.field_77576_b = p_i1917_1_;
+         this.field_77577_c = p_i1917_2_;
+         this.field_77574_d = p_i1917_3_;
 -
--        for (int i = 0; i < this.field_77574_d.length; ++i)
-+        this.recipeWidth = width;
-+        this.recipeHeight = height;
-+        this.recipeItems = ingredientsIn;
-+        for (int i = 0; i < this.recipeItems.length; ++i)
+         for (int i = 0; i < this.field_77574_d.length; ++i)
          {
--            if (this.field_77574_d[i] == null)
-+            if (this.recipeItems[i] == null)
-             {
--                this.field_77574_d[i] = ItemStack.field_190927_a;
-+                this.recipeItems[i] = ItemStack.EMPTY;
-             }
-         }
+             if (this.field_77574_d[i] == null)
+@@ -29,7 +31,62 @@
  
--        this.field_77575_e = p_i1917_4_;
-+        this.recipeOutput = output;
+         this.field_77575_e = p_i1917_4_;
      }
 -
--    public ItemStack func_77571_b()
 +    // CraftBukkit start
 +    @Override
 +    public org.bukkit.inventory.ShapedRecipe toBukkitRecipe() {
-+        CraftItemStack result = CraftItemStack.asCraftMirror(this.recipeOutput);
++        CraftItemStack result = CraftItemStack.asCraftMirror(this.field_77575_e);
 +        CraftShapedRecipe recipe = new CraftShapedRecipe(result, this);
-+        switch (this.recipeHeight) {
++        switch (this.field_77577_c) {
 +            case 1:
-+                switch (this.recipeWidth) {
++                switch (this.field_77576_b) {
 +                    case 1:
 +                        recipe.shape("a");
 +                        break;
@@ -67,7 +43,7 @@
 +                }
 +                break;
 +            case 2:
-+                switch (this.recipeWidth) {
++                switch (this.field_77576_b) {
 +                    case 1:
 +                        recipe.shape("a","b");
 +                        break;
@@ -80,7 +56,7 @@
 +                }
 +                break;
 +            case 3:
-+                switch (this.recipeWidth) {
++                switch (this.field_77576_b) {
 +                    case 1:
 +                        recipe.shape("a","b","c");
 +                        break;
@@ -94,151 +70,28 @@
 +                break;
 +        }
 +        char c = 'a';
-+        for (ItemStack stack : this.recipeItems) {
++        for (ItemStack stack : this.field_77574_d) {
 +            if (stack != null) {
-+                recipe.setIngredient(c, org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(stack.getItem()), stack.getMetadata());
++                recipe.setIngredient(c, org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(stack.func_77973_b()), stack.func_77960_j());
 +            }
 +            c++;
 +        }
 +        return recipe;
 +    }
 +    // CraftBukkit end
-+    public ItemStack getRecipeOutput()
+     public ItemStack func_77571_b()
      {
--        return this.field_77575_e;
-+        return this.recipeOutput;
-     }
- 
--    public NonNullList<ItemStack> func_179532_b(InventoryCrafting p_179532_1_)
-+    public NonNullList<ItemStack> getRemainingItems(InventoryCrafting inv)
-     {
--        NonNullList<ItemStack> nonnulllist = NonNullList.<ItemStack>func_191197_a(p_179532_1_.func_70302_i_(), ItemStack.field_190927_a);
-+        NonNullList<ItemStack> nonnulllist = NonNullList.<ItemStack>withSize(inv.getSizeInventory(), ItemStack.EMPTY);
- 
+         return this.field_77575_e;
+@@ -42,11 +99,7 @@
          for (int i = 0; i < nonnulllist.size(); ++i)
          {
--            ItemStack itemstack = p_179532_1_.func_70301_a(i);
+             ItemStack itemstack = p_179532_1_.func_70301_a(i);
 -
 -            if (itemstack.func_77973_b().func_77634_r())
 -            {
 -                nonnulllist.set(i, new ItemStack(itemstack.func_77973_b().func_77668_q()));
 -            }
-+            ItemStack itemstack = inv.getStackInSlot(i);
 +            nonnulllist.set(i, net.minecraftforge.common.ForgeHooks.getContainerItem(itemstack));
          }
  
          return nonnulllist;
-     }
- 
--    public boolean func_77569_a(InventoryCrafting p_77569_1_, World p_77569_2_)
-+    public boolean matches(InventoryCrafting inv, World worldIn)
-     {
--        for (int i = 0; i <= 3 - this.field_77576_b; ++i)
-+        for (int i = 0; i <= 3 - this.recipeWidth; ++i)
-         {
--            for (int j = 0; j <= 3 - this.field_77577_c; ++j)
-+            for (int j = 0; j <= 3 - this.recipeHeight; ++j)
-             {
--                if (this.func_77573_a(p_77569_1_, i, j, true))
-+                if (this.checkMatch(inv, i, j, true))
-                 {
-                     return true;
-                 }
- 
--                if (this.func_77573_a(p_77569_1_, i, j, false))
-+                if (this.checkMatch(inv, i, j, false))
-                 {
-                     return true;
-                 }
-@@ -73,7 +126,7 @@
-         return false;
-     }
- 
--    private boolean func_77573_a(InventoryCrafting p_77573_1_, int p_77573_2_, int p_77573_3_, boolean p_77573_4_)
-+    private boolean checkMatch(InventoryCrafting p_77573_1_, int p_77573_2_, int p_77573_3_, boolean p_77573_4_)
-     {
-         for (int i = 0; i < 3; ++i)
-         {
-@@ -81,35 +134,35 @@
-             {
-                 int k = i - p_77573_2_;
-                 int l = j - p_77573_3_;
--                ItemStack itemstack = ItemStack.field_190927_a;
-+                ItemStack itemstack = ItemStack.EMPTY;
- 
--                if (k >= 0 && l >= 0 && k < this.field_77576_b && l < this.field_77577_c)
-+                if (k >= 0 && l >= 0 && k < this.recipeWidth && l < this.recipeHeight)
-                 {
-                     if (p_77573_4_)
-                     {
--                        itemstack = this.field_77574_d[this.field_77576_b - k - 1 + l * this.field_77576_b];
-+                        itemstack = this.recipeItems[this.recipeWidth - k - 1 + l * this.recipeWidth];
-                     }
-                     else
-                     {
--                        itemstack = this.field_77574_d[k + l * this.field_77576_b];
-+                        itemstack = this.recipeItems[k + l * this.recipeWidth];
-                     }
-                 }
- 
--                ItemStack itemstack1 = p_77573_1_.func_70463_b(i, j);
-+                ItemStack itemstack1 = p_77573_1_.getStackInRowAndColumn(i, j);
- 
--                if (!itemstack1.func_190926_b() || !itemstack.func_190926_b())
-+                if (!itemstack1.isEmpty() || !itemstack.isEmpty())
-                 {
--                    if (itemstack1.func_190926_b() != itemstack.func_190926_b())
-+                    if (itemstack1.isEmpty() != itemstack.isEmpty())
-                     {
-                         return false;
-                     }
- 
--                    if (itemstack.func_77973_b() != itemstack1.func_77973_b())
-+                    if (itemstack.getItem() != itemstack1.getItem())
-                     {
-                         return false;
-                     }
- 
--                    if (itemstack.func_77960_j() != 32767 && itemstack.func_77960_j() != itemstack1.func_77960_j())
-+                    if (itemstack.getMetadata() != 32767 && itemstack.getMetadata() != itemstack1.getMetadata())
-                     {
-                         return false;
-                     }
-@@ -120,19 +173,19 @@
-         return true;
-     }
- 
--    public ItemStack func_77572_b(InventoryCrafting p_77572_1_)
-+    public ItemStack getCraftingResult(InventoryCrafting inv)
-     {
--        ItemStack itemstack = this.func_77571_b().func_77946_l();
-+        ItemStack itemstack = this.getRecipeOutput().copy();
- 
--        if (this.field_92101_f)
-+        if (this.copyIngredientNBT)
-         {
--            for (int i = 0; i < p_77572_1_.func_70302_i_(); ++i)
-+            for (int i = 0; i < inv.getSizeInventory(); ++i)
-             {
--                ItemStack itemstack1 = p_77572_1_.func_70301_a(i);
-+                ItemStack itemstack1 = inv.getStackInSlot(i);
- 
--                if (!itemstack1.func_190926_b() && itemstack1.func_77942_o())
-+                if (!itemstack1.isEmpty() && itemstack1.hasTagCompound())
-                 {
--                    itemstack.func_77982_d(itemstack1.func_77978_p().func_74737_b());
-+                    itemstack.setTagCompound(itemstack1.getTagCompound().copy());
-                 }
-             }
-         }
-@@ -140,8 +193,8 @@
-         return itemstack;
-     }
- 
--    public int func_77570_a()
-+    public int getRecipeSize()
-     {
--        return this.field_77576_b * this.field_77577_c;
-+        return this.recipeWidth * this.recipeHeight;
-     }
- }

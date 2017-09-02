@@ -332,7 +332,10 @@ public class EventBus implements IEventExceptionHandler
             else if(event instanceof BlockEvent.HarvestDropsEvent)
             {
                 BlockEvent.HarvestDropsEvent event1 = (BlockEvent.HarvestDropsEvent) event;
-                thisevent = new BlockBreakEvent(event1.getWorld().getWorld().getBlockAt(event1.getPos().getX(),event1.getPos().getY(),event1.getPos().getZ()), (Player) event1.getHarvester().getBukkitEntity());
+                EntityPlayer harvester = ((BlockEvent.HarvestDropsEvent) event).getHarvester();
+                if(harvester != null) {
+                    thisevent = new BlockBreakEvent(event1.getWorld().getWorld().getBlockAt(event1.getPos().getX(), event1.getPos().getY(), event1.getPos().getZ()), (Player) event1.getHarvester().getBukkitEntity());
+                }
             }
             else if(event instanceof BlockEvent.CropGrowEvent)
             {
@@ -367,7 +370,7 @@ public class EventBus implements IEventExceptionHandler
                 }
                 else if(event instanceof ChunkEvent.Unload)
                 {
-                    Chunk c =((ChunkEvent.Load) event).getChunk();
+                    Chunk c =((ChunkEvent.Unload) event).getChunk();
                     thisevent = new ChunkUnloadEvent(new CraftChunk(c));
                 }
             }
@@ -594,11 +597,19 @@ public class EventBus implements IEventExceptionHandler
                 } else if (event instanceof LivingEquipmentChangeEvent) {
                     //
                 } else if (event instanceof EnderTeleportEvent) {
-                    EntityPlayer player = (EntityPlayer) ((EnderTeleportEvent) event).getEntityLiving();
-                    BlockPos old = player.getPosition();
+                    Entity teleportingEntity = (Entity) ((EnderTeleportEvent) event).getEntityLiving();
+                    BlockPos old = teleportingEntity.getPosition();
                     BlockPos target = new BlockPos(((EnderTeleportEvent) event).getTargetX(),((EnderTeleportEvent) event).getTargetY(),((EnderTeleportEvent) event).getTargetZ());
-                    CraftWorld w = player.getEntityWorld().getWorld();
-                    thisevent = new PlayerTeleportEvent((Player) player.getBukkitEntity(),new Location(w,old.getX(),old.getY(),old.getZ()),new Location(w,target.getX(),target.getY(),target.getZ()), PlayerTeleportEvent.TeleportCause.ENDER_PEARL);
+                    CraftWorld w = teleportingEntity.getEntityWorld().getWorld();
+                    if(teleportingEntity instanceof Player)
+                    {
+                        thisevent = new PlayerTeleportEvent((Player) teleportingEntity.getBukkitEntity(),new Location(w,old.getX(),old.getY(),old.getZ()),new Location(w,target.getX(),target.getY(),target.getZ()), PlayerTeleportEvent.TeleportCause.ENDER_PEARL);
+
+                    }
+                    else
+                    {
+                        thisevent = new EntityTeleportEvent(teleportingEntity.getBukkitEntity(),new Location(w,old.getX(),old.getY(),old.getZ()),new Location(w,target.getX(),target.getY(),target.getZ()));
+                    }
                 } else if (event instanceof LivingDestroyBlockEvent) {
 
                 } else if (event instanceof LivingEvent.LivingUpdateEvent) {

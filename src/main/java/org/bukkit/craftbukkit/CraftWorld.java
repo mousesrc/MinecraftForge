@@ -1396,6 +1396,12 @@ public class CraftWorld implements World {
         } else if (EvokerFangs.class.isAssignableFrom(clazz)) {
             entity = new EntityEvokerFangs(world, x, y, z, (float) Math.toRadians(yaw), 0, null);
         }
+        else
+        {
+            throw new IllegalArgumentException("Cannot spawn an entity for " + clazz.getName());
+        }
+        return entity;
+
         /*
         if (entity != null) {
             // Spigot start
@@ -1406,7 +1412,7 @@ public class CraftWorld implements World {
             // Spigot end
             return entity;
         }*/
-        throw new IllegalArgumentException("Cannot spawn an entity for " + clazz.getName());
+
     }
 
     @SuppressWarnings("unchecked")

@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
@@ -50,6 +51,7 @@ import net.minecraft.network.play.client.CPacketCustomPayload;
 import net.minecraft.network.play.server.SPacketJoinGame;
 import net.minecraft.network.play.server.SPacketCustomPayload;
 import net.minecraft.network.play.server.SPacketDisconnect;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.management.PlayerList;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.common.DimensionManager;
@@ -147,6 +149,8 @@ public class NetworkDispatcher extends SimpleChannelInboundHandler<Packet<?>> im
     public void serverToClientHandshake(EntityPlayerMP player)
     {
         this.player = player;
+        MinecraftServer.LOG.debug("EntityPlayerMP at NetworkDispatcher.java -> serverToClientHandshake(), with dimension -> {}", new Object[]{this.player.getServerWorld().dimension});
+
         Boolean fml = this.manager.channel().attr(NetworkRegistry.FML_MARKER).get();
         if (fml != null && fml)
         {

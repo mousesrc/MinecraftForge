@@ -1,6 +1,6 @@
 --- ../src-base/minecraft/net/minecraft/entity/item/EntityBoat.java
 +++ ../src-work/minecraft/net/minecraft/entity/item/EntityBoat.java
-@@ -34,122 +34,153 @@
+@@ -34,6 +34,12 @@
  import net.minecraft.world.World;
  import net.minecraftforge.fml.relauncher.Side;
  import net.minecraftforge.fml.relauncher.SideOnly;
@@ -13,56 +13,11 @@
  
  public class EntityBoat extends Entity
  {
--    private static final DataParameter<Integer> field_184460_a = EntityDataManager.<Integer>func_187226_a(EntityBoat.class, DataSerializers.field_187192_b);
--    private static final DataParameter<Integer> field_184462_b = EntityDataManager.<Integer>func_187226_a(EntityBoat.class, DataSerializers.field_187192_b);
--    private static final DataParameter<Float> field_184464_c = EntityDataManager.<Float>func_187226_a(EntityBoat.class, DataSerializers.field_187193_c);
--    private static final DataParameter<Integer> field_184466_d = EntityDataManager.<Integer>func_187226_a(EntityBoat.class, DataSerializers.field_187192_b);
--    private static final DataParameter<Boolean>[] field_184468_e = new DataParameter[] {EntityDataManager.func_187226_a(EntityBoat.class, DataSerializers.field_187198_h), EntityDataManager.func_187226_a(EntityBoat.class, DataSerializers.field_187198_h)};
--    private final float[] field_184470_f;
--    private float field_184472_g;
--    private float field_184474_h;
--    private float field_184475_as;
--    private int field_184476_at;
--    private double field_70281_h;
--    private double field_184477_av;
--    private double field_184478_aw;
--    private double field_70273_g;
--    private double field_184479_ay;
--    private boolean field_184480_az;
--    private boolean field_184459_aA;
--    private boolean field_184461_aB;
--    private boolean field_184463_aC;
--    private double field_184465_aD;
--    private float field_184467_aE;
--    private EntityBoat.Status field_184469_aF;
--    private EntityBoat.Status field_184471_aG;
--    private double field_184473_aH;
+@@ -61,7 +67,13 @@
+     private EntityBoat.Status field_184469_aF;
+     private EntityBoat.Status field_184471_aG;
+     private double field_184473_aH;
 -
--    public EntityBoat(World p_i1704_1_)
-+    private static final DataParameter<Integer> TIME_SINCE_HIT = EntityDataManager.<Integer>createKey(EntityBoat.class, DataSerializers.VARINT);
-+    private static final DataParameter<Integer> FORWARD_DIRECTION = EntityDataManager.<Integer>createKey(EntityBoat.class, DataSerializers.VARINT);
-+    private static final DataParameter<Float> DAMAGE_TAKEN = EntityDataManager.<Float>createKey(EntityBoat.class, DataSerializers.FLOAT);
-+    private static final DataParameter<Integer> BOAT_TYPE = EntityDataManager.<Integer>createKey(EntityBoat.class, DataSerializers.VARINT);
-+    private static final DataParameter<Boolean>[] DATA_ID_PADDLE = new DataParameter[] {EntityDataManager.createKey(EntityBoat.class, DataSerializers.BOOLEAN), EntityDataManager.createKey(EntityBoat.class, DataSerializers.BOOLEAN)};
-+    private final float[] paddlePositions;
-+    private float momentum;
-+    private float outOfControlTicks;
-+    private float deltaRotation;
-+    private int lerpSteps;
-+    private double boatPitch;
-+    private double lerpY;
-+    private double lerpZ;
-+    private double boatYaw;
-+    private double lerpXRot;
-+    private boolean leftInputDown;
-+    private boolean rightInputDown;
-+    private boolean forwardInputDown;
-+    private boolean backInputDown;
-+    private double waterLevel;
-+    private float boatGlide;
-+    private EntityBoat.Status status;
-+    private EntityBoat.Status previousStatus;
-+    private double lastYd;
 +    // CraftBukkit start
 +    // PAIL: Some of these haven't worked since a few updates, and since 1.9 they are less and less applicable.
 +    public double maxSpeed = 0.4D;
@@ -70,363 +25,95 @@
 +    public double unoccupiedDeceleration = -1;
 +    public boolean landBoats = false;
 +    // CraftBukkit end
-+    public EntityBoat(World worldIn)
+     public EntityBoat(World p_i1704_1_)
      {
--        super(p_i1704_1_);
--        this.field_184470_f = new float[2];
--        this.field_70156_m = true;
--        this.func_70105_a(1.375F, 0.5625F);
-+        super(worldIn);
-+        this.paddlePositions = new float[2];
-+        this.preventEntitySpawning = true;
-+        this.setSize(1.375F, 0.5625F);
-     }
- 
--    public EntityBoat(World p_i1705_1_, double p_i1705_2_, double p_i1705_4_, double p_i1705_6_)
-+    public EntityBoat(World worldIn, double x, double y, double z)
-     {
--        this(p_i1705_1_);
--        this.func_70107_b(p_i1705_2_, p_i1705_4_, p_i1705_6_);
--        this.field_70159_w = 0.0D;
--        this.field_70181_x = 0.0D;
--        this.field_70179_y = 0.0D;
--        this.field_70169_q = p_i1705_2_;
--        this.field_70167_r = p_i1705_4_;
--        this.field_70166_s = p_i1705_6_;
-+        this(worldIn);
-+        this.setPosition(x, y, z);
-+        this.motionX = 0.0D;
-+        this.motionY = 0.0D;
-+        this.motionZ = 0.0D;
-+        this.prevPosX = x;
-+        this.prevPosY = y;
-+        this.prevPosZ = z;
-     }
- 
--    protected boolean func_70041_e_()
-+    protected boolean canTriggerWalking()
-     {
-         return false;
-     }
- 
--    protected void func_70088_a()
-+    protected void entityInit()
-     {
--        this.field_70180_af.func_187214_a(field_184460_a, Integer.valueOf(0));
--        this.field_70180_af.func_187214_a(field_184462_b, Integer.valueOf(1));
--        this.field_70180_af.func_187214_a(field_184464_c, Float.valueOf(0.0F));
--        this.field_70180_af.func_187214_a(field_184466_d, Integer.valueOf(EntityBoat.Type.OAK.ordinal()));
-+        this.dataManager.register(TIME_SINCE_HIT, Integer.valueOf(0));
-+        this.dataManager.register(FORWARD_DIRECTION, Integer.valueOf(1));
-+        this.dataManager.register(DAMAGE_TAKEN, Float.valueOf(0.0F));
-+        this.dataManager.register(BOAT_TYPE, Integer.valueOf(EntityBoat.Type.OAK.ordinal()));
- 
--        for (DataParameter<Boolean> dataparameter : field_184468_e)
-+        for (DataParameter<Boolean> dataparameter : DATA_ID_PADDLE)
-         {
--            this.field_70180_af.func_187214_a(dataparameter, Boolean.valueOf(false));
-+            this.dataManager.register(dataparameter, Boolean.valueOf(false));
-         }
-     }
- 
-     @Nullable
--    public AxisAlignedBB func_70114_g(Entity p_70114_1_)
-+    public AxisAlignedBB getCollisionBox(Entity entityIn)
-     {
--        return p_70114_1_.func_70104_M() ? p_70114_1_.func_174813_aQ() : null;
-+        return entityIn.canBePushed() ? entityIn.getEntityBoundingBox() : null;
-     }
- 
-     @Nullable
--    public AxisAlignedBB func_70046_E()
-+    public AxisAlignedBB getCollisionBoundingBox()
-     {
--        return this.func_174813_aQ();
-+        return this.getEntityBoundingBox();
-     }
- 
--    public boolean func_70104_M()
-+    public boolean canBePushed()
-     {
-         return true;
-     }
- 
--    public double func_70042_X()
-+    public double getMountedYOffset()
-     {
-         return -0.1D;
-     }
- 
--    public boolean func_70097_a(DamageSource p_70097_1_, float p_70097_2_)
-+    public boolean attackEntityFrom(DamageSource source, float amount)
-     {
--        if (this.func_180431_b(p_70097_1_))
-+        if (this.isEntityInvulnerable(source))
-         {
-             return false;
-         }
--        else if (!this.field_70170_p.field_72995_K && !this.field_70128_L)
-+        else if (!this.world.isRemote && !this.isDead)
-         {
--            if (p_70097_1_ instanceof EntityDamageSourceIndirect && p_70097_1_.func_76346_g() != null && this.func_184196_w(p_70097_1_.func_76346_g()))
-+            if (source instanceof EntityDamageSourceIndirect && source.getEntity() != null && this.isPassenger(source.getEntity()))
-             {
-                 return false;
+         super(p_i1704_1_);
+@@ -136,6 +148,18 @@
              }
              else
              {
--                this.func_70269_c(-this.func_70267_i());
--                this.func_70265_b(10);
--                this.func_70266_a(this.func_70271_g() + p_70097_2_ * 10.0F);
--                this.func_70018_K();
--                boolean flag = p_70097_1_.func_76346_g() instanceof EntityPlayer && ((EntityPlayer)p_70097_1_.func_76346_g()).field_71075_bZ.field_75098_d;
 +                // CraftBukkit start
 +                Vehicle vehicle = (Vehicle) this.getBukkitEntity();
-+                org.bukkit.entity.Entity attacker = (source.getEntity() == null) ? null : source.getEntity().getBukkitEntity();
- 
--                if (flag || this.func_70271_g() > 40.0F)
-+                VehicleDamageEvent event = new VehicleDamageEvent(vehicle, attacker, (double) amount);
-+                this.world.getServer().getPluginManager().callEvent(event);
++                org.bukkit.entity.Entity attacker = (p_70097_1_.func_76346_g() == null) ? null : p_70097_1_.func_76346_g().getBukkitEntity();
++
++                VehicleDamageEvent event = new VehicleDamageEvent(vehicle, attacker, (double) p_70097_2_);
++                this.field_70170_p.getServer().getPluginManager().callEvent(event);
 +
 +                if (event.isCancelled()) {
 +                    return true;
 +                }
 +                // f = event.getDamage(); // TODO Why don't we do this?
 +                // CraftBukkit end
-+                this.setForwardDirection(-this.getForwardDirection());
-+                this.setTimeSinceHit(10);
-+                this.setDamageTaken(this.getDamageTaken() + amount * 10.0F);
-+                this.setBeenAttacked();
-+                boolean flag = source.getEntity() instanceof EntityPlayer && ((EntityPlayer)source.getEntity()).capabilities.isCreativeMode;
-+
-+                if (flag || this.getDamageTaken() > 40.0F)
+                 this.func_70269_c(-this.func_70267_i());
+                 this.func_70265_b(10);
+                 this.func_70266_a(this.func_70271_g() + p_70097_2_ * 10.0F);
+@@ -144,11 +168,18 @@
+ 
+                 if (flag || this.func_70271_g() > 40.0F)
                  {
 -                    if (!flag && this.field_70170_p.func_82736_K().func_82766_b("doEntityDrops"))
 -                    {
--                        this.func_145778_a(this.func_184455_j(), 1, 0.0F);
--                    }
 +                    // CraftBukkit start
 +                    VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, attacker);
-+                    this.world.getServer().getPluginManager().callEvent(destroyEvent);
- 
--                    this.func_70106_y();
++                    this.field_70170_p.getServer().getPluginManager().callEvent(destroyEvent);
++
 +                    if (destroyEvent.isCancelled()) {
-+                        this.setDamageTaken(40F); // Maximize damage so this doesn't get triggered again right away
++                        this.func_70266_a(40F); // Maximize damage so this doesn't get triggered again right away
 +                        return true;
 +                    }
 +                    // CraftBukkit end
-+                    if (!flag && this.world.getGameRules().getBoolean("doEntityDrops")) {
-+                        this.dropItemWithOffset(this.getItemBoat(), 1, 0.0F);
-+                    }
-+                    this.setDead();
++                    if (!flag && this.field_70170_p.func_82736_K().func_82766_b("doEntityDrops")) {
+                         this.func_145778_a(this.func_184455_j(), 1, 0.0F);
+                     }
+-
+                     this.func_70106_y();
                  }
  
-                 return true;
-@@ -161,215 +192,246 @@
-         }
-     }
- 
--    public void func_70108_f(Entity p_70108_1_)
-+    public void applyEntityCollision(Entity entityIn)
-     {
--        if (p_70108_1_ instanceof EntityBoat)
-+        if (entityIn instanceof EntityBoat)
+@@ -167,11 +198,27 @@
          {
--            if (p_70108_1_.func_174813_aQ().field_72338_b < this.func_174813_aQ().field_72337_e)
-+            if (entityIn.getEntityBoundingBox().minY < this.getEntityBoundingBox().maxY)
+             if (p_70108_1_.func_174813_aQ().field_72338_b < this.func_174813_aQ().field_72337_e)
              {
--                super.func_70108_f(p_70108_1_);
 +                // CraftBukkit start
-+                VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), entityIn.getBukkitEntity());
-+                this.world.getServer().getPluginManager().callEvent(event);
++                VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), p_70108_1_.getBukkitEntity());
++                this.field_70170_p.getServer().getPluginManager().callEvent(event);
 +
 +                if (event.isCancelled()) {
 +                    return;
 +                }
 +                // CraftBukkit end
-+                super.applyEntityCollision(entityIn);
+                 super.func_70108_f(p_70108_1_);
              }
          }
--        else if (p_70108_1_.func_174813_aQ().field_72338_b <= this.func_174813_aQ().field_72338_b)
-+        else if (entityIn.getEntityBoundingBox().minY <= this.getEntityBoundingBox().minY)
+         else if (p_70108_1_.func_174813_aQ().field_72338_b <= this.func_174813_aQ().field_72338_b)
          {
--            super.func_70108_f(p_70108_1_);
 +            // CraftBukkit start
-+            VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), entityIn.getBukkitEntity());
-+            this.world.getServer().getPluginManager().callEvent(event);
++            VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), p_70108_1_.getBukkitEntity());
++            this.field_70170_p.getServer().getPluginManager().callEvent(event);
 +
 +            if (event.isCancelled()) {
 +                return;
 +            }
 +            // CraftBukkit end
-+            super.applyEntityCollision(entityIn);
+             super.func_70108_f(p_70108_1_);
          }
      }
- 
--    public Item func_184455_j()
-+    public Item getItemBoat()
+@@ -224,6 +271,7 @@
      {
--        switch (this.func_184453_r())
-+        switch (this.getBoatType())
-         {
-             case OAK:
-             default:
--                return Items.field_151124_az;
-+                return Items.BOAT;
-             case SPRUCE:
--                return Items.field_185150_aH;
-+                return Items.SPRUCE_BOAT;
-             case BIRCH:
--                return Items.field_185151_aI;
-+                return Items.BIRCH_BOAT;
-             case JUNGLE:
--                return Items.field_185152_aJ;
-+                return Items.JUNGLE_BOAT;
-             case ACACIA:
--                return Items.field_185153_aK;
-+                return Items.ACACIA_BOAT;
-             case DARK_OAK:
--                return Items.field_185154_aL;
-+                return Items.DARK_OAK_BOAT;
-         }
-     }
- 
-     @SideOnly(Side.CLIENT)
--    public void func_70057_ab()
-+    public void performHurtAnimation()
-     {
--        this.func_70269_c(-this.func_70267_i());
--        this.func_70265_b(10);
--        this.func_70266_a(this.func_70271_g() * 11.0F);
-+        this.setForwardDirection(-this.getForwardDirection());
-+        this.setTimeSinceHit(10);
-+        this.setDamageTaken(this.getDamageTaken() * 11.0F);
-     }
- 
--    public boolean func_70067_L()
-+    public boolean canBeCollidedWith()
-     {
--        return !this.field_70128_L;
-+        return !this.isDead;
-     }
- 
-     @SideOnly(Side.CLIENT)
--    public void func_180426_a(double p_180426_1_, double p_180426_3_, double p_180426_5_, float p_180426_7_, float p_180426_8_, int p_180426_9_, boolean p_180426_10_)
-+    public void setPositionAndRotationDirect(double x, double y, double z, float yaw, float pitch, int posRotationIncrements, boolean teleport)
-     {
--        this.field_70281_h = p_180426_1_;
--        this.field_184477_av = p_180426_3_;
--        this.field_184478_aw = p_180426_5_;
--        this.field_70273_g = (double)p_180426_7_;
--        this.field_184479_ay = (double)p_180426_8_;
--        this.field_184476_at = 10;
-+        this.boatPitch = x;
-+        this.lerpY = y;
-+        this.lerpZ = z;
-+        this.boatYaw = (double)yaw;
-+        this.lerpXRot = (double)pitch;
-+        this.lerpSteps = 10;
-     }
- 
--    public EnumFacing func_184172_bi()
-+    public EnumFacing getAdjustedHorizontalFacing()
-     {
--        return this.func_174811_aO().func_176746_e();
-+        return this.getHorizontalFacing().rotateY();
+         return this.func_174811_aO().func_176746_e();
      }
 +    private Location lastLocation; // CraftBukkit
  
--    public void func_70071_h_()
-+    public void onUpdate()
+     public void func_70071_h_()
      {
--        this.field_184471_aG = this.field_184469_aF;
--        this.field_184469_aF = this.func_184449_t();
-+        this.previousStatus = this.status;
-+        this.status = this.getBoatStatus();
- 
--        if (this.field_184469_aF != EntityBoat.Status.UNDER_WATER && this.field_184469_aF != EntityBoat.Status.UNDER_FLOWING_WATER)
-+        if (this.status != EntityBoat.Status.UNDER_WATER && this.status != EntityBoat.Status.UNDER_FLOWING_WATER)
-         {
--            this.field_184474_h = 0.0F;
-+            this.outOfControlTicks = 0.0F;
-         }
-         else
-         {
--            ++this.field_184474_h;
-+            ++this.outOfControlTicks;
-         }
- 
--        if (!this.field_70170_p.field_72995_K && this.field_184474_h >= 60.0F)
-+        if (!this.world.isRemote && this.outOfControlTicks >= 60.0F)
-         {
--            this.func_184226_ay();
-+            this.removePassengers();
-         }
- 
--        if (this.func_70268_h() > 0)
-+        if (this.getTimeSinceHit() > 0)
-         {
--            this.func_70265_b(this.func_70268_h() - 1);
-+            this.setTimeSinceHit(this.getTimeSinceHit() - 1);
-         }
- 
--        if (this.func_70271_g() > 0.0F)
-+        if (this.getDamageTaken() > 0.0F)
-         {
--            this.func_70266_a(this.func_70271_g() - 1.0F);
-+            this.setDamageTaken(this.getDamageTaken() - 1.0F);
-         }
- 
--        this.field_70169_q = this.field_70165_t;
--        this.field_70167_r = this.field_70163_u;
--        this.field_70166_s = this.field_70161_v;
--        super.func_70071_h_();
--        this.func_184447_s();
-+        this.prevPosX = this.posX;
-+        this.prevPosY = this.posY;
-+        this.prevPosZ = this.posZ;
-+        super.onUpdate();
-+        this.tickLerp();
- 
--        if (this.func_184186_bw())
-+        if (this.canPassengerSteer())
-         {
--            if (this.func_184188_bt().size() == 0 || !(this.func_184188_bt().get(0) instanceof EntityPlayer))
-+            if (this.getPassengers().size() == 0 || !(this.getPassengers().get(0) instanceof EntityPlayer))
-             {
--                this.func_184445_a(false, false);
-+                this.setPaddleState(false, false);
-             }
- 
--            this.func_184450_w();
-+            this.updateMotion();
- 
--            if (this.field_70170_p.field_72995_K)
-+            if (this.world.isRemote)
-             {
--                this.func_184443_x();
--                this.field_70170_p.func_184135_a(new CPacketSteerBoat(this.func_184457_a(0), this.func_184457_a(1)));
-+                this.controlBoat();
-+                this.world.sendPacketToServer(new CPacketSteerBoat(this.getPaddleState(0), this.getPaddleState(1)));
-             }
- 
--            this.func_70091_d(MoverType.SELF, this.field_70159_w, this.field_70181_x, this.field_70179_y);
-+            this.move(MoverType.SELF, this.motionX, this.motionY, this.motionZ);
-         }
-         else
-         {
--            this.field_70159_w = 0.0D;
--            this.field_70181_x = 0.0D;
--            this.field_70179_y = 0.0D;
-+            this.motionX = 0.0D;
-+            this.motionY = 0.0D;
-+            this.motionZ = 0.0D;
+@@ -283,7 +331,21 @@
+             this.field_70181_x = 0.0D;
+             this.field_70179_y = 0.0D;
          }
 +        // CraftBukkit start
-+        org.bukkit.Server server = this.world.getServer();
-+        org.bukkit.World bworld = this.world.getWorld();
++        org.bukkit.Server server = this.field_70170_p.getServer();
++        org.bukkit.World bworld = this.field_70170_p.getWorld();
  
-+        Location to = new Location(bworld, this.posX, this.posY, this.posZ, this.rotationYaw, this.rotationPitch);
++        Location to = new Location(bworld, this.field_70165_t, this.field_70163_u, this.field_70161_v, this.field_70177_z, this.field_70125_A);
 +        Vehicle vehicle = (Vehicle) this.getBukkitEntity();
 +
 +        server.getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleUpdateEvent(vehicle));
@@ -439,648 +126,19 @@
 +        // CraftBukkit end
          for (int i = 0; i <= 1; ++i)
          {
--            if (this.func_184457_a(i))
-+            if (this.getPaddleState(i))
-             {
--                this.field_184470_f[i] = (float)((double)this.field_184470_f[i] + 0.01D);
-+                this.paddlePositions[i] = (float)((double)this.paddlePositions[i] + 0.01D);
-             }
-             else
-             {
--                this.field_184470_f[i] = 0.0F;
-+                this.paddlePositions[i] = 0.0F;
-             }
-         }
+             if (this.func_184457_a(i))
+@@ -791,18 +853,22 @@
  
--        this.func_145775_I();
--        List<Entity> list = this.field_70170_p.func_175674_a(this, this.func_174813_aQ().func_72314_b(0.20000000298023224D, -0.009999999776482582D, 0.20000000298023224D), EntitySelectors.<Entity>func_188442_a(this));
-+        this.doBlockCollisions();
-+        List<Entity> list = this.world.getEntitiesInAABBexcluding(this, this.getEntityBoundingBox().expand(0.20000000298023224D, -0.009999999776482582D, 0.20000000298023224D), EntitySelectors.<Entity>getTeamCollisionPredicate(this));
- 
-         if (!list.isEmpty())
-         {
--            boolean flag = !this.field_70170_p.field_72995_K && !(this.func_184179_bs() instanceof EntityPlayer);
-+            boolean flag = !this.world.isRemote && !(this.getControllingPassenger() instanceof EntityPlayer);
- 
-             for (int j = 0; j < list.size(); ++j)
-             {
-                 Entity entity = (Entity)list.get(j);
- 
--                if (!entity.func_184196_w(this))
-+                if (!entity.isPassenger(this))
-                 {
--                    if (flag && this.func_184188_bt().size() < 2 && !entity.func_184218_aH() && entity.field_70130_N < this.field_70130_N && entity instanceof EntityLivingBase && !(entity instanceof EntityWaterMob) && !(entity instanceof EntityPlayer))
-+                    if (flag && this.getPassengers().size() < 2 && !entity.isRiding() && entity.width < this.width && entity instanceof EntityLivingBase && !(entity instanceof EntityWaterMob) && !(entity instanceof EntityPlayer))
-                     {
--                        entity.func_184220_m(this);
-+                        entity.startRiding(this);
-                     }
-                     else
-                     {
--                        this.func_70108_f(entity);
-+                        this.applyEntityCollision(entity);
-                     }
-                 }
-             }
-         }
-     }
- 
--    private void func_184447_s()
-+    private void tickLerp()
-     {
--        if (this.field_184476_at > 0 && !this.func_184186_bw())
-+        if (this.lerpSteps > 0 && !this.canPassengerSteer())
-         {
--            double d0 = this.field_70165_t + (this.field_70281_h - this.field_70165_t) / (double)this.field_184476_at;
--            double d1 = this.field_70163_u + (this.field_184477_av - this.field_70163_u) / (double)this.field_184476_at;
--            double d2 = this.field_70161_v + (this.field_184478_aw - this.field_70161_v) / (double)this.field_184476_at;
--            double d3 = MathHelper.func_76138_g(this.field_70273_g - (double)this.field_70177_z);
--            this.field_70177_z = (float)((double)this.field_70177_z + d3 / (double)this.field_184476_at);
--            this.field_70125_A = (float)((double)this.field_70125_A + (this.field_184479_ay - (double)this.field_70125_A) / (double)this.field_184476_at);
--            --this.field_184476_at;
--            this.func_70107_b(d0, d1, d2);
--            this.func_70101_b(this.field_70177_z, this.field_70125_A);
-+            double d0 = this.posX + (this.boatPitch - this.posX) / (double)this.lerpSteps;
-+            double d1 = this.posY + (this.lerpY - this.posY) / (double)this.lerpSteps;
-+            double d2 = this.posZ + (this.lerpZ - this.posZ) / (double)this.lerpSteps;
-+            double d3 = MathHelper.wrapDegrees(this.boatYaw - (double)this.rotationYaw);
-+            this.rotationYaw = (float)((double)this.rotationYaw + d3 / (double)this.lerpSteps);
-+            this.rotationPitch = (float)((double)this.rotationPitch + (this.lerpXRot - (double)this.rotationPitch) / (double)this.lerpSteps);
-+            --this.lerpSteps;
-+            this.setPosition(d0, d1, d2);
-+            this.setRotation(this.rotationYaw, this.rotationPitch);
-         }
-     }
- 
--    public void func_184445_a(boolean p_184445_1_, boolean p_184445_2_)
-+    public void setPaddleState(boolean p_184445_1_, boolean p_184445_2_)
-     {
--        this.field_70180_af.func_187227_b(field_184468_e[0], Boolean.valueOf(p_184445_1_));
--        this.field_70180_af.func_187227_b(field_184468_e[1], Boolean.valueOf(p_184445_2_));
-+        this.dataManager.set(DATA_ID_PADDLE[0], Boolean.valueOf(p_184445_1_));
-+        this.dataManager.set(DATA_ID_PADDLE[1], Boolean.valueOf(p_184445_2_));
-     }
- 
-     @SideOnly(Side.CLIENT)
--    public float func_184448_a(int p_184448_1_, float p_184448_2_)
-+    public float getRowingTime(int p_184448_1_, float limbSwing)
-     {
--        return this.func_184457_a(p_184448_1_) ? (float)MathHelper.func_151238_b((double)this.field_184470_f[p_184448_1_] - 0.01D, (double)this.field_184470_f[p_184448_1_], (double)p_184448_2_) : 0.0F;
-+        return this.getPaddleState(p_184448_1_) ? (float)MathHelper.clampedLerp((double)this.paddlePositions[p_184448_1_] - 0.01D, (double)this.paddlePositions[p_184448_1_], (double)limbSwing) : 0.0F;
-     }
- 
--    private EntityBoat.Status func_184449_t()
-+    private EntityBoat.Status getBoatStatus()
-     {
--        EntityBoat.Status entityboat$status = this.func_184444_v();
-+        EntityBoat.Status entityboat$status = this.getUnderwaterStatus();
- 
-         if (entityboat$status != null)
-         {
--            this.field_184465_aD = this.func_174813_aQ().field_72337_e;
-+            this.waterLevel = this.getEntityBoundingBox().maxY;
-             return entityboat$status;
-         }
--        else if (this.func_184446_u())
-+        else if (this.checkInWater())
-         {
-             return EntityBoat.Status.IN_WATER;
-         }
-         else
-         {
--            float f = this.func_184441_l();
-+            float f = this.getBoatGlide();
- 
-             if (f > 0.0F)
-             {
--                this.field_184467_aE = f;
-+                this.boatGlide = f;
-                 return EntityBoat.Status.ON_LAND;
-             }
-             else
-@@ -379,16 +441,16 @@
-         }
-     }
- 
--    public float func_184451_k()
-+    public float getWaterLevelAbove()
-     {
--        AxisAlignedBB axisalignedbb = this.func_174813_aQ();
--        int i = MathHelper.func_76128_c(axisalignedbb.field_72340_a);
--        int j = MathHelper.func_76143_f(axisalignedbb.field_72336_d);
--        int k = MathHelper.func_76128_c(axisalignedbb.field_72337_e);
--        int l = MathHelper.func_76143_f(axisalignedbb.field_72337_e - this.field_184473_aH);
--        int i1 = MathHelper.func_76128_c(axisalignedbb.field_72339_c);
--        int j1 = MathHelper.func_76143_f(axisalignedbb.field_72334_f);
--        BlockPos.PooledMutableBlockPos blockpos$pooledmutableblockpos = BlockPos.PooledMutableBlockPos.func_185346_s();
-+        AxisAlignedBB axisalignedbb = this.getEntityBoundingBox();
-+        int i = MathHelper.floor(axisalignedbb.minX);
-+        int j = MathHelper.ceil(axisalignedbb.maxX);
-+        int k = MathHelper.floor(axisalignedbb.maxY);
-+        int l = MathHelper.ceil(axisalignedbb.maxY - this.lastYd);
-+        int i1 = MathHelper.floor(axisalignedbb.minZ);
-+        int j1 = MathHelper.ceil(axisalignedbb.maxZ);
-+        BlockPos.PooledMutableBlockPos blockpos$pooledmutableblockpos = BlockPos.PooledMutableBlockPos.retain();
- 
-         try
-         {
-@@ -405,7 +467,7 @@
-                     {
-                         if (f < 1.0F)
-                         {
--                            float f2 = (float)blockpos$pooledmutableblockpos.func_177956_o() + f;
-+                            float f2 = (float)blockpos$pooledmutableblockpos.getY() + f;
-                             return f2;
-                         }
- 
-@@ -414,12 +476,12 @@
- 
-                     for (int i2 = i1; i2 < j1; ++i2)
-                     {
--                        blockpos$pooledmutableblockpos.func_181079_c(l1, k1, i2);
--                        IBlockState iblockstate = this.field_70170_p.func_180495_p(blockpos$pooledmutableblockpos);
-+                        blockpos$pooledmutableblockpos.setPos(l1, k1, i2);
-+                        IBlockState iblockstate = this.world.getBlockState(blockpos$pooledmutableblockpos);
- 
--                        if (iblockstate.func_185904_a() == Material.field_151586_h)
-+                        if (iblockstate.getMaterial() == Material.WATER)
-                         {
--                            f = Math.max(f, BlockLiquid.func_190973_f(iblockstate, this.field_70170_p, blockpos$pooledmutableblockpos));
-+                            f = Math.max(f, BlockLiquid.getBlockLiquidHeight(iblockstate, this.world, blockpos$pooledmutableblockpos));
-                         }
- 
-                         if (f >= 1.0F)
-@@ -437,24 +499,24 @@
-         }
-         finally
-         {
--            blockpos$pooledmutableblockpos.func_185344_t();
-+            blockpos$pooledmutableblockpos.release();
-         }
-     }
- 
--    public float func_184441_l()
-+    public float getBoatGlide()
-     {
--        AxisAlignedBB axisalignedbb = this.func_174813_aQ();
--        AxisAlignedBB axisalignedbb1 = new AxisAlignedBB(axisalignedbb.field_72340_a, axisalignedbb.field_72338_b - 0.001D, axisalignedbb.field_72339_c, axisalignedbb.field_72336_d, axisalignedbb.field_72338_b, axisalignedbb.field_72334_f);
--        int i = MathHelper.func_76128_c(axisalignedbb1.field_72340_a) - 1;
--        int j = MathHelper.func_76143_f(axisalignedbb1.field_72336_d) + 1;
--        int k = MathHelper.func_76128_c(axisalignedbb1.field_72338_b) - 1;
--        int l = MathHelper.func_76143_f(axisalignedbb1.field_72337_e) + 1;
--        int i1 = MathHelper.func_76128_c(axisalignedbb1.field_72339_c) - 1;
--        int j1 = MathHelper.func_76143_f(axisalignedbb1.field_72334_f) + 1;
-+        AxisAlignedBB axisalignedbb = this.getEntityBoundingBox();
-+        AxisAlignedBB axisalignedbb1 = new AxisAlignedBB(axisalignedbb.minX, axisalignedbb.minY - 0.001D, axisalignedbb.minZ, axisalignedbb.maxX, axisalignedbb.minY, axisalignedbb.maxZ);
-+        int i = MathHelper.floor(axisalignedbb1.minX) - 1;
-+        int j = MathHelper.ceil(axisalignedbb1.maxX) + 1;
-+        int k = MathHelper.floor(axisalignedbb1.minY) - 1;
-+        int l = MathHelper.ceil(axisalignedbb1.maxY) + 1;
-+        int i1 = MathHelper.floor(axisalignedbb1.minZ) - 1;
-+        int j1 = MathHelper.ceil(axisalignedbb1.maxZ) + 1;
-         List<AxisAlignedBB> list = Lists.<AxisAlignedBB>newArrayList();
-         float f = 0.0F;
-         int k1 = 0;
--        BlockPos.PooledMutableBlockPos blockpos$pooledmutableblockpos = BlockPos.PooledMutableBlockPos.func_185346_s();
-+        BlockPos.PooledMutableBlockPos blockpos$pooledmutableblockpos = BlockPos.PooledMutableBlockPos.retain();
- 
-         try
-         {
-@@ -470,13 +532,13 @@
-                         {
-                             if (j2 <= 0 || k2 != k && k2 != l - 1)
-                             {
--                                blockpos$pooledmutableblockpos.func_181079_c(l1, k2, i2);
--                                IBlockState iblockstate = this.field_70170_p.func_180495_p(blockpos$pooledmutableblockpos);
--                                iblockstate.func_185908_a(this.field_70170_p, blockpos$pooledmutableblockpos, axisalignedbb1, list, this, false);
-+                                blockpos$pooledmutableblockpos.setPos(l1, k2, i2);
-+                                IBlockState iblockstate = this.world.getBlockState(blockpos$pooledmutableblockpos);
-+                                iblockstate.addCollisionBoxToList(this.world, blockpos$pooledmutableblockpos, axisalignedbb1, list, this, false);
- 
-                                 if (!list.isEmpty())
-                                 {
--                                    f += iblockstate.func_177230_c().field_149765_K;
-+                                    f += iblockstate.getBlock().slipperiness;
-                                     ++k1;
-                                 }
- 
-@@ -489,24 +551,24 @@
-         }
-         finally
-         {
--            blockpos$pooledmutableblockpos.func_185344_t();
-+            blockpos$pooledmutableblockpos.release();
-         }
- 
-         return f / (float)k1;
-     }
- 
--    private boolean func_184446_u()
-+    private boolean checkInWater()
-     {
--        AxisAlignedBB axisalignedbb = this.func_174813_aQ();
--        int i = MathHelper.func_76128_c(axisalignedbb.field_72340_a);
--        int j = MathHelper.func_76143_f(axisalignedbb.field_72336_d);
--        int k = MathHelper.func_76128_c(axisalignedbb.field_72338_b);
--        int l = MathHelper.func_76143_f(axisalignedbb.field_72338_b + 0.001D);
--        int i1 = MathHelper.func_76128_c(axisalignedbb.field_72339_c);
--        int j1 = MathHelper.func_76143_f(axisalignedbb.field_72334_f);
-+        AxisAlignedBB axisalignedbb = this.getEntityBoundingBox();
-+        int i = MathHelper.floor(axisalignedbb.minX);
-+        int j = MathHelper.ceil(axisalignedbb.maxX);
-+        int k = MathHelper.floor(axisalignedbb.minY);
-+        int l = MathHelper.ceil(axisalignedbb.minY + 0.001D);
-+        int i1 = MathHelper.floor(axisalignedbb.minZ);
-+        int j1 = MathHelper.ceil(axisalignedbb.maxZ);
-         boolean flag = false;
--        this.field_184465_aD = Double.MIN_VALUE;
--        BlockPos.PooledMutableBlockPos blockpos$pooledmutableblockpos = BlockPos.PooledMutableBlockPos.func_185346_s();
-+        this.waterLevel = Double.MIN_VALUE;
-+        BlockPos.PooledMutableBlockPos blockpos$pooledmutableblockpos = BlockPos.PooledMutableBlockPos.retain();
- 
-         try
-         {
-@@ -516,14 +578,14 @@
-                 {
-                     for (int i2 = i1; i2 < j1; ++i2)
-                     {
--                        blockpos$pooledmutableblockpos.func_181079_c(k1, l1, i2);
--                        IBlockState iblockstate = this.field_70170_p.func_180495_p(blockpos$pooledmutableblockpos);
-+                        blockpos$pooledmutableblockpos.setPos(k1, l1, i2);
-+                        IBlockState iblockstate = this.world.getBlockState(blockpos$pooledmutableblockpos);
- 
--                        if (iblockstate.func_185904_a() == Material.field_151586_h)
-+                        if (iblockstate.getMaterial() == Material.WATER)
-                         {
--                            float f = BlockLiquid.func_190972_g(iblockstate, this.field_70170_p, blockpos$pooledmutableblockpos);
--                            this.field_184465_aD = Math.max((double)f, this.field_184465_aD);
--                            flag |= axisalignedbb.field_72338_b < (double)f;
-+                            float f = BlockLiquid.getLiquidHeight(iblockstate, this.world, blockpos$pooledmutableblockpos);
-+                            this.waterLevel = Math.max((double)f, this.waterLevel);
-+                            flag |= axisalignedbb.minY < (double)f;
-                         }
-                     }
-                 }
-@@ -531,25 +593,25 @@
-         }
-         finally
-         {
--            blockpos$pooledmutableblockpos.func_185344_t();
-+            blockpos$pooledmutableblockpos.release();
-         }
- 
-         return flag;
-     }
- 
-     @Nullable
--    private EntityBoat.Status func_184444_v()
-+    private EntityBoat.Status getUnderwaterStatus()
-     {
--        AxisAlignedBB axisalignedbb = this.func_174813_aQ();
--        double d0 = axisalignedbb.field_72337_e + 0.001D;
--        int i = MathHelper.func_76128_c(axisalignedbb.field_72340_a);
--        int j = MathHelper.func_76143_f(axisalignedbb.field_72336_d);
--        int k = MathHelper.func_76128_c(axisalignedbb.field_72337_e);
--        int l = MathHelper.func_76143_f(d0);
--        int i1 = MathHelper.func_76128_c(axisalignedbb.field_72339_c);
--        int j1 = MathHelper.func_76143_f(axisalignedbb.field_72334_f);
-+        AxisAlignedBB axisalignedbb = this.getEntityBoundingBox();
-+        double d0 = axisalignedbb.maxY + 0.001D;
-+        int i = MathHelper.floor(axisalignedbb.minX);
-+        int j = MathHelper.ceil(axisalignedbb.maxX);
-+        int k = MathHelper.floor(axisalignedbb.maxY);
-+        int l = MathHelper.ceil(d0);
-+        int i1 = MathHelper.floor(axisalignedbb.minZ);
-+        int j1 = MathHelper.ceil(axisalignedbb.maxZ);
-         boolean flag = false;
--        BlockPos.PooledMutableBlockPos blockpos$pooledmutableblockpos = BlockPos.PooledMutableBlockPos.func_185346_s();
-+        BlockPos.PooledMutableBlockPos blockpos$pooledmutableblockpos = BlockPos.PooledMutableBlockPos.retain();
- 
-         try
-         {
-@@ -559,12 +621,12 @@
-                 {
-                     for (int i2 = i1; i2 < j1; ++i2)
-                     {
--                        blockpos$pooledmutableblockpos.func_181079_c(k1, l1, i2);
--                        IBlockState iblockstate = this.field_70170_p.func_180495_p(blockpos$pooledmutableblockpos);
-+                        blockpos$pooledmutableblockpos.setPos(k1, l1, i2);
-+                        IBlockState iblockstate = this.world.getBlockState(blockpos$pooledmutableblockpos);
- 
--                        if (iblockstate.func_185904_a() == Material.field_151586_h && d0 < (double)BlockLiquid.func_190972_g(iblockstate, this.field_70170_p, blockpos$pooledmutableblockpos))
-+                        if (iblockstate.getMaterial() == Material.WATER && d0 < (double)BlockLiquid.getLiquidHeight(iblockstate, this.world, blockpos$pooledmutableblockpos))
-                         {
--                            if (((Integer)iblockstate.func_177229_b(BlockLiquid.field_176367_b)).intValue() != 0)
-+                            if (((Integer)iblockstate.getValue(BlockLiquid.LEVEL)).intValue() != 0)
-                             {
-                                 EntityBoat.Status entityboat$status = EntityBoat.Status.UNDER_FLOWING_WATER;
-                                 return entityboat$status;
-@@ -578,122 +640,122 @@
-         }
-         finally
-         {
--            blockpos$pooledmutableblockpos.func_185344_t();
-+            blockpos$pooledmutableblockpos.release();
-         }
- 
-         return flag ? EntityBoat.Status.UNDER_WATER : null;
-     }
- 
--    private void func_184450_w()
-+    private void updateMotion()
-     {
-         double d0 = -0.03999999910593033D;
--        double d1 = this.func_189652_ae() ? 0.0D : -0.03999999910593033D;
-+        double d1 = this.hasNoGravity() ? 0.0D : -0.03999999910593033D;
-         double d2 = 0.0D;
--        this.field_184472_g = 0.05F;
-+        this.momentum = 0.05F;
- 
--        if (this.field_184471_aG == EntityBoat.Status.IN_AIR && this.field_184469_aF != EntityBoat.Status.IN_AIR && this.field_184469_aF != EntityBoat.Status.ON_LAND)
-+        if (this.previousStatus == EntityBoat.Status.IN_AIR && this.status != EntityBoat.Status.IN_AIR && this.status != EntityBoat.Status.ON_LAND)
-         {
--            this.field_184465_aD = this.func_174813_aQ().field_72338_b + (double)this.field_70131_O;
--            this.func_70107_b(this.field_70165_t, (double)(this.func_184451_k() - this.field_70131_O) + 0.101D, this.field_70161_v);
--            this.field_70181_x = 0.0D;
--            this.field_184473_aH = 0.0D;
--            this.field_184469_aF = EntityBoat.Status.IN_WATER;
-+            this.waterLevel = this.getEntityBoundingBox().minY + (double)this.height;
-+            this.setPosition(this.posX, (double)(this.getWaterLevelAbove() - this.height) + 0.101D, this.posZ);
-+            this.motionY = 0.0D;
-+            this.lastYd = 0.0D;
-+            this.status = EntityBoat.Status.IN_WATER;
-         }
-         else
-         {
--            if (this.field_184469_aF == EntityBoat.Status.IN_WATER)
-+            if (this.status == EntityBoat.Status.IN_WATER)
-             {
--                d2 = (this.field_184465_aD - this.func_174813_aQ().field_72338_b) / (double)this.field_70131_O;
--                this.field_184472_g = 0.9F;
-+                d2 = (this.waterLevel - this.getEntityBoundingBox().minY) / (double)this.height;
-+                this.momentum = 0.9F;
-             }
--            else if (this.field_184469_aF == EntityBoat.Status.UNDER_FLOWING_WATER)
-+            else if (this.status == EntityBoat.Status.UNDER_FLOWING_WATER)
-             {
-                 d1 = -7.0E-4D;
--                this.field_184472_g = 0.9F;
-+                this.momentum = 0.9F;
-             }
--            else if (this.field_184469_aF == EntityBoat.Status.UNDER_WATER)
-+            else if (this.status == EntityBoat.Status.UNDER_WATER)
-             {
-                 d2 = 0.009999999776482582D;
--                this.field_184472_g = 0.45F;
-+                this.momentum = 0.45F;
-             }
--            else if (this.field_184469_aF == EntityBoat.Status.IN_AIR)
-+            else if (this.status == EntityBoat.Status.IN_AIR)
-             {
--                this.field_184472_g = 0.9F;
-+                this.momentum = 0.9F;
-             }
--            else if (this.field_184469_aF == EntityBoat.Status.ON_LAND)
-+            else if (this.status == EntityBoat.Status.ON_LAND)
-             {
--                this.field_184472_g = this.field_184467_aE;
-+                this.momentum = this.boatGlide;
- 
--                if (this.func_184179_bs() instanceof EntityPlayer)
-+                if (this.getControllingPassenger() instanceof EntityPlayer)
-                 {
--                    this.field_184467_aE /= 2.0F;
-+                    this.boatGlide /= 2.0F;
-                 }
-             }
- 
--            this.field_70159_w *= (double)this.field_184472_g;
--            this.field_70179_y *= (double)this.field_184472_g;
--            this.field_184475_as *= this.field_184472_g;
--            this.field_70181_x += d1;
-+            this.motionX *= (double)this.momentum;
-+            this.motionZ *= (double)this.momentum;
-+            this.deltaRotation *= this.momentum;
-+            this.motionY += d1;
- 
-             if (d2 > 0.0D)
-             {
-                 double d3 = 0.65D;
--                this.field_70181_x += d2 * 0.06153846016296973D;
-+                this.motionY += d2 * 0.06153846016296973D;
-                 double d4 = 0.75D;
--                this.field_70181_x *= 0.75D;
-+                this.motionY *= 0.75D;
-             }
-         }
-     }
- 
--    private void func_184443_x()
-+    private void controlBoat()
-     {
--        if (this.func_184207_aI())
-+        if (this.isBeingRidden())
-         {
-             float f = 0.0F;
- 
--            if (this.field_184480_az)
-+            if (this.leftInputDown)
-             {
--                this.field_184475_as += -1.0F;
-+                this.deltaRotation += -1.0F;
-             }
- 
--            if (this.field_184459_aA)
-+            if (this.rightInputDown)
-             {
--                ++this.field_184475_as;
-+                ++this.deltaRotation;
-             }
- 
--            if (this.field_184459_aA != this.field_184480_az && !this.field_184461_aB && !this.field_184463_aC)
-+            if (this.rightInputDown != this.leftInputDown && !this.forwardInputDown && !this.backInputDown)
-             {
-                 f += 0.005F;
-             }
- 
--            this.field_70177_z += this.field_184475_as;
-+            this.rotationYaw += this.deltaRotation;
- 
--            if (this.field_184461_aB)
-+            if (this.forwardInputDown)
-             {
-                 f += 0.04F;
-             }
- 
--            if (this.field_184463_aC)
-+            if (this.backInputDown)
-             {
-                 f -= 0.005F;
-             }
- 
--            this.field_70159_w += (double)(MathHelper.func_76126_a(-this.field_70177_z * 0.017453292F) * f);
--            this.field_70179_y += (double)(MathHelper.func_76134_b(this.field_70177_z * 0.017453292F) * f);
--            this.func_184445_a(this.field_184459_aA && !this.field_184480_az || this.field_184461_aB, this.field_184480_az && !this.field_184459_aA || this.field_184461_aB);
-+            this.motionX += (double)(MathHelper.sin(-this.rotationYaw * 0.017453292F) * f);
-+            this.motionZ += (double)(MathHelper.cos(this.rotationYaw * 0.017453292F) * f);
-+            this.setPaddleState(this.rightInputDown && !this.leftInputDown || this.forwardInputDown, this.leftInputDown && !this.rightInputDown || this.forwardInputDown);
-         }
-     }
- 
--    public void func_184232_k(Entity p_184232_1_)
-+    public void updatePassenger(Entity passenger)
-     {
--        if (this.func_184196_w(p_184232_1_))
-+        if (this.isPassenger(passenger))
-         {
-             float f = 0.0F;
--            float f1 = (float)((this.field_70128_L ? 0.009999999776482582D : this.func_70042_X()) + p_184232_1_.func_70033_W());
-+            float f1 = (float)((this.isDead ? 0.009999999776482582D : this.getMountedYOffset()) + passenger.getYOffset());
- 
--            if (this.func_184188_bt().size() > 1)
-+            if (this.getPassengers().size() > 1)
-             {
--                int i = this.func_184188_bt().indexOf(p_184232_1_);
-+                int i = this.getPassengers().indexOf(passenger);
- 
-                 if (i == 0)
-                 {
-@@ -704,183 +766,187 @@
-                     f = -0.6F;
-                 }
- 
--                if (p_184232_1_ instanceof EntityAnimal)
-+                if (passenger instanceof EntityAnimal)
-                 {
-                     f = (float)((double)f + 0.2D);
-                 }
-             }
- 
--            Vec3d vec3d = (new Vec3d((double)f, 0.0D, 0.0D)).func_178785_b(-this.field_70177_z * 0.017453292F - ((float)Math.PI / 2F));
--            p_184232_1_.func_70107_b(this.field_70165_t + vec3d.field_72450_a, this.field_70163_u + (double)f1, this.field_70161_v + vec3d.field_72449_c);
--            p_184232_1_.field_70177_z += this.field_184475_as;
--            p_184232_1_.func_70034_d(p_184232_1_.func_70079_am() + this.field_184475_as);
--            this.func_184454_a(p_184232_1_);
-+            Vec3d vec3d = (new Vec3d((double)f, 0.0D, 0.0D)).rotateYaw(-this.rotationYaw * 0.017453292F - ((float)Math.PI / 2F));
-+            passenger.setPosition(this.posX + vec3d.xCoord, this.posY + (double)f1, this.posZ + vec3d.zCoord);
-+            passenger.rotationYaw += this.deltaRotation;
-+            passenger.setRotationYawHead(passenger.getRotationYawHead() + this.deltaRotation);
-+            this.applyYawToEntity(passenger);
- 
--            if (p_184232_1_ instanceof EntityAnimal && this.func_184188_bt().size() > 1)
-+            if (passenger instanceof EntityAnimal && this.getPassengers().size() > 1)
-             {
--                int j = p_184232_1_.func_145782_y() % 2 == 0 ? 90 : 270;
--                p_184232_1_.func_181013_g(((EntityAnimal)p_184232_1_).field_70761_aq + (float)j);
--                p_184232_1_.func_70034_d(p_184232_1_.func_70079_am() + (float)j);
-+                int j = passenger.getEntityId() % 2 == 0 ? 90 : 270;
-+                passenger.setRenderYawOffset(((EntityAnimal)passenger).renderYawOffset + (float)j);
-+                passenger.setRotationYawHead(passenger.getRotationYawHead() + (float)j);
-             }
-         }
-     }
- 
--    protected void func_184454_a(Entity p_184454_1_)
-+    protected void applyYawToEntity(Entity entityToUpdate)
-     {
--        p_184454_1_.func_181013_g(this.field_70177_z);
--        float f = MathHelper.func_76142_g(p_184454_1_.field_70177_z - this.field_70177_z);
--        float f1 = MathHelper.func_76131_a(f, -105.0F, 105.0F);
--        p_184454_1_.field_70126_B += f1 - f;
--        p_184454_1_.field_70177_z += f1 - f;
--        p_184454_1_.func_70034_d(p_184454_1_.field_70177_z);
-+        entityToUpdate.setRenderYawOffset(this.rotationYaw);
-+        float f = MathHelper.wrapDegrees(entityToUpdate.rotationYaw - this.rotationYaw);
-+        float f1 = MathHelper.clamp(f, -105.0F, 105.0F);
-+        entityToUpdate.prevRotationYaw += f1 - f;
-+        entityToUpdate.rotationYaw += f1 - f;
-+        entityToUpdate.setRotationYawHead(entityToUpdate.rotationYaw);
-     }
- 
-     @SideOnly(Side.CLIENT)
--    public void func_184190_l(Entity p_184190_1_)
-+    public void applyOrientationToEntity(Entity entityToUpdate)
-     {
--        this.func_184454_a(p_184190_1_);
-+        this.applyYawToEntity(entityToUpdate);
-     }
- 
--    protected void func_70014_b(NBTTagCompound p_70014_1_)
-+    protected void writeEntityToNBT(NBTTagCompound compound)
-     {
--        p_70014_1_.func_74778_a("Type", this.func_184453_r().func_184980_a());
-+        compound.setString("Type", this.getBoatType().getName());
-     }
- 
--    protected void func_70037_a(NBTTagCompound p_70037_1_)
-+    protected void readEntityFromNBT(NBTTagCompound compound)
-     {
--        if (p_70037_1_.func_150297_b("Type", 8))
-+        if (compound.hasKey("Type", 8))
-         {
--            this.func_184458_a(EntityBoat.Type.func_184981_a(p_70037_1_.func_74779_i("Type")));
-+            this.setBoatType(EntityBoat.Type.getTypeFromString(compound.getString("Type")));
-         }
-     }
- 
--    public boolean func_184230_a(EntityPlayer p_184230_1_, EnumHand p_184230_2_)
-+    public boolean processInitialInteract(EntityPlayer player, EnumHand hand)
-     {
--        if (p_184230_1_.func_70093_af())
-+        if (player.isSneaking())
-         {
-             return false;
-         }
-         else
-         {
--            if (!this.field_70170_p.field_72995_K && this.field_184474_h < 60.0F)
-+            if (!this.world.isRemote && this.outOfControlTicks < 60.0F)
-             {
--                p_184230_1_.func_184220_m(this);
-+                player.startRiding(this);
-             }
- 
-             return true;
-         }
-     }
- 
--    protected void func_184231_a(double p_184231_1_, boolean p_184231_3_, IBlockState p_184231_4_, BlockPos p_184231_5_)
-+    protected void updateFallState(double y, boolean onGroundIn, IBlockState state, BlockPos pos)
-     {
--        this.field_184473_aH = this.field_70181_x;
-+        this.lastYd = this.motionY;
- 
--        if (!this.func_184218_aH())
-+        if (!this.isRiding())
-         {
--            if (p_184231_3_)
-+            if (onGroundIn)
-             {
--                if (this.field_70143_R > 3.0F)
-+                if (this.fallDistance > 3.0F)
-                 {
--                    if (this.field_184469_aF != EntityBoat.Status.ON_LAND)
-+                    if (this.status != EntityBoat.Status.ON_LAND)
-                     {
--                        this.field_70143_R = 0.0F;
-+                        this.fallDistance = 0.0F;
-                         return;
-                     }
- 
--                    this.func_180430_e(this.field_70143_R, 1.0F);
-+                    this.fall(this.fallDistance, 1.0F);
- 
--                    if (!this.field_70170_p.field_72995_K && !this.field_70128_L)
-+                    if (!this.world.isRemote && !this.isDead)
+                     if (!this.field_70170_p.field_72995_K && !this.field_70128_L)
                      {
 -                        this.func_70106_y();
 +                        // CraftBukkit start
 +                        Vehicle vehicle = (Vehicle) this.getBukkitEntity();
 +                        VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, null);
-+                        this.world.getServer().getPluginManager().callEvent(destroyEvent);
++                        this.field_70170_p.getServer().getPluginManager().callEvent(destroyEvent);
 +                        if (!destroyEvent.isCancelled()) {
-+                            this.setDead();
-+                            if (this.world.getGameRules().getBoolean("doEntityDrops")) {
++                            this.func_70106_y();
++                            if (this.field_70170_p.func_82736_K().func_82766_b("doEntityDrops")) {
 +                                int i;
  
 -                        if (this.field_70170_p.func_82736_K().func_82766_b("doEntityDrops"))
@@ -1090,198 +148,15 @@
 -                                this.func_70099_a(new ItemStack(Item.func_150898_a(Blocks.field_150344_f), 1, this.func_184453_r().func_184982_b()), 0.0F);
 -                            }
 +                                for (i = 0; i < 3; ++i) {
-+                                    this.entityDropItem(new ItemStack(Item.getItemFromBlock(Blocks.PLANKS), 1, this.getBoatType().getMetadata()), 0.0F);
++                                    this.func_70099_a(new ItemStack(Item.func_150898_a(Blocks.field_150344_f), 1, this.func_184453_r().func_184982_b()), 0.0F);
 +                                }
  
 -                            for (int j = 0; j < 2; ++j)
 -                            {
 -                                this.func_145778_a(Items.field_151055_y, 1, 0.0F);
 +                                for (i = 0; i < 2; ++i) {
-+                                    this.dropItemWithOffset(Items.STICK, 1, 0.0F);
++                                    this.func_145778_a(Items.field_151055_y, 1, 0.0F);
 +                                }
                              }
                          }
                      }
-                 }
- 
--                this.field_70143_R = 0.0F;
-+                this.fallDistance = 0.0F;
-             }
--            else if (this.field_70170_p.func_180495_p((new BlockPos(this)).func_177977_b()).func_185904_a() != Material.field_151586_h && p_184231_1_ < 0.0D)
-+            else if (this.world.getBlockState((new BlockPos(this)).down()).getMaterial() != Material.WATER && y < 0.0D)
-             {
--                this.field_70143_R = (float)((double)this.field_70143_R - p_184231_1_);
-+                this.fallDistance = (float)((double)this.fallDistance - y);
-             }
-         }
-     }
- 
--    public boolean func_184457_a(int p_184457_1_)
-+    public boolean getPaddleState(int p_184457_1_)
-     {
--        return ((Boolean)this.field_70180_af.func_187225_a(field_184468_e[p_184457_1_])).booleanValue() && this.func_184179_bs() != null;
-+        return ((Boolean)this.dataManager.get(DATA_ID_PADDLE[p_184457_1_])).booleanValue() && this.getControllingPassenger() != null;
-     }
- 
--    public void func_70266_a(float p_70266_1_)
-+    public void setDamageTaken(float damageTaken)
-     {
--        this.field_70180_af.func_187227_b(field_184464_c, Float.valueOf(p_70266_1_));
-+        this.dataManager.set(DAMAGE_TAKEN, Float.valueOf(damageTaken));
-     }
- 
--    public float func_70271_g()
-+    public float getDamageTaken()
-     {
--        return ((Float)this.field_70180_af.func_187225_a(field_184464_c)).floatValue();
-+        return ((Float)this.dataManager.get(DAMAGE_TAKEN)).floatValue();
-     }
- 
--    public void func_70265_b(int p_70265_1_)
-+    public void setTimeSinceHit(int timeSinceHit)
-     {
--        this.field_70180_af.func_187227_b(field_184460_a, Integer.valueOf(p_70265_1_));
-+        this.dataManager.set(TIME_SINCE_HIT, Integer.valueOf(timeSinceHit));
-     }
- 
--    public int func_70268_h()
-+    public int getTimeSinceHit()
-     {
--        return ((Integer)this.field_70180_af.func_187225_a(field_184460_a)).intValue();
-+        return ((Integer)this.dataManager.get(TIME_SINCE_HIT)).intValue();
-     }
- 
--    public void func_70269_c(int p_70269_1_)
-+    public void setForwardDirection(int forwardDirection)
-     {
--        this.field_70180_af.func_187227_b(field_184462_b, Integer.valueOf(p_70269_1_));
-+        this.dataManager.set(FORWARD_DIRECTION, Integer.valueOf(forwardDirection));
-     }
- 
--    public int func_70267_i()
-+    public int getForwardDirection()
-     {
--        return ((Integer)this.field_70180_af.func_187225_a(field_184462_b)).intValue();
-+        return ((Integer)this.dataManager.get(FORWARD_DIRECTION)).intValue();
-     }
- 
--    public void func_184458_a(EntityBoat.Type p_184458_1_)
-+    public void setBoatType(EntityBoat.Type boatType)
-     {
--        this.field_70180_af.func_187227_b(field_184466_d, Integer.valueOf(p_184458_1_.ordinal()));
-+        this.dataManager.set(BOAT_TYPE, Integer.valueOf(boatType.ordinal()));
-     }
- 
--    public EntityBoat.Type func_184453_r()
-+    public EntityBoat.Type getBoatType()
-     {
--        return EntityBoat.Type.func_184979_a(((Integer)this.field_70180_af.func_187225_a(field_184466_d)).intValue());
-+        return EntityBoat.Type.byId(((Integer)this.dataManager.get(BOAT_TYPE)).intValue());
-     }
- 
--    protected boolean func_184219_q(Entity p_184219_1_)
-+    protected boolean canFitPassenger(Entity passenger)
-     {
--        return this.func_184188_bt().size() < 2;
-+        return this.getPassengers().size() < 2;
-     }
- 
-     @Nullable
--    public Entity func_184179_bs()
-+    public Entity getControllingPassenger()
-     {
--        List<Entity> list = this.func_184188_bt();
-+        List<Entity> list = this.getPassengers();
-         return list.isEmpty() ? null : (Entity)list.get(0);
-     }
- 
-     @SideOnly(Side.CLIENT)
--    public void func_184442_a(boolean p_184442_1_, boolean p_184442_2_, boolean p_184442_3_, boolean p_184442_4_)
-+    public void updateInputs(boolean p_184442_1_, boolean p_184442_2_, boolean p_184442_3_, boolean p_184442_4_)
-     {
--        this.field_184480_az = p_184442_1_;
--        this.field_184459_aA = p_184442_2_;
--        this.field_184461_aB = p_184442_3_;
--        this.field_184463_aC = p_184442_4_;
-+        this.leftInputDown = p_184442_1_;
-+        this.rightInputDown = p_184442_2_;
-+        this.forwardInputDown = p_184442_3_;
-+        this.backInputDown = p_184442_4_;
-     }
- 
-     public static enum Status
-@@ -894,52 +960,52 @@
- 
-     public static enum Type
-     {
--        OAK(BlockPlanks.EnumType.OAK.func_176839_a(), "oak"),
--        SPRUCE(BlockPlanks.EnumType.SPRUCE.func_176839_a(), "spruce"),
--        BIRCH(BlockPlanks.EnumType.BIRCH.func_176839_a(), "birch"),
--        JUNGLE(BlockPlanks.EnumType.JUNGLE.func_176839_a(), "jungle"),
--        ACACIA(BlockPlanks.EnumType.ACACIA.func_176839_a(), "acacia"),
--        DARK_OAK(BlockPlanks.EnumType.DARK_OAK.func_176839_a(), "dark_oak");
-+        OAK(BlockPlanks.EnumType.OAK.getMetadata(), "oak"),
-+        SPRUCE(BlockPlanks.EnumType.SPRUCE.getMetadata(), "spruce"),
-+        BIRCH(BlockPlanks.EnumType.BIRCH.getMetadata(), "birch"),
-+        JUNGLE(BlockPlanks.EnumType.JUNGLE.getMetadata(), "jungle"),
-+        ACACIA(BlockPlanks.EnumType.ACACIA.getMetadata(), "acacia"),
-+        DARK_OAK(BlockPlanks.EnumType.DARK_OAK.getMetadata(), "dark_oak");
- 
--        private final String field_184990_g;
--        private final int field_184991_h;
-+        private final String name;
-+        private final int metadata;
- 
--        private Type(int p_i47028_3_, String p_i47028_4_)
-+        private Type(int metadataIn, String nameIn)
-         {
--            this.field_184990_g = p_i47028_4_;
--            this.field_184991_h = p_i47028_3_;
-+            this.name = nameIn;
-+            this.metadata = metadataIn;
-         }
- 
--        public String func_184980_a()
-+        public String getName()
-         {
--            return this.field_184990_g;
-+            return this.name;
-         }
- 
--        public int func_184982_b()
-+        public int getMetadata()
-         {
--            return this.field_184991_h;
-+            return this.metadata;
-         }
- 
-         public String toString()
-         {
--            return this.field_184990_g;
-+            return this.name;
-         }
- 
--        public static EntityBoat.Type func_184979_a(int p_184979_0_)
-+        public static EntityBoat.Type byId(int id)
-         {
--            if (p_184979_0_ < 0 || p_184979_0_ >= values().length)
-+            if (id < 0 || id >= values().length)
-             {
--                p_184979_0_ = 0;
-+                id = 0;
-             }
- 
--            return values()[p_184979_0_];
-+            return values()[id];
-         }
- 
--        public static EntityBoat.Type func_184981_a(String p_184981_0_)
-+        public static EntityBoat.Type getTypeFromString(String nameIn)
-         {
-             for (int i = 0; i < values().length; ++i)
-             {
--                if (values()[i].func_184980_a().equals(p_184981_0_))
-+                if (values()[i].getName().equals(nameIn))
-                 {
-                     return values()[i];
-                 }

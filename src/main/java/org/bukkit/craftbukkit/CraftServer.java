@@ -157,6 +157,10 @@ import net.minecraft.world.storage.MapStorage;
 import net.minecraft.world.storage.SaveHandler;
 import net.minecraft.world.storage.WorldInfo;
 
+import static org.bukkit.World.Environment.NETHER;
+import static org.bukkit.World.Environment.NORMAL;
+import static org.bukkit.World.Environment.THE_END;
+
 public final class CraftServer implements Server {
     private static final Player[] EMPTY_PLAYER_ARRAY = new Player[0];
     private final String serverName = "CraftBukkit";
@@ -293,11 +297,11 @@ public final class CraftServer implements Server {
     }
 
     private File getConfigFile() {
-        return (File) console.options.valueOf("bukkit-settings");
+        return new File("bukkit.yml");
     }
 
     private File getCommandsConfigFile() {
-        return (File) console.options.valueOf("commands-settings");
+        return new File("commands.yml");
     }
 
     private void saveConfig() {
@@ -853,7 +857,25 @@ public final class CraftServer implements Server {
     public World createWorld(String name, Environment environment, long seed, ChunkGenerator generator) {
         return WorldCreator.name(name).environment(environment).seed(seed).generator(generator).createWorld();
     }
-
+    Environment decide(WorldProvider in)
+    {
+        if(in.getDimensionType() == DimensionType.OVERWORLD)
+        {
+            return NORMAL;
+        }
+        else if(in.getDimensionType() == DimensionType.NETHER)
+        {
+            return NETHER;
+        }
+        else if(in.getDimensionType() == DimensionType.THE_END)
+        {
+            return THE_END;
+        }
+        else
+        {
+            return NORMAL;
+        }
+    }
     @Override
     public World createWorld(WorldCreator creator) {
 
@@ -881,7 +903,7 @@ public final class CraftServer implements Server {
         DimensionManager.registerDimension(dimension, DimensionType.getById(type.getWorldTypeID()));
         boolean hardcore = false;
         DimensionManager.initDimension(dimension);
-        return new CraftWorld(DimensionManager.getWorld(dimension),generator,net.minecraft.world.World.decide(DimensionManager.getProvider(dimension)));
+        return new CraftWorld(DimensionManager.getWorld(dimension),generator,decide(DimensionManager.getProvider(dimension)));
     }
 
     @Override

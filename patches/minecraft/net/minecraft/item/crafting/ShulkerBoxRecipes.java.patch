@@ -1,16 +1,7 @@
 --- ../src-base/minecraft/net/minecraft/item/crafting/ShulkerBoxRecipes.java
 +++ ../src-work/minecraft/net/minecraft/item/crafting/ShulkerBoxRecipes.java
-@@ -13,36 +13,38 @@
- 
- public class ShulkerBoxRecipes
- {
--    void func_190935_a(CraftingManager p_190935_1_)
-+    void addRecipes(CraftingManager manager)
-     {
--        p_190935_1_.func_92103_a(BlockShulkerBox.func_190953_b(EntityShulker.field_190771_bx), new Object[] {"-", "#", "-", '-', Items.field_190930_cZ, '#', Blocks.field_150486_ae});
--        p_190935_1_.func_180302_a(new ShulkerBoxRecipes.ShulkerBoxColoring());
-+        manager.addRecipe(BlockShulkerBox.getColoredItemStack(EntityShulker.DEFAULT_COLOR), new Object[] {"-", "#", "-", '-', Items.SHULKER_SHELL, '#', Blocks.CHEST});
-+        manager.addRecipe(new ShulkerBoxRecipes.ShulkerBoxColoring());
+@@ -19,11 +19,13 @@
+         p_190935_1_.func_180302_a(new ShulkerBoxRecipes.ShulkerBoxColoring());
      }
  
 -    static class ShulkerBoxColoring implements IRecipe
@@ -20,113 +11,9 @@
 -            {
 +            // CraftBukkit start - Delegate to new parent class with bogus info
 +            public ShulkerBoxColoring() {
-+                super(new ItemStack(Blocks.WHITE_SHULKER_BOX, 0, 0), java.util.Arrays.asList(new ItemStack(Items.DYE, 0, 5)));
++                super(new ItemStack(Blocks.field_190977_dl, 0, 0), java.util.Arrays.asList(new ItemStack(Items.field_151100_aR, 0, 5)));
              }
 +            // CraftBukkit end
  
--            public boolean func_77569_a(InventoryCrafting p_77569_1_, World p_77569_2_)
-+            public boolean matches(InventoryCrafting inv, World worldIn)
+             public boolean func_77569_a(InventoryCrafting p_77569_1_, World p_77569_2_)
              {
-                 int i = 0;
-                 int j = 0;
- 
--                for (int k = 0; k < p_77569_1_.func_70302_i_(); ++k)
-+                for (int k = 0; k < inv.getSizeInventory(); ++k)
-                 {
--                    ItemStack itemstack = p_77569_1_.func_70301_a(k);
-+                    ItemStack itemstack = inv.getStackInSlot(k);
- 
--                    if (!itemstack.func_190926_b())
-+                    if (!itemstack.isEmpty())
-                     {
--                        if (Block.func_149634_a(itemstack.func_77973_b()) instanceof BlockShulkerBox)
-+                        if (Block.getBlockFromItem(itemstack.getItem()) instanceof BlockShulkerBox)
-                         {
-                             ++i;
-                         }
-                         else
-                         {
--                            if (itemstack.func_77973_b() != Items.field_151100_aR)
-+                            if (itemstack.getItem() != Items.DYE)
-                             {
-                                 return false;
-                             }
-@@ -60,59 +62,59 @@
-                 return i == 1 && j == 1;
-             }
- 
--            public ItemStack func_77572_b(InventoryCrafting p_77572_1_)
-+            public ItemStack getCraftingResult(InventoryCrafting inv)
-             {
--                ItemStack itemstack = ItemStack.field_190927_a;
--                ItemStack itemstack1 = ItemStack.field_190927_a;
-+                ItemStack itemstack = ItemStack.EMPTY;
-+                ItemStack itemstack1 = ItemStack.EMPTY;
- 
--                for (int i = 0; i < p_77572_1_.func_70302_i_(); ++i)
-+                for (int i = 0; i < inv.getSizeInventory(); ++i)
-                 {
--                    ItemStack itemstack2 = p_77572_1_.func_70301_a(i);
-+                    ItemStack itemstack2 = inv.getStackInSlot(i);
- 
--                    if (!itemstack2.func_190926_b())
-+                    if (!itemstack2.isEmpty())
-                     {
--                        if (Block.func_149634_a(itemstack2.func_77973_b()) instanceof BlockShulkerBox)
-+                        if (Block.getBlockFromItem(itemstack2.getItem()) instanceof BlockShulkerBox)
-                         {
-                             itemstack = itemstack2;
-                         }
--                        else if (itemstack2.func_77973_b() == Items.field_151100_aR)
-+                        else if (itemstack2.getItem() == Items.DYE)
-                         {
-                             itemstack1 = itemstack2;
-                         }
-                     }
-                 }
- 
--                ItemStack itemstack3 = BlockShulkerBox.func_190953_b(EnumDyeColor.func_176766_a(itemstack1.func_77960_j()));
-+                ItemStack itemstack3 = BlockShulkerBox.getColoredItemStack(EnumDyeColor.byDyeDamage(itemstack1.getMetadata()));
- 
--                if (itemstack.func_77942_o())
-+                if (itemstack.hasTagCompound())
-                 {
--                    itemstack3.func_77982_d(itemstack.func_77978_p().func_74737_b());
-+                    itemstack3.setTagCompound(itemstack.getTagCompound().copy());
-                 }
- 
-                 return itemstack3;
-             }
- 
--            public int func_77570_a()
-+            public int getRecipeSize()
-             {
-                 return 10;
-             }
- 
--            public ItemStack func_77571_b()
-+            public ItemStack getRecipeOutput()
-             {
--                return ItemStack.field_190927_a;
-+                return ItemStack.EMPTY;
-             }
- 
--            public NonNullList<ItemStack> func_179532_b(InventoryCrafting p_179532_1_)
-+            public NonNullList<ItemStack> getRemainingItems(InventoryCrafting inv)
-             {
--                NonNullList<ItemStack> nonnulllist = NonNullList.<ItemStack>func_191197_a(p_179532_1_.func_70302_i_(), ItemStack.field_190927_a);
-+                NonNullList<ItemStack> nonnulllist = NonNullList.<ItemStack>withSize(inv.getSizeInventory(), ItemStack.EMPTY);
- 
-                 for (int i = 0; i < nonnulllist.size(); ++i)
-                 {
--                    ItemStack itemstack = p_179532_1_.func_70301_a(i);
-+                    ItemStack itemstack = inv.getStackInSlot(i);
- 
--                    if (itemstack.func_77973_b().func_77634_r())
-+                    if (itemstack.getItem().hasContainerItem())
-                     {
--                        nonnulllist.set(i, new ItemStack(itemstack.func_77973_b().func_77668_q()));
-+                        nonnulllist.set(i, new ItemStack(itemstack.getItem().getContainerItem()));
-                     }
-                 }
- 

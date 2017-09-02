@@ -1,6 +1,6 @@
 --- ../src-base/minecraft/net/minecraft/inventory/ContainerWorkbench.java
 +++ ../src-work/minecraft/net/minecraft/inventory/ContainerWorkbench.java
-@@ -1,31 +1,57 @@
+@@ -1,12 +1,17 @@
  package net.minecraft.inventory;
  
  import net.minecraft.entity.player.EntityPlayer;
@@ -18,14 +18,10 @@
  
  public class ContainerWorkbench extends Container
  {
--    public InventoryCrafting field_75162_e = new InventoryCrafting(this, 3, 3);
--    public IInventory field_75160_f = new InventoryCraftResult();
--    private final World field_75161_g;
--    private final BlockPos field_178145_h;
-+    public InventoryCrafting craftMatrix = new InventoryCrafting(this, 3, 3);
-+    public IInventory craftResult = new InventoryCraftResult();
-+    private final World world;
-+    private final BlockPos pos;
+@@ -14,9 +19,30 @@
+     public IInventory field_75160_f = new InventoryCraftResult();
+     private final World field_75161_g;
+     private final BlockPos field_178145_h;
 +    // CraftBukkit start
 +    private CraftInventoryView bukkitEntity = null;
 +    private InventoryPlayer player;
@@ -37,203 +33,42 @@
 +            return bukkitEntity;
 +        }
  
--    public ContainerWorkbench(InventoryPlayer p_i45800_1_, World p_i45800_2_, BlockPos p_i45800_3_)
-+        CraftInventoryCrafting inventory = new CraftInventoryCrafting(this.craftMatrix, this.craftResult);
-+        bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
++        CraftInventoryCrafting inventory = new CraftInventoryCrafting(this.field_75162_e, this.field_75160_f);
++        bukkitEntity = new CraftInventoryView(this.player.field_70458_d.getBukkitEntity(), inventory, this);
 +        return bukkitEntity;
 +    }
 +    // CraftBukkit end
-+    public ContainerWorkbench(InventoryPlayer playerInventory, World worldIn, BlockPos posIn)
+     public ContainerWorkbench(InventoryPlayer p_i45800_1_, World p_i45800_2_, BlockPos p_i45800_3_)
      {
--        this.field_75161_g = p_i45800_2_;
--        this.field_178145_h = p_i45800_3_;
--        this.func_75146_a(new SlotCrafting(p_i45800_1_.field_70458_d, this.field_75162_e, this.field_75160_f, 0, 124, 35));
 +        // CraftBukkit start - Switched order of IInventory construction and stored player
-+        this.craftResult = new net.minecraft.inventory.InventoryCraftResult();
-+        this.craftMatrix = new net.minecraft.inventory.InventoryCrafting(this, 3, 3, playerInventory.player); // CraftBukkit - pass player
-+        this.craftMatrix.resultInventory = this.craftResult;
-+        this.player = playerInventory;
++        this.field_75160_f = new net.minecraft.inventory.InventoryCraftResult();
++        this.field_75162_e = new net.minecraft.inventory.InventoryCrafting(this, 3, 3, p_i45800_1_.field_70458_d); // CraftBukkit - pass player
++        this.field_75162_e.resultInventory = this.field_75160_f;
++        this.player = p_i45800_1_;
 +        // CraftBukkit end
-+        this.world = worldIn;
-+        this.pos = posIn;
-+        this.addSlotToContainer(new SlotCrafting(playerInventory.player, this.craftMatrix, this.craftResult, 0, 124, 35));
+         this.field_75161_g = p_i45800_2_;
+         this.field_178145_h = p_i45800_3_;
+         this.func_75146_a(new SlotCrafting(p_i45800_1_.field_70458_d, this.field_75162_e, this.field_75160_f, 0, 124, 35));
+@@ -47,7 +73,21 @@
  
-         for (int i = 0; i < 3; ++i)
-         {
-             for (int j = 0; j < 3; ++j)
-             {
--                this.func_75146_a(new Slot(this.field_75162_e, j + i * 3, 30 + j * 18, 17 + i * 18));
-+                this.addSlotToContainer(new Slot(this.craftMatrix, j + i * 3, 30 + j * 18, 17 + i * 18));
-             }
-         }
- 
-@@ -33,113 +59,127 @@
-         {
-             for (int i1 = 0; i1 < 9; ++i1)
-             {
--                this.func_75146_a(new Slot(p_i45800_1_, i1 + k * 9 + 9, 8 + i1 * 18, 84 + k * 18));
-+                this.addSlotToContainer(new Slot(playerInventory, i1 + k * 9 + 9, 8 + i1 * 18, 84 + k * 18));
-             }
-         }
- 
-         for (int l = 0; l < 9; ++l)
-         {
--            this.func_75146_a(new Slot(p_i45800_1_, l, 8 + l * 18, 142));
-+            this.addSlotToContainer(new Slot(playerInventory, l, 8 + l * 18, 142));
-         }
- 
--        this.func_75130_a(this.field_75162_e);
-+        this.onCraftMatrixChanged(this.craftMatrix);
-     }
- 
--    public void func_75130_a(IInventory p_75130_1_)
-+    public void onCraftMatrixChanged(IInventory inventoryIn)
+     public void func_75130_a(IInventory p_75130_1_)
      {
 -        this.field_75160_f.func_70299_a(0, CraftingManager.func_77594_a().func_82787_a(this.field_75162_e, this.field_75161_g));
 +// this.resultInventory.setItem(0, CraftingManager.getInstance().craft(this.craftInventory, this.g));
 +        // CraftBukkit start
-+        CraftingManager.getInstance().lastCraftView = getBukkitView();
-+        ItemStack craftResult = CraftingManager.getInstance().findMatchingRecipe(this.craftMatrix, this.world);
-+        this.craftResult.setInventorySlotContents(0, craftResult);
-+        if (super.listeners.size() < 1) {
++        CraftingManager.func_77594_a().lastCraftView = getBukkitView();
++        ItemStack craftResult = CraftingManager.func_77594_a().func_82787_a(this.field_75162_e, this.field_75161_g);
++        this.field_75160_f.func_70299_a(0, craftResult);
++        if (super.field_75149_d.size() < 1) {
 +            return;
 +        }
 +        // See CraftBukkit PR #39
-+        if (craftResult != null && craftResult.getItem() == Items.FILLED_MAP) {
++        if (craftResult != null && craftResult.func_77973_b() == Items.field_151098_aY) {
 +            return;
 +        }
-+        EntityPlayerMP player = (EntityPlayerMP) super.listeners.get(0); // TODO: Is this _always_ correct? Seems like it.
-+        player.connection.sendPacket(new SPacketSetSlot(player.openContainer.windowId, 0, craftResult));
++        EntityPlayerMP player = (EntityPlayerMP) super.field_75149_d.get(0); // TODO: Is this _always_ correct? Seems like it.
++        player.field_71135_a.func_147359_a(new SPacketSetSlot(player.field_71070_bA.field_75152_c, 0, craftResult));
 +        // CraftBukkit end
      }
  
--    public void func_75134_a(EntityPlayer p_75134_1_)
-+    public void onContainerClosed(EntityPlayer playerIn)
-     {
--        super.func_75134_a(p_75134_1_);
-+        super.onContainerClosed(playerIn);
- 
--        if (!this.field_75161_g.field_72995_K)
-+        if (!this.world.isRemote)
-         {
-             for (int i = 0; i < 9; ++i)
-             {
--                ItemStack itemstack = this.field_75162_e.func_70304_b(i);
-+                ItemStack itemstack = this.craftMatrix.removeStackFromSlot(i);
- 
--                if (!itemstack.func_190926_b())
-+                if (!itemstack.isEmpty())
-                 {
--                    p_75134_1_.func_71019_a(itemstack, false);
-+                    playerIn.dropItem(itemstack, false);
-                 }
-             }
-         }
-     }
- 
--    public boolean func_75145_c(EntityPlayer p_75145_1_)
-+    public boolean canInteractWith(EntityPlayer playerIn)
-     {
--        return this.field_75161_g.func_180495_p(this.field_178145_h).func_177230_c() != Blocks.field_150462_ai ? false : p_75145_1_.func_70092_e((double)this.field_178145_h.func_177958_n() + 0.5D, (double)this.field_178145_h.func_177956_o() + 0.5D, (double)this.field_178145_h.func_177952_p() + 0.5D) <= 64.0D;
-+        return this.world.getBlockState(this.pos).getBlock() != Blocks.CRAFTING_TABLE ? false : playerIn.getDistanceSq((double)this.pos.getX() + 0.5D, (double)this.pos.getY() + 0.5D, (double)this.pos.getZ() + 0.5D) <= 64.0D;
-     }
- 
--    public ItemStack func_82846_b(EntityPlayer p_82846_1_, int p_82846_2_)
-+    public ItemStack transferStackInSlot(EntityPlayer playerIn, int index)
-     {
--        ItemStack itemstack = ItemStack.field_190927_a;
--        Slot slot = (Slot)this.field_75151_b.get(p_82846_2_);
-+        ItemStack itemstack = ItemStack.EMPTY;
-+        Slot slot = (Slot)this.inventorySlots.get(index);
- 
--        if (slot != null && slot.func_75216_d())
-+        if (slot != null && slot.getHasStack())
-         {
--            ItemStack itemstack1 = slot.func_75211_c();
--            itemstack = itemstack1.func_77946_l();
-+            ItemStack itemstack1 = slot.getStack();
-+            itemstack = itemstack1.copy();
- 
--            if (p_82846_2_ == 0)
-+            if (index == 0)
-             {
--                itemstack1.func_77973_b().func_77622_d(itemstack1, this.field_75161_g, p_82846_1_);
-+                itemstack1.getItem().onCreated(itemstack1, this.world, playerIn);
- 
--                if (!this.func_75135_a(itemstack1, 10, 46, true))
-+                if (!this.mergeItemStack(itemstack1, 10, 46, true))
-                 {
--                    return ItemStack.field_190927_a;
-+                    return ItemStack.EMPTY;
-                 }
- 
--                slot.func_75220_a(itemstack1, itemstack);
-+                slot.onSlotChange(itemstack1, itemstack);
-             }
--            else if (p_82846_2_ >= 10 && p_82846_2_ < 37)
-+            else if (index >= 10 && index < 37)
-             {
--                if (!this.func_75135_a(itemstack1, 37, 46, false))
-+                if (!this.mergeItemStack(itemstack1, 37, 46, false))
-                 {
--                    return ItemStack.field_190927_a;
-+                    return ItemStack.EMPTY;
-                 }
-             }
--            else if (p_82846_2_ >= 37 && p_82846_2_ < 46)
-+            else if (index >= 37 && index < 46)
-             {
--                if (!this.func_75135_a(itemstack1, 10, 37, false))
-+                if (!this.mergeItemStack(itemstack1, 10, 37, false))
-                 {
--                    return ItemStack.field_190927_a;
-+                    return ItemStack.EMPTY;
-                 }
-             }
--            else if (!this.func_75135_a(itemstack1, 10, 46, false))
-+            else if (!this.mergeItemStack(itemstack1, 10, 46, false))
-             {
--                return ItemStack.field_190927_a;
-+                return ItemStack.EMPTY;
-             }
- 
--            if (itemstack1.func_190926_b())
-+            if (itemstack1.isEmpty())
-             {
--                slot.func_75215_d(ItemStack.field_190927_a);
-+                slot.putStack(ItemStack.EMPTY);
-             }
-             else
-             {
--                slot.func_75218_e();
-+                slot.onSlotChanged();
-             }
- 
--            if (itemstack1.func_190916_E() == itemstack.func_190916_E())
-+            if (itemstack1.getCount() == itemstack.getCount())
-             {
--                return ItemStack.field_190927_a;
-+                return ItemStack.EMPTY;
-             }
- 
--            ItemStack itemstack2 = slot.func_190901_a(p_82846_1_, itemstack1);
-+            ItemStack itemstack2 = slot.onTake(playerIn, itemstack1);
- 
--            if (p_82846_2_ == 0)
-+            if (index == 0)
-             {
--                p_82846_1_.func_71019_a(itemstack2, false);
-+                playerIn.dropItem(itemstack2, false);
-             }
-         }
- 
-         return itemstack;
-     }
- 
--    public boolean func_94530_a(ItemStack p_94530_1_, Slot p_94530_2_)
-+    public boolean canMergeSlot(ItemStack stack, Slot slotIn)
-     {
--        return p_94530_2_.field_75224_c != this.field_75160_f && super.func_94530_a(p_94530_1_, p_94530_2_);
-+        return slotIn.inventory != this.craftResult && super.canMergeSlot(stack, slotIn);
-     }
- }
+     public void func_75134_a(EntityPlayer p_75134_1_)

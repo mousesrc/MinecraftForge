@@ -1,6 +1,6 @@
 --- ../src-base/minecraft/net/minecraft/inventory/SlotFurnaceOutput.java
 +++ ../src-work/minecraft/net/minecraft/inventory/SlotFurnaceOutput.java
-@@ -6,55 +6,63 @@
+@@ -6,7 +6,15 @@
  import net.minecraft.item.ItemStack;
  import net.minecraft.item.crafting.FurnaceRecipes;
  import net.minecraft.stats.AchievementList;
@@ -16,129 +16,30 @@
  
  public class SlotFurnaceOutput extends Slot
  {
--    private final EntityPlayer field_75229_a;
--    private int field_75228_b;
-+    private final EntityPlayer player;
-+    private int removeCount;
- 
--    public SlotFurnaceOutput(EntityPlayer p_i45793_1_, IInventory p_i45793_2_, int p_i45793_3_, int p_i45793_4_, int p_i45793_5_)
-+    public SlotFurnaceOutput(EntityPlayer player, IInventory inventoryIn, int slotIndex, int xPosition, int yPosition)
-     {
--        super(p_i45793_2_, p_i45793_3_, p_i45793_4_, p_i45793_5_);
--        this.field_75229_a = p_i45793_1_;
-+        super(inventoryIn, slotIndex, xPosition, yPosition);
-+        this.player = player;
-     }
- 
--    public boolean func_75214_a(ItemStack p_75214_1_)
-+    public boolean isItemValid(ItemStack stack)
-     {
-         return false;
-     }
- 
--    public ItemStack func_75209_a(int p_75209_1_)
-+    public ItemStack decrStackSize(int amount)
-     {
--        if (this.func_75216_d())
-+        if (this.getHasStack())
-         {
--            this.field_75228_b += Math.min(p_75209_1_, this.func_75211_c().func_190916_E());
-+            this.removeCount += Math.min(amount, this.getStack().getCount());
-         }
- 
--        return super.func_75209_a(p_75209_1_);
-+        return super.decrStackSize(amount);
-     }
- 
--    public ItemStack func_190901_a(EntityPlayer p_190901_1_, ItemStack p_190901_2_)
-+    public ItemStack onTake(EntityPlayer thePlayer, ItemStack stack)
-     {
--        this.func_75208_c(p_190901_2_);
--        super.func_190901_a(p_190901_1_, p_190901_2_);
--        return p_190901_2_;
-+        this.onCrafting(stack);
-+        super.onTake(thePlayer, stack);
-+        return stack;
-     }
- 
--    protected void func_75210_a(ItemStack p_75210_1_, int p_75210_2_)
-+    protected void onCrafting(ItemStack stack, int amount)
-     {
--        this.field_75228_b += p_75210_2_;
--        this.func_75208_c(p_75210_1_);
-+        this.removeCount += amount;
-+        this.onCrafting(stack);
-     }
- 
--    protected void func_75208_c(ItemStack p_75208_1_)
-+    protected void onCrafting(ItemStack stack)
-     {
--        p_75208_1_.func_77980_a(this.field_75229_a.field_70170_p, this.field_75229_a, this.field_75228_b);
-+        stack.onCrafting(this.player.world, this.player, this.removeCount);
- 
--        if (!this.field_75229_a.field_70170_p.field_72995_K)
-+        if (!this.player.world.isRemote)
-         {
--            int i = this.field_75228_b;
--            float f = FurnaceRecipes.func_77602_a().func_151398_b(p_75208_1_);
-+            int i = this.removeCount;
-+            float f = FurnaceRecipes.instance().getSmeltingExperience(stack);
- 
-             if (f == 0.0F)
-             {
-@@ -62,34 +70,46 @@
-             }
-             else if (f < 1.0F)
-             {
--                int j = MathHelper.func_76141_d((float)i * f);
-+                int j = MathHelper.floor((float)i * f);
- 
--                if (j < MathHelper.func_76123_f((float)i * f) && Math.random() < (double)((float)i * f - (float)j))
-+                if (j < MathHelper.ceil((float)i * f) && Math.random() < (double)((float)i * f - (float)j))
-                 {
-                     ++j;
-                 }
+@@ -71,7 +79,17 @@
  
                  i = j;
              }
 +            // CraftBukkit start - fire FurnaceExtractEvent
-+            Player bplayer = (Player) player.getBukkitEntity();
-+            TileEntityFurnace furnace = ((TileEntityFurnace) this.inventory);
-+            org.bukkit.block.Block block = player.world.getWorld().getBlockAt(furnace.getPos().getX(), furnace.getPos().getY(), furnace.getPos().getZ());
++            Player bplayer = (Player) field_75229_a.getBukkitEntity();
++            TileEntityFurnace furnace = ((TileEntityFurnace) this.field_75224_c);
++            org.bukkit.block.Block block = field_75229_a.field_70170_p.getWorld().getBlockAt(furnace.func_174877_v().func_177958_n(), furnace.func_174877_v().func_177956_o(), furnace.func_174877_v().func_177952_p());
  
-+            if (removeCount != 0) {
-+                FurnaceExtractEvent event = new FurnaceExtractEvent(bplayer, block, org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(stack.getItem()), removeCount, i);
-+                player.world.getServer().getPluginManager().callEvent(event);
++            if (field_75228_b != 0) {
++                FurnaceExtractEvent event = new FurnaceExtractEvent(bplayer, block, org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(p_75208_1_.func_77973_b()), field_75228_b, i);
++                field_75229_a.field_70170_p.getServer().getPluginManager().callEvent(event);
 +                i = event.getExpToDrop();
 +            }
 +            // CraftBukkit end
              while (i > 0)
              {
--                int k = EntityXPOrb.func_70527_a(i);
-+                int k = EntityXPOrb.getXPSplit(i);
-                 i -= k;
--                this.field_75229_a.field_70170_p.func_72838_d(new EntityXPOrb(this.field_75229_a.field_70170_p, this.field_75229_a.field_70165_t, this.field_75229_a.field_70163_u + 0.5D, this.field_75229_a.field_70161_v + 0.5D, k));
-+                this.player.world.spawnEntity(new EntityXPOrb(this.player.world, this.player.posX, this.player.posY + 0.5D, this.player.posZ + 0.5D, k));
-             }
-         }
+                 int k = EntityXPOrb.func_70527_a(i);
+@@ -82,6 +100,8 @@
  
--        this.field_75228_b = 0;
-+        this.removeCount = 0;
+         this.field_75228_b = 0;
  
--        if (p_75208_1_.func_77973_b() == Items.field_151042_j)
-+        net.minecraftforge.fml.common.FMLCommonHandler.instance().firePlayerSmeltedEvent(player, stack);
++        net.minecraftforge.fml.common.FMLCommonHandler.instance().firePlayerSmeltedEvent(field_75229_a, p_75208_1_);
 +
-+        if (stack.getItem() == Items.IRON_INGOT)
+         if (p_75208_1_.func_77973_b() == Items.field_151042_j)
          {
--            this.field_75229_a.func_71029_a(AchievementList.field_187987_k);
-+            this.player.addStat(AchievementList.ACQUIRE_IRON);
-         }
- 
--        if (p_75208_1_.func_77973_b() == Items.field_179566_aV)
-+        if (stack.getItem() == Items.COOKED_FISH)
-         {
--            this.field_75229_a.func_71029_a(AchievementList.field_76026_p);
-+            this.player.addStat(AchievementList.COOK_FISH);
-         }
-     }
- }
+             this.field_75229_a.func_71029_a(AchievementList.field_187987_k);

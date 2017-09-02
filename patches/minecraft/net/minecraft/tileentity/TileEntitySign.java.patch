@@ -9,7 +9,7 @@
  import net.minecraft.command.CommandException;
  import net.minecraft.command.CommandResultStats;
  import net.minecraft.command.ICommandSender;
-@@ -19,216 +21,240 @@
+@@ -19,6 +21,11 @@
  import net.minecraft.world.World;
  import net.minecraftforge.fml.relauncher.Side;
  import net.minecraftforge.fml.relauncher.SideOnly;
@@ -21,338 +21,155 @@
  
  public class TileEntitySign extends TileEntity
  {
--    public final ITextComponent[] field_145915_a = new ITextComponent[] {new TextComponentString(""), new TextComponentString(""), new TextComponentString(""), new TextComponentString("")};
--    public int field_145918_i = -1;
--    public boolean field_145916_j = true;
--    private EntityPlayer field_145917_k;
--    private final CommandResultStats field_174883_i = new CommandResultStats();
-+    public final ITextComponent[] signText = new ITextComponent[] {new TextComponentString(""), new TextComponentString(""), new TextComponentString(""), new TextComponentString("")};
-+    public int lineBeingEdited = -1;
-+    public boolean isEditable = true;
-+    private EntityPlayer player;
-+    private final CommandResultStats stats = new CommandResultStats();
- 
--    public NBTTagCompound func_189515_b(NBTTagCompound p_189515_1_)
-+    public NBTTagCompound writeToNBT(NBTTagCompound compound)
-     {
--        super.func_189515_b(p_189515_1_);
-+        super.writeToNBT(compound);
- 
-         for (int i = 0; i < 4; ++i)
-         {
--            String s = ITextComponent.Serializer.func_150696_a(this.field_145915_a[i]);
--            p_189515_1_.func_74778_a("Text" + (i + 1), s);
-+            String s = ITextComponent.Serializer.componentToJson(this.signText[i]);
-+            compound.setString("Text" + (i + 1), s);
+@@ -37,7 +44,11 @@
+             String s = ITextComponent.Serializer.func_150696_a(this.field_145915_a[i]);
+             p_189515_1_.func_74778_a("Text" + (i + 1), s);
          }
 -
--        this.field_174883_i.func_179670_b(p_189515_1_);
--        return p_189515_1_;
 +        // CraftBukkit start
 +        if (Boolean.getBoolean("convertLegacySigns")) {
-+            compound.setBoolean("Bukkit.isConverted", true);
++            p_189515_1_.func_74757_a("Bukkit.isConverted", true);
 +        }
 +        // CraftBukkit end
-+        this.stats.writeStatsToNBT(compound);
-+        return compound;
+         this.field_174883_i.func_179670_b(p_189515_1_);
+         return p_189515_1_;
      }
- 
--    protected void func_190201_b(World p_190201_1_)
-+    protected void setWorldCreate(World worldIn)
-     {
--        this.func_145834_a(p_190201_1_);
-+        this.setWorld(worldIn);
+@@ -47,72 +58,84 @@
+         this.func_145834_a(p_190201_1_);
      }
  
 -    public void func_145839_a(NBTTagCompound p_145839_1_)
 -    {
--        this.field_145916_j = false;
--        super.func_145839_a(p_145839_1_);
++    public void func_145839_a(NBTTagCompound p_145839_1_) {
+         this.field_145916_j = false;
+         super.func_145839_a(p_145839_1_);
 -        ICommandSender icommandsender = new ICommandSender()
 -        {
 -            public String func_70005_c_()
 -            {
-+    public void readFromNBT(NBTTagCompound compound) {
-+        this.isEditable = false;
-+        super.readFromNBT(compound);
 +        ICommandSender icommandsender = new ICommandSender() {
-+            public String getName() {
++            public String func_70005_c_() {
                  return "Sign";
              }
 -            public ITextComponent func_145748_c_()
 -            {
--                return new TextComponentString(this.func_70005_c_());
 +
-+            public ITextComponent getDisplayName() {
-+                return new TextComponentString(this.getName());
++            public ITextComponent func_145748_c_() {
+                 return new TextComponentString(this.func_70005_c_());
              }
 -            public void func_145747_a(ITextComponent p_145747_1_)
 -            {
 +
-+            public void sendMessage(ITextComponent component) {
++            public void func_145747_a(ITextComponent p_145747_1_) {
              }
 -            public boolean func_70003_b(int p_70003_1_, String p_70003_2_)
 -            {
 -                return true;
 +
-+            public boolean canUseCommand(int permLevel, String commandName) {
-+                return permLevel <= 2; //Forge: Fixes  MC-75630 - Exploit with signs and command blocks
++            public boolean func_70003_b(int p_70003_1_, String p_70003_2_) {
++                return p_70003_1_ <= 2; //Forge: Fixes  MC-75630 - Exploit with signs and command blocks
              }
 -            public BlockPos func_180425_c()
 -            {
--                return TileEntitySign.this.field_174879_c;
 +
-+            public BlockPos getPosition() {
-+                return TileEntitySign.this.pos;
++            public BlockPos func_180425_c() {
+                 return TileEntitySign.this.field_174879_c;
              }
 -            public Vec3d func_174791_d()
 -            {
 -                return new Vec3d((double)TileEntitySign.this.field_174879_c.func_177958_n() + 0.5D, (double)TileEntitySign.this.field_174879_c.func_177956_o() + 0.5D, (double)TileEntitySign.this.field_174879_c.func_177952_p() + 0.5D);
 +
-+            public Vec3d getPositionVector() {
-+                return new Vec3d((double) TileEntitySign.this.pos.getX() + 0.5D, (double) TileEntitySign.this.pos.getY() + 0.5D, (double) TileEntitySign.this.pos.getZ() + 0.5D);
++            public Vec3d func_174791_d() {
++                return new Vec3d((double) TileEntitySign.this.field_174879_c.func_177958_n() + 0.5D, (double) TileEntitySign.this.field_174879_c.func_177956_o() + 0.5D, (double) TileEntitySign.this.field_174879_c.func_177952_p() + 0.5D);
              }
 -            public World func_130014_f_()
 -            {
--                return TileEntitySign.this.field_145850_b;
 +
-+            public World getEntityWorld() {
-+                return TileEntitySign.this.world;
++            public World func_130014_f_() {
+                 return TileEntitySign.this.field_145850_b;
              }
 -            public Entity func_174793_f()
 -            {
 +
-+            public Entity getCommandSenderEntity() {
++            public Entity func_174793_f() {
                  return null;
              }
 -            public boolean func_174792_t_()
 -            {
 +
-+            public boolean sendCommandFeedback() {
++            public boolean func_174792_t_() {
                  return false;
              }
 -            public void func_174794_a(CommandResultStats.Type p_174794_1_, int p_174794_2_)
 -            {
 +
-+            public void setCommandStat(CommandResultStats.Type type, int amount) {
++            public void func_174794_a(CommandResultStats.Type p_174794_1_, int p_174794_2_) {
              }
 -            public MinecraftServer func_184102_h()
 -            {
--                return TileEntitySign.this.field_145850_b.func_73046_m();
 +
-+            public MinecraftServer getServer() {
-+                return TileEntitySign.this.world.getMinecraftServer();
++            public MinecraftServer func_184102_h() {
+                 return TileEntitySign.this.field_145850_b.func_73046_m();
              }
          };
  
 -        for (int i = 0; i < 4; ++i)
 -        {
--            String s = p_145839_1_.func_74779_i("Text" + (i + 1));
--            ITextComponent itextcomponent = ITextComponent.Serializer.func_150699_a(s);
 +        // CraftBukkit start - Add an option to convert signs correctly
 +        // This is done with a flag instead of all the time because
 +        // we have no way to tell whether a sign is from 1.7.10 or 1.8
++
++        boolean oldSign = Boolean.getBoolean("convertLegacySigns") && !p_145839_1_.func_74767_n("Bukkit.isConverted");
++
++        for (int i = 0; i < 4; ++i) {
+             String s = p_145839_1_.func_74779_i("Text" + (i + 1));
+-            ITextComponent itextcomponent = ITextComponent.Serializer.func_150699_a(s);
++            if (s != null && s.length() > 2048) {
++                s = "\"\"";
++            }
  
 -            try
 -            {
 -                this.field_145915_a[i] = TextComponentUtils.func_179985_a(icommandsender, itextcomponent, (Entity)null);
-+        boolean oldSign = Boolean.getBoolean("convertLegacySigns") && !compound.getBoolean("Bukkit.isConverted");
-+
-+        for (int i = 0; i < 4; ++i) {
-+            String s = compound.getString("Text" + (i + 1));
-+            if (s != null && s.length() > 2048) {
-+                s = "\"\"";
-             }
--            catch (CommandException var7)
--            {
--                this.field_145915_a[i] = itextcomponent;
-+
 +            try {
-+                ITextComponent ichatbasecomponent = ITextComponent.Serializer.jsonToComponent(s);
++                ITextComponent ichatbasecomponent = ITextComponent.Serializer.func_150699_a(s);
 +
 +                if (oldSign) {
-+                    signText[i] = CraftChatMessage.fromString(s)[0];
++                    field_145915_a[i] = CraftChatMessage.fromString(s)[0];
 +                    continue;
 +                }
 +                // CraftBukkit end
 +                try {
-+                    this.signText[i] = TextComponentUtils.processComponent(icommandsender, ichatbasecomponent, (Entity) null);
++                    this.field_145915_a[i] = TextComponentUtils.func_179985_a(icommandsender, ichatbasecomponent, (Entity) null);
 +                } catch (CommandException var7) {
-+                    this.signText[i] = ichatbasecomponent;
++                    this.field_145915_a[i] = ichatbasecomponent;
 +                }
 +            } catch (JsonParseException jsonparseexception) {
-+                this.signText[i] = new TextComponentString(s);
++                this.field_145915_a[i] = new TextComponentString(s);
              }
+-            catch (CommandException var7)
+-            {
+-                this.field_145915_a[i] = itextcomponent;
+-            }
 -        }
  
 -        this.field_174883_i.func_179668_a(p_145839_1_);
-+            this.stats.readStatsFromNBT(compound);
++            this.field_174883_i.func_179668_a(p_145839_1_);
 +        }
      }
  
      @Nullable
--    public SPacketUpdateTileEntity func_189518_D_()
-+    public SPacketUpdateTileEntity getUpdatePacket()
-     {
--        return new SPacketUpdateTileEntity(this.field_174879_c, 9, this.func_189517_E_());
-+        return new SPacketUpdateTileEntity(this.pos, 9, this.getUpdateTag());
-     }
+@@ -219,8 +242,11 @@
  
--    public NBTTagCompound func_189517_E_()
-+    public NBTTagCompound getUpdateTag()
-     {
--        return this.func_189515_b(new NBTTagCompound());
-+        return this.writeToNBT(new NBTTagCompound());
-     }
- 
--    public boolean func_183000_F()
-+    public boolean onlyOpsCanSetNbt()
-     {
-         return true;
-     }
- 
--    public boolean func_145914_a()
-+    public boolean getIsEditable()
-     {
--        return this.field_145916_j;
-+        return this.isEditable;
-     }
- 
-     @SideOnly(Side.CLIENT)
--    public void func_145913_a(boolean p_145913_1_)
-+    public void setEditable(boolean isEditableIn)
-     {
--        this.field_145916_j = p_145913_1_;
-+        this.isEditable = isEditableIn;
- 
--        if (!p_145913_1_)
-+        if (!isEditableIn)
-         {
--            this.field_145917_k = null;
-+            this.player = null;
-         }
-     }
- 
--    public void func_145912_a(EntityPlayer p_145912_1_)
-+    public void setPlayer(EntityPlayer playerIn)
-     {
--        this.field_145917_k = p_145912_1_;
-+        this.player = playerIn;
-     }
- 
--    public EntityPlayer func_145911_b()
-+    public EntityPlayer getPlayer()
-     {
--        return this.field_145917_k;
-+        return this.player;
-     }
- 
--    public boolean func_174882_b(final EntityPlayer p_174882_1_)
-+    public boolean executeCommand(final EntityPlayer playerIn)
-     {
-         ICommandSender icommandsender = new ICommandSender()
-         {
--            public String func_70005_c_()
-+            public String getName()
-             {
--                return p_174882_1_.func_70005_c_();
-+                return playerIn.getName();
-             }
--            public ITextComponent func_145748_c_()
-+            public ITextComponent getDisplayName()
-             {
--                return p_174882_1_.func_145748_c_();
-+                return playerIn.getDisplayName();
-             }
--            public void func_145747_a(ITextComponent p_145747_1_)
-+            public void sendMessage(ITextComponent component)
-             {
-             }
--            public boolean func_70003_b(int p_70003_1_, String p_70003_2_)
-+            public boolean canUseCommand(int permLevel, String commandName)
-             {
--                return p_70003_1_ <= 2;
-+                return permLevel <= 2;
-             }
--            public BlockPos func_180425_c()
-+            public BlockPos getPosition()
-             {
--                return TileEntitySign.this.field_174879_c;
-+                return TileEntitySign.this.pos;
-             }
--            public Vec3d func_174791_d()
-+            public Vec3d getPositionVector()
-             {
--                return new Vec3d((double)TileEntitySign.this.field_174879_c.func_177958_n() + 0.5D, (double)TileEntitySign.this.field_174879_c.func_177956_o() + 0.5D, (double)TileEntitySign.this.field_174879_c.func_177952_p() + 0.5D);
-+                return new Vec3d((double)TileEntitySign.this.pos.getX() + 0.5D, (double)TileEntitySign.this.pos.getY() + 0.5D, (double)TileEntitySign.this.pos.getZ() + 0.5D);
-             }
--            public World func_130014_f_()
-+            public World getEntityWorld()
-             {
--                return p_174882_1_.func_130014_f_();
-+                return playerIn.getEntityWorld();
-             }
--            public Entity func_174793_f()
-+            public Entity getCommandSenderEntity()
-             {
--                return p_174882_1_;
-+                return playerIn;
-             }
--            public boolean func_174792_t_()
-+            public boolean sendCommandFeedback()
-             {
-                 return false;
-             }
--            public void func_174794_a(CommandResultStats.Type p_174794_1_, int p_174794_2_)
-+            public void setCommandStat(CommandResultStats.Type type, int amount)
-             {
--                if (TileEntitySign.this.field_145850_b != null && !TileEntitySign.this.field_145850_b.field_72995_K)
-+                if (TileEntitySign.this.world != null && !TileEntitySign.this.world.isRemote)
-                 {
--                    TileEntitySign.this.field_174883_i.func_184932_a(TileEntitySign.this.field_145850_b.func_73046_m(), this, p_174794_1_, p_174794_2_);
-+                    TileEntitySign.this.stats.setCommandStatForSender(TileEntitySign.this.world.getMinecraftServer(), this, type, amount);
-                 }
-             }
--            public MinecraftServer func_184102_h()
-+            public MinecraftServer getServer()
-             {
--                return p_174882_1_.func_184102_h();
-+                return playerIn.getServer();
-             }
-         };
- 
--        for (ITextComponent itextcomponent : this.field_145915_a)
-+        for (ITextComponent itextcomponent : this.signText)
-         {
--            Style style = itextcomponent == null ? null : itextcomponent.func_150256_b();
-+            Style style = itextcomponent == null ? null : itextcomponent.getStyle();
- 
--            if (style != null && style.func_150235_h() != null)
-+            if (style != null && style.getClickEvent() != null)
-             {
--                ClickEvent clickevent = style.func_150235_h();
-+                ClickEvent clickevent = style.getClickEvent();
- 
--                if (clickevent.func_150669_a() == ClickEvent.Action.RUN_COMMAND)
-+                if (clickevent.getAction() == ClickEvent.Action.RUN_COMMAND)
+                 if (clickevent.func_150669_a() == ClickEvent.Action.RUN_COMMAND)
                  {
 -                    p_174882_1_.func_184102_h().func_71187_D().func_71556_a(icommandsender, clickevent.func_150668_b());
 -                }
 +                    CommandBlockBaseLogic.executeSafely(icommandsender, new ProxiedNativeCommandSender(
 +                            icommandsender,
 +                            new CraftBlockCommandSender(icommandsender),
-+                            playerIn.getBukkitEntity()
-+                    ), clickevent.getValue());                }
++                            p_174882_1_.getBukkitEntity()
++                    ), clickevent.func_150668_b());                }
              }
          }
  
-         return true;
-     }
- 
--    public CommandResultStats func_174880_d()
-+    public CommandResultStats getStats()
-     {
--        return this.field_174883_i;
-+        return this.stats;
-     }
- }

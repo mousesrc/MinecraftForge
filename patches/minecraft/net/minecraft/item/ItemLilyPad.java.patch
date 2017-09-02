@@ -1,6 +1,6 @@
 --- ../src-base/minecraft/net/minecraft/item/ItemLilyPad.java
 +++ ../src-work/minecraft/net/minecraft/item/ItemLilyPad.java
-@@ -48,6 +48,15 @@
+@@ -48,6 +48,17 @@
  
                  if (iblockstate.func_185904_a() == Material.field_151586_h && ((Integer)iblockstate.func_177229_b(BlockLiquid.field_176367_b)).intValue() == 0 && p_77659_1_.func_175623_d(blockpos1))
                  {
@@ -9,7 +9,9 @@
 +                    p_77659_1_.func_175656_a(blockpos1, Blocks.field_150392_bi.func_176223_P());
 +                    if (net.minecraftforge.event.ForgeEventFactory.onPlayerBlockPlace(p_77659_2_, blocksnapshot, net.minecraft.util.EnumFacing.UP, p_77659_3_).isCanceled())
 +                    {
++                        p_77659_1_.restoringBlockSnapshots = true;
 +                        blocksnapshot.restore(true, false);
++                        p_77659_1_.restoringBlockSnapshots = false;
 +                        return new ActionResult<ItemStack>(EnumActionResult.FAIL, itemstack);
 +                    }
 +

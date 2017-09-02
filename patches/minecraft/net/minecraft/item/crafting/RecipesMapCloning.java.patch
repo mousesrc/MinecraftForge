@@ -1,157 +1,29 @@
 --- ../src-base/minecraft/net/minecraft/item/crafting/RecipesMapCloning.java
 +++ ../src-work/minecraft/net/minecraft/item/crafting/RecipesMapCloning.java
-@@ -6,22 +6,27 @@
+@@ -6,8 +6,13 @@
  import net.minecraft.util.NonNullList;
  import net.minecraft.world.World;
  
 -public class RecipesMapCloning implements IRecipe
 +public class RecipesMapCloning extends ShapelessRecipes implements IRecipe
  {
--    public boolean func_77569_a(InventoryCrafting p_77569_1_, World p_77569_2_)
 +    // CraftBukkit start - Delegate to new parent class
 +    public RecipesMapCloning() {
-+        super(new ItemStack(Items.MAP, 0, -1), java.util.Arrays.asList(new ItemStack(Items.MAP, 0, 0)));
++        super(new ItemStack(Items.field_151148_bJ, 0, -1), java.util.Arrays.asList(new ItemStack(Items.field_151148_bJ, 0, 0)));
 +    }
 +    // CraftBukkit end
-+    public boolean matches(InventoryCrafting inv, World worldIn)
+     public boolean func_77569_a(InventoryCrafting p_77569_1_, World p_77569_2_)
      {
          int i = 0;
--        ItemStack itemstack = ItemStack.field_190927_a;
-+        ItemStack itemstack = ItemStack.EMPTY;
- 
--        for (int j = 0; j < p_77569_1_.func_70302_i_(); ++j)
-+        for (int j = 0; j < inv.getSizeInventory(); ++j)
-         {
--            ItemStack itemstack1 = p_77569_1_.func_70301_a(j);
-+            ItemStack itemstack1 = inv.getStackInSlot(j);
- 
--            if (!itemstack1.func_190926_b())
-+            if (!itemstack1.isEmpty())
-             {
--                if (itemstack1.func_77973_b() == Items.field_151098_aY)
-+                if (itemstack1.getItem() == Items.FILLED_MAP)
-                 {
--                    if (!itemstack.func_190926_b())
-+                    if (!itemstack.isEmpty())
-                     {
-                         return false;
-                     }
-@@ -30,7 +35,7 @@
-                 }
-                 else
-                 {
--                    if (itemstack1.func_77973_b() != Items.field_151148_bJ)
-+                    if (itemstack1.getItem() != Items.MAP)
-                     {
-                         return false;
-                     }
-@@ -40,34 +45,34 @@
-             }
-         }
- 
--        return !itemstack.func_190926_b() && i > 0;
-+        return !itemstack.isEmpty() && i > 0;
-     }
- 
--    public ItemStack func_77572_b(InventoryCrafting p_77572_1_)
-+    public ItemStack getCraftingResult(InventoryCrafting inv)
-     {
-         int i = 0;
--        ItemStack itemstack = ItemStack.field_190927_a;
-+        ItemStack itemstack = ItemStack.EMPTY;
- 
--        for (int j = 0; j < p_77572_1_.func_70302_i_(); ++j)
-+        for (int j = 0; j < inv.getSizeInventory(); ++j)
-         {
--            ItemStack itemstack1 = p_77572_1_.func_70301_a(j);
-+            ItemStack itemstack1 = inv.getStackInSlot(j);
- 
--            if (!itemstack1.func_190926_b())
-+            if (!itemstack1.isEmpty())
-             {
--                if (itemstack1.func_77973_b() == Items.field_151098_aY)
-+                if (itemstack1.getItem() == Items.FILLED_MAP)
-                 {
--                    if (!itemstack.func_190926_b())
-+                    if (!itemstack.isEmpty())
-                     {
--                        return ItemStack.field_190927_a;
-+                        return ItemStack.EMPTY;
-                     }
- 
-                     itemstack = itemstack1;
-                 }
-                 else
-                 {
--                    if (itemstack1.func_77973_b() != Items.field_151148_bJ)
-+                    if (itemstack1.getItem() != Items.MAP)
-                     {
--                        return ItemStack.field_190927_a;
-+                        return ItemStack.EMPTY;
-                     }
- 
-                     ++i;
-@@ -75,50 +80,46 @@
-             }
-         }
- 
--        if (!itemstack.func_190926_b() && i >= 1)
-+        if (!itemstack.isEmpty() && i >= 1)
-         {
--            ItemStack itemstack2 = new ItemStack(Items.field_151098_aY, i + 1, itemstack.func_77960_j());
-+            ItemStack itemstack2 = new ItemStack(Items.FILLED_MAP, i + 1, itemstack.getMetadata());
- 
--            if (itemstack.func_82837_s())
-+            if (itemstack.hasDisplayName())
-             {
--                itemstack2.func_151001_c(itemstack.func_82833_r());
-+                itemstack2.setStackDisplayName(itemstack.getDisplayName());
-             }
- 
--            if (itemstack.func_77942_o())
-+            if (itemstack.hasTagCompound())
-             {
--                itemstack2.func_77982_d(itemstack.func_77978_p());
-+                itemstack2.setTagCompound(itemstack.getTagCompound());
-             }
- 
-             return itemstack2;
-         }
-         else
-         {
--            return ItemStack.field_190927_a;
-+            return ItemStack.EMPTY;
-         }
-     }
- 
--    public int func_77570_a()
-+    public int getRecipeSize()
-     {
-         return 9;
-     }
- 
--    public ItemStack func_77571_b()
-+    public ItemStack getRecipeOutput()
-     {
--        return ItemStack.field_190927_a;
-+        return ItemStack.EMPTY;
-     }
- 
--    public NonNullList<ItemStack> func_179532_b(InventoryCrafting p_179532_1_)
-+    public NonNullList<ItemStack> getRemainingItems(InventoryCrafting inv)
-     {
--        NonNullList<ItemStack> nonnulllist = NonNullList.<ItemStack>func_191197_a(p_179532_1_.func_70302_i_(), ItemStack.field_190927_a);
-+        NonNullList<ItemStack> nonnulllist = NonNullList.<ItemStack>withSize(inv.getSizeInventory(), ItemStack.EMPTY);
- 
+@@ -114,11 +119,7 @@
          for (int i = 0; i < nonnulllist.size(); ++i)
          {
--            ItemStack itemstack = p_179532_1_.func_70301_a(i);
+             ItemStack itemstack = p_179532_1_.func_70301_a(i);
 -
 -            if (itemstack.func_77973_b().func_77634_r())
 -            {
 -                nonnulllist.set(i, new ItemStack(itemstack.func_77973_b().func_77668_q()));
 -            }
-+            ItemStack itemstack = inv.getStackInSlot(i);
 +            nonnulllist.set(i, net.minecraftforge.common.ForgeHooks.getContainerItem(itemstack));
          }
  

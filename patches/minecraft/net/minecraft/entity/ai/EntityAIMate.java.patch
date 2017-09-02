@@ -1,6 +1,6 @@
 --- ../src-base/minecraft/net/minecraft/entity/ai/EntityAIMate.java
 +++ ../src-work/minecraft/net/minecraft/entity/ai/EntityAIMate.java
-@@ -11,130 +11,171 @@
+@@ -11,7 +11,11 @@
  import net.minecraft.stats.StatList;
  import net.minecraft.util.EnumParticleTypes;
  import net.minecraft.world.World;
@@ -12,218 +12,49 @@
 +import net.minecraft.entity.EntityLivingBase;
  public class EntityAIMate extends EntityAIBase
  {
--    private final EntityAnimal field_75390_d;
--    private final Class <? extends EntityAnimal > field_190857_e;
--    World field_75394_a;
--    private EntityAnimal field_75391_e;
--    int field_75392_b;
--    double field_75393_c;
-+    private final EntityAnimal theAnimal;
-+    private final Class <? extends EntityAnimal > mateClass;
-+    World world;
-+    private EntityAnimal targetMate;
-+    int spawnBabyDelay;
-+    double moveSpeed;
- 
--    public EntityAIMate(EntityAnimal p_i1619_1_, double p_i1619_2_)
-+    public EntityAIMate(EntityAnimal animal, double speedIn)
+     private final EntityAnimal field_75390_d;
+@@ -92,7 +96,44 @@
+     private void func_75388_i()
      {
--        this(p_i1619_1_, p_i1619_2_, p_i1619_1_.getClass());
-+        this(animal, speedIn, animal.getClass());
-     }
- 
-     public EntityAIMate(EntityAnimal p_i47306_1_, double p_i47306_2_, Class <? extends EntityAnimal > p_i47306_4_)
-     {
--        this.field_75390_d = p_i47306_1_;
--        this.field_75394_a = p_i47306_1_.field_70170_p;
--        this.field_190857_e = p_i47306_4_;
--        this.field_75393_c = p_i47306_2_;
--        this.func_75248_a(3);
-+        this.theAnimal = p_i47306_1_;
-+        this.world = p_i47306_1_.world;
-+        this.mateClass = p_i47306_4_;
-+        this.moveSpeed = p_i47306_2_;
-+        this.setMutexBits(3);
-     }
- 
--    public boolean func_75250_a()
-+    public boolean shouldExecute()
-     {
--        if (!this.field_75390_d.func_70880_s())
-+        if (!this.theAnimal.isInLove())
-         {
-             return false;
-         }
-         else
-         {
--            this.field_75391_e = this.func_75389_f();
--            return this.field_75391_e != null;
-+            this.targetMate = this.getNearbyMate();
-+            return this.targetMate != null;
-         }
-     }
- 
--    public boolean func_75253_b()
-+    public boolean continueExecuting()
-     {
--        return this.field_75391_e.func_70089_S() && this.field_75391_e.func_70880_s() && this.field_75392_b < 60;
-+        return this.targetMate.isEntityAlive() && this.targetMate.isInLove() && this.spawnBabyDelay < 60;
-     }
- 
--    public void func_75251_c()
-+    public void resetTask()
-     {
--        this.field_75391_e = null;
--        this.field_75392_b = 0;
-+        this.targetMate = null;
-+        this.spawnBabyDelay = 0;
-     }
- 
--    public void func_75246_d()
-+    public void updateTask()
-     {
--        this.field_75390_d.func_70671_ap().func_75651_a(this.field_75391_e, 10.0F, (float)this.field_75390_d.func_70646_bf());
--        this.field_75390_d.func_70661_as().func_75497_a(this.field_75391_e, this.field_75393_c);
--        ++this.field_75392_b;
-+        this.theAnimal.getLookHelper().setLookPositionWithEntity(this.targetMate, 10.0F, (float)this.theAnimal.getVerticalFaceSpeed());
-+        this.theAnimal.getNavigator().tryMoveToEntityLiving(this.targetMate, this.moveSpeed);
-+        ++this.spawnBabyDelay;
- 
--        if (this.field_75392_b >= 60 && this.field_75390_d.func_70068_e(this.field_75391_e) < 9.0D)
-+        if (this.spawnBabyDelay >= 60 && this.theAnimal.getDistanceSqToEntity(this.targetMate) < 9.0D)
-         {
--            this.func_75388_i();
-+            this.spawnBaby();
-         }
-     }
- 
--    private EntityAnimal func_75389_f()
-+    private EntityAnimal getNearbyMate()
-     {
--        List<EntityAnimal> list = this.field_75394_a.<EntityAnimal>func_72872_a(this.field_190857_e, this.field_75390_d.func_174813_aQ().func_186662_g(8.0D));
-+        List<EntityAnimal> list = this.world.<EntityAnimal>getEntitiesWithinAABB(this.mateClass, this.theAnimal.getEntityBoundingBox().expandXyz(8.0D));
-         double d0 = Double.MAX_VALUE;
-         EntityAnimal entityanimal = null;
- 
-         for (EntityAnimal entityanimal1 : list)
-         {
--            if (this.field_75390_d.func_70878_b(entityanimal1) && this.field_75390_d.func_70068_e(entityanimal1) < d0)
-+            if (this.theAnimal.canMateWith(entityanimal1) && this.theAnimal.getDistanceSqToEntity(entityanimal1) < d0)
-             {
-                 entityanimal = entityanimal1;
--                d0 = this.field_75390_d.func_70068_e(entityanimal1);
-+                d0 = this.theAnimal.getDistanceSqToEntity(entityanimal1);
-             }
-         }
- 
-         return entityanimal;
-     }
- 
--    private void func_75388_i()
-+    private void spawnBaby()
-     {
--        EntityAgeable entityageable = this.field_75390_d.func_90011_a(this.field_75391_e);
-+        EntityAgeable entityageable = this.theAnimal.createChild(this.targetMate);
-+        int xptodrop = theAnimal.getRNG().nextInt(7) + 1;
+         EntityAgeable entityageable = this.field_75390_d.func_90011_a(this.field_75391_e);
++        int xptodrop = field_75390_d.func_70681_au().nextInt(7) + 1;
 +        //fire bukkitevent first, MCPCRevive start
 +        EntityLivingBase child = (EntityLivingBase) entityageable;
-+        EntityLivingBase parentA = (EntityLivingBase) theAnimal;
-+        EntityLivingBase parentB = (EntityLivingBase) targetMate;
++        EntityLivingBase parentA = (EntityLivingBase) field_75390_d;
++        EntityLivingBase parentB = (EntityLivingBase) field_75391_e;
 +        EntityPlayer playerMP = null;
  
 +        if (parentA instanceof EntityAnimal) {
-+            playerMP = ((EntityAnimal)parentA).getPlayerInLove();
++            playerMP = ((EntityAnimal)parentA).func_146083_cb();
 +        }
 +
 +        if (playerMP == null && parentB instanceof EntityAnimal)
 +        {
-+            playerMP = ((EntityAnimal)parentB).getPlayerInLove();
++            playerMP = ((EntityAnimal)parentB).func_146083_cb();
 +        }
-+        EntityBreedEvent craftevent = CraftEventFactory.callEntityBreedEvent(child,parentA,parentB,(EntityLivingBase) playerMP, playerMP.getHeldItemMainhand(),xptodrop);
++        EntityBreedEvent craftevent = CraftEventFactory.callEntityBreedEvent(child,parentA,parentB,(EntityLivingBase) playerMP, playerMP.func_184614_ca(),xptodrop);
 +        CraftEventFactory.callEvent(craftevent);
 +        if(craftevent.isCancelled())
 +        {
-+            this.theAnimal.setGrowingAge(6000);
-+            this.targetMate.setGrowingAge(6000);
-+            this.theAnimal.resetInLove();
-+            this.targetMate.resetInLove();
++            this.field_75390_d.func_70873_a(6000);
++            this.field_75391_e.func_70873_a(6000);
++            this.field_75390_d.func_70875_t();
++            this.field_75391_e.func_70875_t();
 +            return;
 +        }
 +        //MCPCRevive end
-+        final net.minecraftforge.event.entity.living.BabyEntitySpawnEvent event = new net.minecraftforge.event.entity.living.BabyEntitySpawnEvent(theAnimal, targetMate, entityageable);
++        final net.minecraftforge.event.entity.living.BabyEntitySpawnEvent event = new net.minecraftforge.event.entity.living.BabyEntitySpawnEvent(field_75390_d, field_75391_e, entityageable);
 +        final boolean cancelled = net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(event);
 +        entityageable = event.getChild();
 +        if (cancelled) {
 +            //Reset the "inLove" state for the animals
-+            this.theAnimal.setGrowingAge(6000);
-+            this.targetMate.setGrowingAge(6000);
-+            this.theAnimal.resetInLove();
-+            this.targetMate.resetInLove();
++            this.field_75390_d.func_70873_a(6000);
++            this.field_75391_e.func_70873_a(6000);
++            this.field_75390_d.func_70875_t();
++            this.field_75391_e.func_70875_t();
 +            return;
 +        }
 +
          if (entityageable != null)
          {
--            EntityPlayer entityplayer = this.field_75390_d.func_146083_cb();
-+            EntityPlayer entityplayer = this.theAnimal.getPlayerInLove();
- 
--            if (entityplayer == null && this.field_75391_e.func_146083_cb() != null)
-+            if (entityplayer == null && this.targetMate.getPlayerInLove() != null)
-             {
--                entityplayer = this.field_75391_e.func_146083_cb();
-+                entityplayer = this.targetMate.getPlayerInLove();
-             }
- 
-             if (entityplayer != null)
-             {
--                entityplayer.func_71029_a(StatList.field_151186_x);
-+                entityplayer.addStat(StatList.ANIMALS_BRED);
- 
--                if (this.field_75390_d instanceof EntityCow)
-+                if (this.theAnimal instanceof EntityCow)
-                 {
--                    entityplayer.func_71029_a(AchievementList.field_187975_H);
-+                    entityplayer.addStat(AchievementList.BREED_COW);
-                 }
-             }
- 
--            this.field_75390_d.func_70873_a(6000);
--            this.field_75391_e.func_70873_a(6000);
--            this.field_75390_d.func_70875_t();
--            this.field_75391_e.func_70875_t();
--            entityageable.func_70873_a(-24000);
--            entityageable.func_70012_b(this.field_75390_d.field_70165_t, this.field_75390_d.field_70163_u, this.field_75390_d.field_70161_v, 0.0F, 0.0F);
--            this.field_75394_a.func_72838_d(entityageable);
--            Random random = this.field_75390_d.func_70681_au();
-+            this.theAnimal.setGrowingAge(6000);
-+            this.targetMate.setGrowingAge(6000);
-+            this.theAnimal.resetInLove();
-+            this.targetMate.resetInLove();
-+            entityageable.setGrowingAge(-24000);
-+            entityageable.setLocationAndAngles(this.theAnimal.posX, this.theAnimal.posY, this.theAnimal.posZ, 0.0F, 0.0F);
-+            this.world.spawnEntity(entityageable);
-+            Random random = this.theAnimal.getRNG();
- 
-             for (int i = 0; i < 7; ++i)
-             {
-                 double d0 = random.nextGaussian() * 0.02D;
-                 double d1 = random.nextGaussian() * 0.02D;
-                 double d2 = random.nextGaussian() * 0.02D;
--                double d3 = random.nextDouble() * (double)this.field_75390_d.field_70130_N * 2.0D - (double)this.field_75390_d.field_70130_N;
--                double d4 = 0.5D + random.nextDouble() * (double)this.field_75390_d.field_70131_O;
--                double d5 = random.nextDouble() * (double)this.field_75390_d.field_70130_N * 2.0D - (double)this.field_75390_d.field_70130_N;
--                this.field_75394_a.func_175688_a(EnumParticleTypes.HEART, this.field_75390_d.field_70165_t + d3, this.field_75390_d.field_70163_u + d4, this.field_75390_d.field_70161_v + d5, d0, d1, d2, new int[0]);
-+                double d3 = random.nextDouble() * (double)this.theAnimal.width * 2.0D - (double)this.theAnimal.width;
-+                double d4 = 0.5D + random.nextDouble() * (double)this.theAnimal.height;
-+                double d5 = random.nextDouble() * (double)this.theAnimal.width * 2.0D - (double)this.theAnimal.width;
-+                this.world.spawnParticle(EnumParticleTypes.HEART, this.theAnimal.posX + d3, this.theAnimal.posY + d4, this.theAnimal.posZ + d5, d0, d1, d2, new int[0]);
-             }
- 
--            if (this.field_75394_a.func_82736_K().func_82766_b("doMobLoot"))
-+            if (this.world.getGameRules().getBoolean("doMobLoot"))
-             {
--                this.field_75394_a.func_72838_d(new EntityXPOrb(this.field_75394_a, this.field_75390_d.field_70165_t, this.field_75390_d.field_70163_u, this.field_75390_d.field_70161_v, random.nextInt(7) + 1));
-+                this.world.spawnEntity(new EntityXPOrb(this.world, this.theAnimal.posX, this.theAnimal.posY, this.theAnimal.posZ, random.nextInt(7) + 1));
-             }
-         }
-     }
+             EntityPlayer entityplayer = this.field_75390_d.func_146083_cb();

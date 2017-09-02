@@ -34,7 +34,7 @@
  import net.minecraft.item.Item;
  import net.minecraft.item.ItemMapBase;
  import net.minecraft.item.ItemStack;
-@@ -100,58 +98,78 @@
+@@ -100,19 +98,28 @@
  import net.minecraft.util.text.TextComponentTranslation;
  import net.minecraft.util.text.TextFormatting;
  import net.minecraft.village.MerchantRecipeList;
@@ -62,66 +62,17 @@
  
  public class EntityPlayerMP extends EntityPlayer implements IContainerListener
  {
--    private static final Logger field_147102_bM = LogManager.getLogger();
+     private static final Logger field_147102_bM = LogManager.getLogger();
 -    private String field_71148_cg = "en_US";
--    public NetHandlerPlayServer field_71135_a;
--    public final MinecraftServer field_71133_b;
--    public final PlayerInteractionManager field_71134_c;
--    public double field_71131_d;
--    public double field_71132_e;
--    public final List<Integer> field_71130_g = Lists.<Integer>newLinkedList();
--    private final StatisticsManagerServer field_147103_bO;
--    private float field_130068_bO = Float.MIN_VALUE;
--    private int field_184852_bV = Integer.MIN_VALUE;
--    private int field_184853_bW = Integer.MIN_VALUE;
--    private int field_184854_bX = Integer.MIN_VALUE;
--    private int field_184855_bY = Integer.MIN_VALUE;
--    private int field_184856_bZ = Integer.MIN_VALUE;
--    private float field_71149_ch = -1.0E8F;
--    private int field_71146_ci = -99999999;
--    private boolean field_71147_cj = true;
--    public int field_71144_ck = -99999999;
--    public int field_147101_bU = 60;
--    private EntityPlayer.EnumChatVisibility field_71143_cn;
--    private boolean field_71140_co = true;
--    private long field_143005_bX = System.currentTimeMillis();
--    private Entity field_175401_bS;
--    public boolean field_184851_cj;
--    public int field_71139_cq;
--    public boolean field_71137_h;
--    public int field_71138_i;
--    public boolean field_71136_j;
++    public String field_71148_cg = "en_US";
+     public NetHandlerPlayServer field_71135_a;
+     public final MinecraftServer field_71133_b;
+     public final PlayerInteractionManager field_71134_c;
+@@ -140,15 +147,26 @@
+     public boolean field_71137_h;
+     public int field_71138_i;
+     public boolean field_71136_j;
 -
--    public EntityPlayerMP(MinecraftServer p_i45285_1_, WorldServer p_i45285_2_, GameProfile p_i45285_3_, PlayerInteractionManager p_i45285_4_)
-+    private static final Logger LOGGER = LogManager.getLogger();
-+    public String language = "en_US";
-+    public NetHandlerPlayServer connection;
-+    public final MinecraftServer mcServer;
-+    public final PlayerInteractionManager interactionManager;
-+    public double managedPosX;
-+    public double managedPosZ;
-+    public final List<Integer> entityRemoveQueue = Lists.<Integer>newLinkedList();
-+    private final StatisticsManagerServer statsFile;
-+    private float lastHealthScore = Float.MIN_VALUE;
-+    private int lastFoodScore = Integer.MIN_VALUE;
-+    private int lastAirScore = Integer.MIN_VALUE;
-+    private int lastArmorScore = Integer.MIN_VALUE;
-+    private int lastLevelScore = Integer.MIN_VALUE;
-+    private int lastExperienceScore = Integer.MIN_VALUE;
-+    private float lastHealth = -1.0E8F;
-+    private int lastFoodLevel = -99999999;
-+    private boolean wasHungry = true;
-+    public int lastExperience = -99999999;
-+    public int respawnInvulnerabilityTicks = 60;
-+    private EntityPlayer.EnumChatVisibility chatVisibility;
-+    private boolean chatColours = true;
-+    private long playerLastActiveTime = System.currentTimeMillis();
-+    private Entity spectatingEntity;
-+    public boolean invulnerableDimensionChange;
-+    public int currentWindowId;
-+    public boolean isChangingQuantityOnly;
-+    public int ping;
-+    public boolean playerConqueredTheEnd;
 +    // CraftBukkit start
 +    public String displayName;
 +    public ITextComponent listName;
@@ -134,286 +85,83 @@
 +    public boolean joining = true;
 +    public boolean sentListPacket = false;
 +    // CraftBukkit end
-+    public EntityPlayerMP(MinecraftServer server, WorldServer worldIn, GameProfile profile, PlayerInteractionManager interactionManagerIn)
+     public EntityPlayerMP(MinecraftServer p_i45285_1_, WorldServer p_i45285_2_, GameProfile p_i45285_3_, PlayerInteractionManager p_i45285_4_)
      {
--        super(p_i45285_2_, p_i45285_3_);
--        p_i45285_4_.field_73090_b = this;
--        this.field_71134_c = p_i45285_4_;
+         super(p_i45285_2_, p_i45285_3_);
+         p_i45285_4_.field_73090_b = this;
+         this.field_71134_c = p_i45285_4_;
 -        BlockPos blockpos = p_i45285_2_.func_175694_M();
-+        super(worldIn, profile);
-+        interactionManagerIn.player = this;
-+        this.interactionManager = interactionManagerIn;
-+        BlockPos blockpos = worldIn.provider.getRandomizedSpawnPoint();
++        BlockPos blockpos = p_i45285_2_.field_73011_w.getRandomizedSpawnPoint();
  
 -        if (p_i45285_2_.field_73011_w.func_191066_m() && p_i45285_2_.func_72912_H().func_76077_q() != GameType.ADVENTURE)
-+        if (false && worldIn.provider.hasSkyLight() && worldIn.getWorldInfo().getGameType() != GameType.ADVENTURE)
++        if (false && p_i45285_2_.field_73011_w.func_191066_m() && p_i45285_2_.func_72912_H().func_76077_q() != GameType.ADVENTURE)
          {
--            int i = Math.max(0, p_i45285_1_.func_184108_a(p_i45285_2_));
--            int j = MathHelper.func_76128_c(p_i45285_2_.func_175723_af().func_177729_b((double)blockpos.func_177958_n(), (double)blockpos.func_177952_p()));
-+            int i = Math.max(0, server.getSpawnRadius(worldIn));
-+            int j = MathHelper.floor(worldIn.getWorldBorder().getClosestDistance((double)blockpos.getX(), (double)blockpos.getZ()));
- 
-             if (j < i)
-             {
-@@ -163,133 +181,162 @@
-                 i = 1;
-             }
- 
--            blockpos = p_i45285_2_.func_175672_r(blockpos.func_177982_a(this.field_70146_Z.nextInt(i * 2 + 1) - i, 0, this.field_70146_Z.nextInt(i * 2 + 1) - i));
-+            blockpos = worldIn.getTopSolidOrLiquidBlock(blockpos.add(this.rand.nextInt(i * 2 + 1) - i, 0, this.rand.nextInt(i * 2 + 1) - i));
-         }
- 
--        this.field_71133_b = p_i45285_1_;
--        this.field_147103_bO = p_i45285_1_.func_184103_al().func_152602_a(this);
--        this.field_70138_W = 0.0F;
--        this.func_174828_a(blockpos, 0.0F, 0.0F);
-+        this.mcServer = server;
-+        this.statsFile = server.getPlayerList().getPlayerStatsFile(this);
-+        this.stepHeight = 0.0F;
-+        this.moveToBlockPosAndAngles(blockpos, 0.0F, 0.0F);
- 
--        while (!p_i45285_2_.func_184144_a(this, this.func_174813_aQ()).isEmpty() && this.field_70163_u < 255.0D)
-+        while (!worldIn.getCollisionBoxes(this, this.getEntityBoundingBox()).isEmpty() && this.posY < 255.0D)
+             int i = Math.max(0, p_i45285_1_.func_184108_a(p_i45285_2_));
+             int j = MathHelper.func_76128_c(p_i45285_2_.func_175723_af().func_177729_b((double)blockpos.func_177958_n(), (double)blockpos.func_177952_p()));
+@@ -175,6 +193,11 @@
          {
--            this.func_70107_b(this.field_70165_t, this.field_70163_u + 1.0D, this.field_70161_v);
-+            this.setPosition(this.posX, this.posY + 1.0D, this.posZ);
+             this.func_70107_b(this.field_70165_t, this.field_70163_u + 1.0D, this.field_70161_v);
          }
 +        // CraftBukkit start
-+        this.displayName = this.getName();
++        this.displayName = this.func_70005_c_();
 +        // this.canPickUpLoot = true; TODO
-+        this.maxHealthCache = this.getMaxHealth();
++        this.maxHealthCache = this.func_110138_aP();
 +        // CraftBukkit end
      }
  
--    public void func_70037_a(NBTTagCompound p_70037_1_)
-+    public void readEntityFromNBT(NBTTagCompound compound)
-     {
--        super.func_70037_a(p_70037_1_);
-+        super.readEntityFromNBT(compound);
- 
--        if (p_70037_1_.func_150297_b("playerGameType", 99))
-+        if (compound.hasKey("playerGameType", 99))
-         {
--            if (this.func_184102_h().func_104056_am())
-+            if (this.getServer().getForceGamemode())
-             {
--                this.field_71134_c.func_73076_a(this.func_184102_h().func_71265_f());
-+                this.interactionManager.setGameType(this.getServer().getGameType());
-             }
-             else
-             {
--                this.field_71134_c.func_73076_a(GameType.func_77146_a(p_70037_1_.func_74762_e("playerGameType")));
-+                this.interactionManager.setGameType(GameType.getByID(compound.getInteger("playerGameType")));
+     public void func_70037_a(NBTTagCompound p_70037_1_)
+@@ -193,7 +216,30 @@
              }
          }
      }
 -
 +    // CraftBukkit start - World fallback code, either respawn location or global spawn
-+    public void setWorld(World world) {
-+        super.setWorld(world);
++    public void func_70029_a(World world) {
++        super.func_70029_a(world);
 +        if (world == null) {
-+            this.isDead = false;
++            this.field_70128_L = false;
 +            BlockPos position = null;
 +            if (this.spawnWorld != null && !this.spawnWorld.equals("")) {
 +                CraftWorld cworld = (CraftWorld) Bukkit.getServer().getWorld(this.spawnWorld);
-+                if (cworld != null && this.getBedLocation() != null) {
++                if (cworld != null && this.func_180470_cg() != null) {
 +                    world = cworld.getHandle();
-+                    position = net.minecraft.entity.player.EntityPlayer.getBedSpawnLocation(cworld.getHandle(), this.getBedLocation(), false);
++                    position = net.minecraft.entity.player.EntityPlayer.func_180467_a(cworld.getHandle(), this.func_180470_cg(), false);
 +                }
 +            }
 +            if (world == null || position == null) {
 +                world = ((CraftWorld) Bukkit.getServer().getWorlds().get(0)).getHandle();
-+                position = world.getSpawnPoint();
++                position = world.func_175694_M();
 +            }
-+            this.world = world;
-+            this.setPosition(position.getX() + 0.5, position.getY(), position.getZ() + 0.5);
++            this.field_70170_p = world;
++            this.func_70107_b(position.func_177958_n() + 0.5, position.func_177956_o(), position.func_177952_p() + 0.5);
 +        }
-+        this.dimension = ((WorldServer) this.world).dimension;
-+        this.interactionManager.setWorld((WorldServer) world);
++        this.field_71093_bK = ((WorldServer) this.field_70170_p).dimension;
++        this.field_71134_c.func_73080_a((WorldServer) world);
 +    }
 +    // CraftBukkit end
      public static void func_191522_a(DataFixer p_191522_0_)
      {
--        p_191522_0_.func_188258_a(FixTypes.PLAYER, new IDataWalker()
-+        p_191522_0_.registerWalker(FixTypes.PLAYER, new IDataWalker()
-         {
--            public NBTTagCompound func_188266_a(IDataFixer p_188266_1_, NBTTagCompound p_188266_2_, int p_188266_3_)
-+            public NBTTagCompound process(IDataFixer fixer, NBTTagCompound compound, int versionIn)
-             {
--                if (p_188266_2_.func_150297_b("RootVehicle", 10))
-+                if (compound.hasKey("RootVehicle", 10))
-                 {
--                    NBTTagCompound nbttagcompound = p_188266_2_.func_74775_l("RootVehicle");
-+                    NBTTagCompound nbttagcompound = compound.getCompoundTag("RootVehicle");
+         p_191522_0_.func_188258_a(FixTypes.PLAYER, new IDataWalker()
+@@ -269,6 +315,7 @@
  
--                    if (nbttagcompound.func_150297_b("Entity", 10))
-+                    if (nbttagcompound.hasKey("Entity", 10))
-                     {
--                        nbttagcompound.func_74782_a("Entity", p_188266_1_.func_188251_a(FixTypes.ENTITY, nbttagcompound.func_74775_l("Entity"), p_188266_3_));
-+                        nbttagcompound.setTag("Entity", fixer.process(FixTypes.ENTITY, nbttagcompound.getCompoundTag("Entity"), versionIn));
-                     }
-                 }
- 
--                return p_188266_2_;
-+                return compound;
-             }
-         });
-     }
- 
--    public void func_70014_b(NBTTagCompound p_70014_1_)
-+    public void writeEntityToNBT(NBTTagCompound compound)
+     public void func_70071_h_()
      {
--        super.func_70014_b(p_70014_1_);
--        p_70014_1_.func_74768_a("playerGameType", this.field_71134_c.func_73081_b().func_77148_a());
--        Entity entity = this.func_184208_bv();
--        Entity entity1 = this.func_184187_bx();
-+        super.writeEntityToNBT(compound);
-+        compound.setInteger("playerGameType", this.interactionManager.getGameType().getID());
-+        Entity entity = this.getLowestRidingEntity();
-+        Entity entity1 = this.getRidingEntity();
- 
--        if (entity1 != null && entity != this & entity.func_184180_b(EntityPlayerMP.class).size() == 1)
-+        if (entity1 != null && entity != this & entity.getRecursivePassengersByType(EntityPlayerMP.class).size() == 1)
-         {
-             NBTTagCompound nbttagcompound = new NBTTagCompound();
-             NBTTagCompound nbttagcompound1 = new NBTTagCompound();
--            entity.func_70039_c(nbttagcompound1);
--            nbttagcompound.func_186854_a("Attach", entity1.func_110124_au());
--            nbttagcompound.func_74782_a("Entity", nbttagcompound1);
--            p_70014_1_.func_74782_a("RootVehicle", nbttagcompound);
-+            entity.writeToNBTOptional(nbttagcompound1);
-+            nbttagcompound.setUniqueId("Attach", entity1.getUniqueID());
-+            nbttagcompound.setTag("Entity", nbttagcompound1);
-+            compound.setTag("RootVehicle", nbttagcompound);
-         }
-     }
- 
--    public void func_82242_a(int p_82242_1_)
-+    public void addExperienceLevel(int levels)
-     {
--        super.func_82242_a(p_82242_1_);
--        this.field_71144_ck = -1;
-+        super.addExperienceLevel(levels);
-+        this.lastExperience = -1;
-     }
- 
--    public void func_71013_b(int p_71013_1_)
-+    public void removeExperienceLevel(int levels)
-     {
--        super.func_71013_b(p_71013_1_);
--        this.field_71144_ck = -1;
-+        super.removeExperienceLevel(levels);
-+        this.lastExperience = -1;
-     }
- 
--    public void func_71116_b()
-+    public void addSelfToInternalCraftingInventory()
-     {
--        this.field_71070_bA.func_75132_a(this);
-+        this.openContainer.addListener(this);
-     }
- 
--    public void func_152111_bt()
-+    public void sendEnterCombat()
-     {
--        super.func_152111_bt();
--        this.field_71135_a.func_147359_a(new SPacketCombatEvent(this.func_110142_aN(), SPacketCombatEvent.Event.ENTER_COMBAT));
-+        super.sendEnterCombat();
-+        this.connection.sendPacket(new SPacketCombatEvent(this.getCombatTracker(), SPacketCombatEvent.Event.ENTER_COMBAT));
-     }
- 
--    public void func_152112_bu()
-+    public void sendEndCombat()
-     {
--        super.func_152112_bu();
--        this.field_71135_a.func_147359_a(new SPacketCombatEvent(this.func_110142_aN(), SPacketCombatEvent.Event.END_COMBAT));
-+        super.sendEndCombat();
-+        this.connection.sendPacket(new SPacketCombatEvent(this.getCombatTracker(), SPacketCombatEvent.Event.END_COMBAT));
-     }
- 
--    protected CooldownTracker func_184815_l()
-+    protected CooldownTracker createCooldownTracker()
-     {
-         return new CooldownTrackerServer(this);
-     }
- 
--    public void func_70071_h_()
-+    public void onUpdate()
-     {
--        this.field_71134_c.func_73075_a();
--        --this.field_147101_bU;
- 
--        if (this.field_70172_ad > 0)
-+        this.interactionManager.updateBlockRemoving();
-+        --this.respawnInvulnerabilityTicks;
 +
-+        if (this.hurtResistantTime > 0)
-         {
--            --this.field_70172_ad;
-+            --this.hurtResistantTime;
-         }
+         this.field_71134_c.func_73075_a();
+         --this.field_147101_bU;
  
--        this.field_71070_bA.func_75142_b();
-+        this.openContainer.detectAndSendChanges();
+@@ -279,7 +326,7 @@
+ 
+         this.field_71070_bA.func_75142_b();
  
 -        if (!this.field_70170_p.field_72995_K && !this.field_71070_bA.func_75145_c(this))
-+        if (!this.world.isRemote && this.openContainer != null && !this.openContainer.canInteractWith(this))
++        if (!this.field_70170_p.field_72995_K && this.field_71070_bA != null && !this.field_71070_bA.func_75145_c(this))
          {
--            this.func_71053_j();
--            this.field_71070_bA = this.field_71069_bz;
-+            this.closeScreen();
-+            this.openContainer = this.inventoryContainer;
-         }
+             this.func_71053_j();
+             this.field_71070_bA = this.field_71069_bz;
+@@ -324,6 +371,12 @@
  
--        while (!this.field_71130_g.isEmpty())
-+        while (!this.entityRemoveQueue.isEmpty())
-         {
--            int i = Math.min(this.field_71130_g.size(), Integer.MAX_VALUE);
-+            int i = Math.min(this.entityRemoveQueue.size(), Integer.MAX_VALUE);
-             int[] aint = new int[i];
--            Iterator<Integer> iterator = this.field_71130_g.iterator();
-+            Iterator<Integer> iterator = this.entityRemoveQueue.iterator();
-             int j = 0;
- 
-             while (iterator.hasNext() && j < i)
-@@ -298,140 +345,160 @@
-                 iterator.remove();
-             }
- 
--            this.field_71135_a.func_147359_a(new SPacketDestroyEntities(aint));
-+            this.connection.sendPacket(new SPacketDestroyEntities(aint));
-         }
- 
--        Entity entity = this.func_175398_C();
-+        Entity entity = this.getSpectatingEntity();
- 
-         if (entity != this)
-         {
--            if (entity.func_70089_S())
-+            if (entity.isEntityAlive())
-             {
--                this.func_70080_a(entity.field_70165_t, entity.field_70163_u, entity.field_70161_v, entity.field_70177_z, entity.field_70125_A);
--                this.field_71133_b.func_184103_al().func_72358_d(this);
-+                this.setPositionAndRotation(entity.posX, entity.posY, entity.posZ, entity.rotationYaw, entity.rotationPitch);
-+                this.mcServer.getPlayerList().serverUpdateMovingPlayer(this);
- 
--                if (this.func_70093_af())
-+                if (this.isSneaking())
-                 {
--                    this.func_175399_e(this);
-+                    this.setSpectatingEntity(this);
-                 }
-             }
-             else
-             {
--                this.func_175399_e(this);
-+                this.setSpectatingEntity(this);
-             }
-         }
-     }
- 
--    public void func_71127_g()
-+    public void onUpdateEntity()
+     public void func_71127_g()
      {
 +        // CraftBukkit start
 +        if (this.joining) {
@@ -423,223 +171,62 @@
 +
          try
          {
--            super.func_70071_h_();
-+            super.onUpdate();
- 
--            for (int i = 0; i < this.field_71071_by.func_70302_i_(); ++i)
-+            for (int i = 0; i < this.inventory.getSizeInventory(); ++i)
-             {
--                ItemStack itemstack = this.field_71071_by.func_70301_a(i);
-+                ItemStack itemstack = this.inventory.getStackInSlot(i);
- 
--                if (!itemstack.func_190926_b() && itemstack.func_77973_b().func_77643_m_())
-+                if (!itemstack.isEmpty() && itemstack.getItem().isMap())
-                 {
--                    Packet<?> packet = ((ItemMapBase)itemstack.func_77973_b()).func_150911_c(itemstack, this.field_70170_p, this);
-+                    Packet<?> packet = ((ItemMapBase)itemstack.getItem()).createMapDataPacket(itemstack, this.world, this);
- 
-                     if (packet != null)
-                     {
--                        this.field_71135_a.func_147359_a(packet);
-+                        this.connection.sendPacket(packet);
-                     }
-                 }
-             }
- 
--            if (this.func_110143_aJ() != this.field_71149_ch || this.field_71146_ci != this.field_71100_bB.func_75116_a() || this.field_71100_bB.func_75115_e() == 0.0F != this.field_71147_cj)
-+            if (this.getHealth() != this.lastHealth || this.lastFoodLevel != this.foodStats.getFoodLevel() || this.foodStats.getSaturationLevel() == 0.0F != this.wasHungry)
-             {
--                this.field_71135_a.func_147359_a(new SPacketUpdateHealth(this.func_110143_aJ(), this.field_71100_bB.func_75116_a(), this.field_71100_bB.func_75115_e()));
--                this.field_71149_ch = this.func_110143_aJ();
--                this.field_71146_ci = this.field_71100_bB.func_75116_a();
--                this.field_71147_cj = this.field_71100_bB.func_75115_e() == 0.0F;
-+                this.connection.sendPacket(new SPacketUpdateHealth(this.getHealth(), this.foodStats.getFoodLevel(), this.foodStats.getSaturationLevel()));
-+                this.lastHealth = this.getHealth();
-+                this.lastFoodLevel = this.foodStats.getFoodLevel();
-+                this.wasHungry = this.foodStats.getSaturationLevel() == 0.0F;
-             }
- 
--            if (this.func_110143_aJ() + this.func_110139_bj() != this.field_130068_bO)
-+            if (this.getHealth() + this.getAbsorptionAmount() != this.lastHealthScore)
-             {
--                this.field_130068_bO = this.func_110143_aJ() + this.func_110139_bj();
--                this.func_184849_a(IScoreCriteria.field_96638_f, MathHelper.func_76123_f(this.field_130068_bO));
-+                this.lastHealthScore = this.getHealth() + this.getAbsorptionAmount();
-+                this.updateScorePoints(IScoreCriteria.HEALTH, MathHelper.ceil(this.lastHealthScore));
-             }
- 
--            if (this.field_71100_bB.func_75116_a() != this.field_184852_bV)
-+            if (this.foodStats.getFoodLevel() != this.lastFoodScore)
-             {
--                this.field_184852_bV = this.field_71100_bB.func_75116_a();
--                this.func_184849_a(IScoreCriteria.field_186698_h, MathHelper.func_76123_f((float)this.field_184852_bV));
-+                this.lastFoodScore = this.foodStats.getFoodLevel();
-+                this.updateScorePoints(IScoreCriteria.FOOD, MathHelper.ceil((float)this.lastFoodScore));
-             }
- 
--            if (this.func_70086_ai() != this.field_184853_bW)
-+            if (this.getAir() != this.lastAirScore)
-             {
--                this.field_184853_bW = this.func_70086_ai();
--                this.func_184849_a(IScoreCriteria.field_186699_i, MathHelper.func_76123_f((float)this.field_184853_bW));
-+                this.lastAirScore = this.getAir();
-+                this.updateScorePoints(IScoreCriteria.AIR, MathHelper.ceil((float)this.lastAirScore));
+             super.func_70071_h_();
+@@ -368,7 +421,11 @@
+                 this.field_184853_bW = this.func_70086_ai();
+                 this.func_184849_a(IScoreCriteria.field_186699_i, MathHelper.func_76123_f((float)this.field_184853_bW));
              }
 -
--            if (this.func_70658_aO() != this.field_184854_bX)
 +            // CraftBukkit start - Force max health updates
 +            //if (this.maxHealthCache != this.getMaxHealth()) {
 +            //    this.getBukkitEntity().updateScaledHealth();
 +            //}
 +            // CraftBukkit end
-+            if (this.getTotalArmorValue() != this.lastArmorScore)
+             if (this.func_70658_aO() != this.field_184854_bX)
              {
--                this.field_184854_bX = this.func_70658_aO();
--                this.func_184849_a(IScoreCriteria.field_186700_j, MathHelper.func_76123_f((float)this.field_184854_bX));
-+                this.lastArmorScore = this.getTotalArmorValue();
-+                this.updateScorePoints(IScoreCriteria.ARMOR, MathHelper.ceil((float)this.lastArmorScore));
-             }
- 
--            if (this.field_71067_cb != this.field_184856_bZ)
-+            if (this.experienceTotal != this.lastExperienceScore)
+                 this.field_184854_bX = this.func_70658_aO();
+@@ -397,6 +454,16 @@
              {
--                this.field_184856_bZ = this.field_71067_cb;
--                this.func_184849_a(IScoreCriteria.field_186701_k, MathHelper.func_76123_f((float)this.field_184856_bZ));
-+                this.lastExperienceScore = this.experienceTotal;
-+                this.updateScorePoints(IScoreCriteria.XP, MathHelper.ceil((float)this.lastExperienceScore));
-             }
- 
--            if (this.field_71068_ca != this.field_184855_bY)
-+            if (this.experienceLevel != this.lastLevelScore)
-             {
--                this.field_184855_bY = this.field_71068_ca;
--                this.func_184849_a(IScoreCriteria.field_186702_l, MathHelper.func_76123_f((float)this.field_184855_bY));
-+                this.lastLevelScore = this.experienceLevel;
-+                this.updateScorePoints(IScoreCriteria.LEVEL, MathHelper.ceil((float)this.lastLevelScore));
-             }
- 
--            if (this.field_71067_cb != this.field_71144_ck)
-+            if (this.experienceTotal != this.lastExperience)
-             {
--                this.field_71144_ck = this.field_71067_cb;
--                this.field_71135_a.func_147359_a(new SPacketSetExperience(this.field_71106_cc, this.field_71067_cb, this.field_71068_ca));
-+                this.lastExperience = this.experienceTotal;
-+                this.connection.sendPacket(new SPacketSetExperience(this.experience, this.experienceTotal, this.experienceLevel));
-             }
- 
--            if (this.field_70173_aa % 100 == 0 && !this.func_147099_x().func_77443_a(AchievementList.field_187979_L))
-+            if (this.ticksExisted % 100 == 0 && !this.getStatFile().hasAchievementUnlocked(AchievementList.EXPLORE_ALL_BIOMES))
-             {
--                this.func_147098_j();
-+                this.updateBiomesExplored();
+                 this.func_147098_j();
              }
 +            // CraftBukkit start - initialize oldLevel and fire PlayerLevelChangeEvent
 +            if (this.oldLevel == -1) {
-+                this.oldLevel = this.experienceLevel;
++                this.oldLevel = this.field_71068_ca;
 +            }
 +
-+            if (this.oldLevel != this.experienceLevel) {
-+                CraftEventFactory.callPlayerLevelChangeEvent(this.world.getServer().getPlayer((net.minecraft.entity.player.EntityPlayerMP) this), this.oldLevel, this.experienceLevel);
-+                this.oldLevel = this.experienceLevel;
++            if (this.oldLevel != this.field_71068_ca) {
++                CraftEventFactory.callPlayerLevelChangeEvent(this.field_70170_p.getServer().getPlayer((net.minecraft.entity.player.EntityPlayerMP) this), this.oldLevel, this.field_71068_ca);
++                this.oldLevel = this.field_71068_ca;
 +            }
 +            // CraftBukkit end
          }
          catch (Throwable throwable)
          {
--            CrashReport crashreport = CrashReport.func_85055_a(throwable, "Ticking player");
--            CrashReportCategory crashreportcategory = crashreport.func_85058_a("Player being ticked");
--            this.func_85029_a(crashreportcategory);
-+            CrashReport crashreport = CrashReport.makeCrashReport(throwable, "Ticking player");
-+            CrashReportCategory crashreportcategory = crashreport.makeCategory("Player being ticked");
-+            this.addEntityCrashInfo(crashreportcategory);
-             throw new ReportedException(crashreport);
-         }
-     }
+@@ -462,9 +529,72 @@
  
--    private void func_184849_a(IScoreCriteria p_184849_1_, int p_184849_2_)
-+    private void updateScorePoints(IScoreCriteria criteria, int points)
+     public void func_70645_a(DamageSource p_70645_1_)
      {
--        for (ScoreObjective scoreobjective : this.func_96123_co().func_96520_a(p_184849_1_))
-+        for (ScoreObjective scoreobjective : this.getWorldScoreboard().getObjectivesFromCriteria(criteria))
-         {
--            Score score = this.func_96123_co().func_96529_a(this.func_70005_c_(), scoreobjective);
--            score.func_96647_c(p_184849_2_);
-+            Score score = this.getWorldScoreboard().getOrCreateScore(this.getName(), scoreobjective);
-+            score.setScorePoints(points);
-         }
-     }
- 
--    protected void func_147098_j()
-+    protected void updateBiomesExplored()
-     {
--        Biome biome = this.field_70170_p.func_180494_b(new BlockPos(MathHelper.func_76128_c(this.field_70165_t), 0, MathHelper.func_76128_c(this.field_70161_v)));
--        String s = biome.func_185359_l();
--        JsonSerializableSet jsonserializableset = (JsonSerializableSet)this.func_147099_x().func_150870_b(AchievementList.field_187979_L);
-+        Biome biome = this.world.getBiome(new BlockPos(MathHelper.floor(this.posX), 0, MathHelper.floor(this.posZ)));
-+        String s = biome.getBiomeName();
-+        JsonSerializableSet jsonserializableset = (JsonSerializableSet)this.getStatFile().getProgress(AchievementList.EXPLORE_ALL_BIOMES);
- 
-         if (jsonserializableset == null)
-         {
--            jsonserializableset = (JsonSerializableSet)this.func_147099_x().func_150872_a(AchievementList.field_187979_L, new JsonSerializableSet());
-+            jsonserializableset = (JsonSerializableSet)this.getStatFile().setProgress(AchievementList.EXPLORE_ALL_BIOMES, new JsonSerializableSet());
-         }
- 
-         jsonserializableset.add(s);
- 
--        if (this.func_147099_x().func_77442_b(AchievementList.field_187979_L) && jsonserializableset.size() >= Biome.field_150597_n.size())
-+        if (this.getStatFile().canUnlockAchievement(AchievementList.EXPLORE_ALL_BIOMES) && jsonserializableset.size() >= Biome.EXPLORATION_BIOMES_LIST.size())
-         {
--            Set<Biome> set = Sets.newHashSet(Biome.field_150597_n);
-+            Set<Biome> set = Sets.newHashSet(Biome.EXPLORATION_BIOMES_LIST);
- 
-             for (String s1 : jsonserializableset)
-             {
-@@ -441,7 +508,7 @@
-                 {
-                     Biome biome1 = (Biome)iterator.next();
- 
--                    if (biome1.func_185359_l().equals(s1))
-+                    if (biome1.getBiomeName().equals(s1))
-                     {
-                         iterator.remove();
-                     }
-@@ -455,91 +522,149 @@
- 
-             if (set.isEmpty())
-             {
--                this.func_71029_a(AchievementList.field_187979_L);
-+                this.addStat(AchievementList.EXPLORE_ALL_BIOMES);
-             }
-         }
-     }
- 
--    public void func_70645_a(DamageSource p_70645_1_)
-+    public void onDeath(DamageSource cause)
-     {
--        boolean flag = this.field_70170_p.func_82736_K().func_82766_b("showDeathMessages");
--        this.field_71135_a.func_147359_a(new SPacketCombatEvent(this.func_110142_aN(), SPacketCombatEvent.Event.ENTITY_DIED, flag));
-+        if (net.minecraftforge.common.ForgeHooks.onLivingDeath(this, cause)) return;
-+        boolean flag = this.world.getGameRules().getBoolean("showDeathMessages");
-+        this.connection.sendPacket(new SPacketCombatEvent(this.getCombatTracker(), SPacketCombatEvent.Event.ENTITY_DIED, flag));
++        if (net.minecraftforge.common.ForgeHooks.onLivingDeath(this, p_70645_1_)) return;
+         boolean flag = this.field_70170_p.func_82736_K().func_82766_b("showDeathMessages");
+         this.field_71135_a.func_147359_a(new SPacketCombatEvent(this.func_110142_aN(), SPacketCombatEvent.Event.ENTITY_DIED, flag));
 +        //craftbukkit  start DeathEvent
-+        if(isDead)
++        if(field_70128_L)
 +        {
 +            return;
 +        }
-+        List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>(this.inventory.getSizeInventory());
++        List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>(this.field_71071_by.func_70302_i_());
 +        List<net.minecraft.item.ItemStack> bukkit_processed_loot = new ArrayList<ItemStack>();
-+        boolean keepInventory = this.world.getGameRules().getBoolean("keepInventory");
++        boolean keepInventory = this.field_70170_p.func_82736_K().func_82766_b("keepInventory");
  
 +        if (!keepInventory) {
-+            for (ItemStack item : this.inventory.getContents()) {
-+                if (!item.isEmpty() && !EnchantmentHelper.hasVanishingCurse(item)) { // PAIL: shouldNotDrop (Vanishing enchant)
++            for (ItemStack item : this.field_71071_by.getContents()) {
++                if (!item.func_190926_b() && !EnchantmentHelper.func_190939_c(item)) { // PAIL: shouldNotDrop (Vanishing enchant)
 +                    loot.add(CraftItemStack.asCraftMirror(item));
 +                }
 +            }
 +        }
-+        ITextComponent chatmessage = this.getCombatTracker().getDeathMessage();
-+        String deathmessage = chatmessage.getUnformattedText();
++        ITextComponent chatmessage = this.func_110142_aN().func_151521_b();
++        String deathmessage = chatmessage.func_150260_c();
 +        org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, deathmessage, keepInventory);
 +        for(org.bukkit.inventory.ItemStack itemStack : loot)
 +        {
@@ -649,36 +236,36 @@
 +
 +        if (deathMessage != null && deathMessage.length() > 0 && flag) { // TODO: allow plugins to override?
 +            if (deathMessage.equals(deathmessage)) {
-+                Team scoreboardteambase = this.getTeam();
++                Team scoreboardteambase = this.func_96124_cp();
 +
-+                if (scoreboardteambase != null && scoreboardteambase.getDeathMessageVisibility() != Team.EnumVisible.ALWAYS) {
-+                    if (scoreboardteambase.getDeathMessageVisibility() == Team.EnumVisible.HIDE_FOR_OTHER_TEAMS) {
-+                        this.mcServer.getPlayerList().sendMessageToAllTeamMembers((net.minecraft.entity.player.EntityPlayer) this, chatmessage);
-+                    } else if (scoreboardteambase.getDeathMessageVisibility() == Team.EnumVisible.HIDE_FOR_OWN_TEAM) {
-+                        this.mcServer.getPlayerList().sendMessageToTeamOrAllPlayers((net.minecraft.entity.player.EntityPlayer) this, chatmessage);
++                if (scoreboardteambase != null && scoreboardteambase.func_178771_j() != Team.EnumVisible.ALWAYS) {
++                    if (scoreboardteambase.func_178771_j() == Team.EnumVisible.HIDE_FOR_OTHER_TEAMS) {
++                        this.field_71133_b.func_184103_al().func_177453_a((net.minecraft.entity.player.EntityPlayer) this, chatmessage);
++                    } else if (scoreboardteambase.func_178771_j() == Team.EnumVisible.HIDE_FOR_OWN_TEAM) {
++                        this.field_71133_b.func_184103_al().func_177452_b((net.minecraft.entity.player.EntityPlayer) this, chatmessage);
 +                    }
 +                } else {
-+                    this.mcServer.getPlayerList().sendMessage(chatmessage);
++                    this.field_71133_b.func_184103_al().func_148539_a(chatmessage);
 +                }
 +            } else {
-+                this.mcServer.getPlayerList().sendMessage(org.bukkit.craftbukkit.util.CraftChatMessage.fromString(deathMessage));
++                this.field_71133_b.func_184103_al().sendMessage(org.bukkit.craftbukkit.util.CraftChatMessage.fromString(deathMessage));
 +            }
 +        }
 +        //CraftBukkit end
-+        if (!event.getKeepInventory() && !this.isSpectator())
++        if (!event.getKeepInventory() && !this.func_175149_v())
 +        {
 +            captureDrops = true;
 +            capturedDrops.clear();
-+            this.destroyVanishingCursedItems();
-+            this.inventory.dropAllItems();
++            this.func_190776_cN();
++            this.field_71071_by.func_70436_m();
 +            captureDrops = false;
 +            //MCPCRevive start : minor modification
-+            net.minecraftforge.event.entity.player.PlayerDropsEvent forgeevent = new net.minecraftforge.event.entity.player.PlayerDropsEvent(this, cause, capturedDrops, recentlyHit > 0);
++            net.minecraftforge.event.entity.player.PlayerDropsEvent forgeevent = new net.minecraftforge.event.entity.player.PlayerDropsEvent(this, p_70645_1_, capturedDrops, field_70718_bc > 0);
 +            if (!net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(forgeevent))
 +            {
 +                for (net.minecraft.item.ItemStack item : bukkit_processed_loot)
 +                {
-+                    this.world.spawnEntity(new EntityItem(getServerWorld(),posX,posY,posZ,item));
++                    this.field_70170_p.func_72838_d(new EntityItem(func_71121_q(),field_70165_t,field_70163_u,field_70161_v,item));
 +                }
 +            }
 +            //spawn Item after forge event
@@ -687,29 +274,8 @@
 +
          if (flag)
          {
--            Team team = this.func_96124_cp();
-+            Team team = this.getTeam();
- 
--            if (team != null && team.func_178771_j() != Team.EnumVisible.ALWAYS)
-+            if (team != null && team.getDeathMessageVisibility() != Team.EnumVisible.ALWAYS)
-             {
--                if (team.func_178771_j() == Team.EnumVisible.HIDE_FOR_OTHER_TEAMS)
-+                if (team.getDeathMessageVisibility() == Team.EnumVisible.HIDE_FOR_OTHER_TEAMS)
-                 {
--                    this.field_71133_b.func_184103_al().func_177453_a(this, this.func_110142_aN().func_151521_b());
-+                    this.mcServer.getPlayerList().sendMessageToAllTeamMembers(this, this.getCombatTracker().getDeathMessage());
-                 }
--                else if (team.func_178771_j() == Team.EnumVisible.HIDE_FOR_OWN_TEAM)
-+                else if (team.getDeathMessageVisibility() == Team.EnumVisible.HIDE_FOR_OWN_TEAM)
-                 {
--                    this.field_71133_b.func_184103_al().func_177452_b(this, this.func_110142_aN().func_151521_b());
-+                    this.mcServer.getPlayerList().sendMessageToTeamOrAllPlayers(this, this.getCombatTracker().getDeathMessage());
-                 }
-             }
-             else
-             {
--                this.field_71133_b.func_184103_al().func_148539_a(this.func_110142_aN().func_151521_b());
-+                this.mcServer.getPlayerList().sendMessage(this.getCombatTracker().getDeathMessage());
+             Team team = this.func_96124_cp();
+@@ -486,11 +616,6 @@
              }
          }
  
@@ -719,1135 +285,150 @@
 -            this.field_71071_by.func_70436_m();
 -        }
  
--        for (ScoreObjective scoreobjective : this.field_70170_p.func_96441_U().func_96520_a(IScoreCriteria.field_96642_c))
-+        for (ScoreObjective scoreobjective : this.world.getScoreboard().getObjectivesFromCriteria(IScoreCriteria.DEATH_COUNT))
+         for (ScoreObjective scoreobjective : this.field_70170_p.func_96441_U().func_96520_a(IScoreCriteria.field_96642_c))
          {
--            Score score = this.func_96123_co().func_96529_a(this.func_70005_c_(), scoreobjective);
--            score.func_96648_a();
-+            Score score = this.getWorldScoreboard().getOrCreateScore(this.getName(), scoreobjective);
-+            score.incrementScore();
-         }
- 
--        EntityLivingBase entitylivingbase = this.func_94060_bK();
-+        EntityLivingBase entitylivingbase = this.getAttackingEntity();
- 
-         if (entitylivingbase != null)
-         {
--            EntityList.EntityEggInfo entitylist$entityegginfo = (EntityList.EntityEggInfo)EntityList.field_75627_a.get(EntityList.func_191301_a(entitylivingbase));
-+            EntityList.EntityEggInfo entitylist$entityegginfo = (EntityList.EntityEggInfo)EntityList.ENTITY_EGGS.get(EntityList.getKey(entitylivingbase));
- 
-             if (entitylist$entityegginfo != null)
-             {
--                this.func_71029_a(entitylist$entityegginfo.field_151513_e);
-+                this.addStat(entitylist$entityegginfo.entityKilledByStat);
-             }
- 
--            entitylivingbase.func_70084_c(this, this.field_70744_aE);
-+            entitylivingbase.addToPlayerScore(this, this.scoreValue);
-         }
- 
--        this.func_71029_a(StatList.field_188069_A);
--        this.func_175145_a(StatList.field_188098_h);
--        this.func_70066_B();
--        this.func_70052_a(0, false);
--        this.func_110142_aN().func_94549_h();
-+        this.addStat(StatList.DEATHS);
-+        this.takeStat(StatList.TIME_SINCE_DEATH);
-+        this.extinguish();
-+        this.setFlag(0, false);
-+        this.getCombatTracker().reset();
-     }
- 
--    public boolean func_70097_a(DamageSource p_70097_1_, float p_70097_2_)
-+    public boolean attackEntityFrom(DamageSource source, float amount)
-     {
--        if (this.func_180431_b(p_70097_1_))
-+        if (this.isEntityInvulnerable(source))
-         {
-             return false;
-         }
-         else
-         {
--            boolean flag = this.field_71133_b.func_71262_S() && this.func_175400_cq() && "fall".equals(p_70097_1_.field_76373_n);
-+            boolean flag = this.mcServer.isDedicatedServer() && this.canPlayersAttack() && "fall".equals(source.damageType);
- 
--            if (!flag && this.field_147101_bU > 0 && p_70097_1_ != DamageSource.field_76380_i)
-+            if (!flag && this.respawnInvulnerabilityTicks > 0 && source != DamageSource.OUT_OF_WORLD)
-             {
-                 return false;
-             }
-             else
-             {
--                if (p_70097_1_ instanceof EntityDamageSource)
-+                if (source instanceof EntityDamageSource)
-                 {
--                    Entity entity = p_70097_1_.func_76346_g();
-+                    Entity entity = source.getEntity();
- 
--                    if (entity instanceof EntityPlayer && !this.func_96122_a((EntityPlayer)entity))
-+                    if (entity instanceof EntityPlayer && !this.canAttackPlayer((EntityPlayer)entity))
-                     {
-                         return false;
-                     }
-@@ -548,49 +673,55 @@
-                     {
-                         EntityArrow entityarrow = (EntityArrow)entity;
- 
--                        if (entityarrow.field_70250_c instanceof EntityPlayer && !this.func_96122_a((EntityPlayer)entityarrow.field_70250_c))
-+                        if (entityarrow.shootingEntity instanceof EntityPlayer && !this.canAttackPlayer((EntityPlayer)entityarrow.shootingEntity))
-                         {
-                             return false;
-                         }
-                     }
-                 }
- 
--                return super.func_70097_a(p_70097_1_, p_70097_2_);
-+                return super.attackEntityFrom(source, amount);
-             }
-         }
-     }
- 
--    public boolean func_96122_a(EntityPlayer p_96122_1_)
-+    public boolean canAttackPlayer(EntityPlayer other)
-     {
--        return !this.func_175400_cq() ? false : super.func_96122_a(p_96122_1_);
-+        return !this.canPlayersAttack() ? false : super.canAttackPlayer(other);
-     }
- 
--    private boolean func_175400_cq()
-+    private boolean canPlayersAttack()
-     {
--        return this.field_71133_b.func_71219_W();
-+        return this.mcServer.isPVPEnabled();
-     }
- 
+@@ -573,6 +698,12 @@
      @Nullable
--    public Entity func_184204_a(int p_184204_1_)
-+    public Entity changeDimension(int dimensionIn)
+     public Entity func_184204_a(int p_184204_1_)
      {
--        this.field_184851_cj = true;
-+        if (!net.minecraftforge.common.ForgeHooks.onTravelToDimension(this, dimensionIn)) return this;
++        if (!net.minecraftforge.common.ForgeHooks.onTravelToDimension(this, p_184204_1_)) return this;
 +        //MCPCRevive start
-+        if(this.dimension != dimensionIn) {
-+            this.mcServer.getPlayerList().changePlayerDimension(this, dimensionIn);
++        if(this.field_71093_bK != p_184204_1_) {
++            this.field_71133_b.func_184103_al().func_187242_a(this, p_184204_1_);
 +        }
 +        //MCPCRevive end
-+        this.invulnerableDimensionChange = true;
+         this.field_184851_cj = true;
  
--        if (this.field_71093_bK == 1 && p_184204_1_ == 1)
-+        if (this.dimension == 1 && dimensionIn == 1)
-         {
--            this.field_70170_p.func_72900_e(this);
-+            this.world.removeEntity(this);
- 
--            if (!this.field_71136_j)
-+            if (!this.playerConqueredTheEnd)
+         if (this.field_71093_bK == 1 && p_184204_1_ == 1)
+@@ -607,8 +738,7 @@
              {
--                this.field_71136_j = true;
-+                this.playerConqueredTheEnd = true;
- 
--                if (this.func_189102_a(AchievementList.field_187971_D))
-+                if (this.hasAchievement(AchievementList.THE_END2))
-                 {
--                    this.field_71135_a.func_147359_a(new SPacketChangeGameState(4, 0.0F));
-+                    this.connection.sendPacket(new SPacketChangeGameState(4, 0.0F));
-                 }
-                 else
-                 {
--                    this.func_71029_a(AchievementList.field_187971_D);
--                    this.field_71135_a.func_147359_a(new SPacketChangeGameState(4, 1.0F));
-+                    this.addStat(AchievementList.THE_END2);
-+                    this.connection.sendPacket(new SPacketChangeGameState(4, 1.0F));
-                 }
-             }
- 
-@@ -598,143 +729,142 @@
-         }
-         else
-         {
--            if (this.field_71093_bK == 0 && p_184204_1_ == 1)
-+            if (this.dimension == 0 && dimensionIn == 1)
-             {
--                this.func_71029_a(AchievementList.field_76002_B);
--                p_184204_1_ = 1;
-+                this.addStat(AchievementList.THE_END);
-+                dimensionIn = 1;
-             }
-             else
-             {
--                this.func_71029_a(AchievementList.field_187997_y);
-+                this.addStat(AchievementList.PORTAL);
+                 this.func_71029_a(AchievementList.field_187997_y);
              }
 -
 -            this.field_71133_b.func_184103_al().func_187242_a(this, p_184204_1_);
--            this.field_71135_a.func_147359_a(new SPacketEffect(1032, BlockPos.field_177992_a, 0, false));
--            this.field_71144_ck = -1;
--            this.field_71149_ch = -1.0F;
--            this.field_71146_ci = -1;
 +            //this.mcServer.getPlayerList().changePlayerDimension(this, dimensionIn); MCPCRevive moved up
-+            this.connection.sendPacket(new SPacketEffect(1032, BlockPos.ORIGIN, 0, false));
-+            this.lastExperience = -1;
-+            this.lastHealth = -1.0F;
-+            this.lastFoodLevel = -1;
-             return this;
-         }
-     }
- 
--    public boolean func_174827_a(EntityPlayerMP p_174827_1_)
-+    public boolean isSpectatedByPlayer(EntityPlayerMP player)
-     {
--        return p_174827_1_.func_175149_v() ? this.func_175398_C() == this : (this.func_175149_v() ? false : super.func_174827_a(p_174827_1_));
-+        return player.isSpectator() ? this.getSpectatingEntity() == this : (this.isSpectator() ? false : super.isSpectatedByPlayer(player));
-     }
- 
--    private void func_147097_b(TileEntity p_147097_1_)
-+    private void sendTileEntityUpdate(TileEntity p_147097_1_)
-     {
-         if (p_147097_1_ != null)
-         {
--            SPacketUpdateTileEntity spacketupdatetileentity = p_147097_1_.func_189518_D_();
-+            SPacketUpdateTileEntity spacketupdatetileentity = p_147097_1_.getUpdatePacket();
- 
-             if (spacketupdatetileentity != null)
-             {
--                this.field_71135_a.func_147359_a(spacketupdatetileentity);
-+                this.connection.sendPacket(spacketupdatetileentity);
-             }
-         }
-     }
- 
--    public void func_71001_a(Entity p_71001_1_, int p_71001_2_)
-+    public void onItemPickup(Entity entityIn, int quantity)
-     {
--        super.func_71001_a(p_71001_1_, p_71001_2_);
--        this.field_71070_bA.func_75142_b();
-+        super.onItemPickup(entityIn, quantity);
-+        this.openContainer.detectAndSendChanges();
-     }
- 
--    public EntityPlayer.SleepResult func_180469_a(BlockPos p_180469_1_)
-+    public EntityPlayer.SleepResult trySleep(BlockPos bedLocation)
-     {
--        EntityPlayer.SleepResult entityplayer$sleepresult = super.func_180469_a(p_180469_1_);
-+        EntityPlayer.SleepResult entityplayer$sleepresult = super.trySleep(bedLocation);
- 
-         if (entityplayer$sleepresult == EntityPlayer.SleepResult.OK)
-         {
--            this.func_71029_a(StatList.field_188064_ad);
--            Packet<?> packet = new SPacketUseBed(this, p_180469_1_);
--            this.func_71121_q().func_73039_n().func_151247_a(this, packet);
--            this.field_71135_a.func_147364_a(this.field_70165_t, this.field_70163_u, this.field_70161_v, this.field_70177_z, this.field_70125_A);
--            this.field_71135_a.func_147359_a(packet);
-+            this.addStat(StatList.SLEEP_IN_BED);
-+            Packet<?> packet = new SPacketUseBed(this, bedLocation);
-+            this.getServerWorld().getEntityTracker().sendToTracking(this, packet);
-+            this.connection.setPlayerLocation(this.posX, this.posY, this.posZ, this.rotationYaw, this.rotationPitch);
-+            this.connection.sendPacket(packet);
-         }
- 
-         return entityplayer$sleepresult;
-     }
- 
--    public void func_70999_a(boolean p_70999_1_, boolean p_70999_2_, boolean p_70999_3_)
-+    public void wakeUpPlayer(boolean immediately, boolean updateWorldFlag, boolean setSpawn)
-     {
--        if (this.func_70608_bn())
-+        if (this.isPlayerSleeping())
-         {
--            this.func_71121_q().func_73039_n().func_151248_b(this, new SPacketAnimation(this, 2));
-+            this.getServerWorld().getEntityTracker().sendToTrackingAndSelf(this, new SPacketAnimation(this, 2));
-         }
- 
--        super.func_70999_a(p_70999_1_, p_70999_2_, p_70999_3_);
-+        super.wakeUpPlayer(immediately, updateWorldFlag, setSpawn);
- 
--        if (this.field_71135_a != null)
-+        if (this.connection != null)
-         {
--            this.field_71135_a.func_147364_a(this.field_70165_t, this.field_70163_u, this.field_70161_v, this.field_70177_z, this.field_70125_A);
-+            this.connection.setPlayerLocation(this.posX, this.posY, this.posZ, this.rotationYaw, this.rotationPitch);
-         }
-     }
- 
--    public boolean func_184205_a(Entity p_184205_1_, boolean p_184205_2_)
-+    public boolean startRiding(Entity entityIn, boolean force)
-     {
--        Entity entity = this.func_184187_bx();
-+        Entity entity = this.getRidingEntity();
- 
--        if (!super.func_184205_a(p_184205_1_, p_184205_2_))
-+        if (!super.startRiding(entityIn, force))
-         {
-             return false;
-         }
-         else
-         {
--            Entity entity1 = this.func_184187_bx();
-+            Entity entity1 = this.getRidingEntity();
- 
--            if (entity1 != entity && this.field_71135_a != null)
-+            if (entity1 != entity && this.connection != null)
-             {
--                this.field_71135_a.func_147364_a(this.field_70165_t, this.field_70163_u, this.field_70161_v, this.field_70177_z, this.field_70125_A);
-+                this.connection.setPlayerLocation(this.posX, this.posY, this.posZ, this.rotationYaw, this.rotationPitch);
-             }
- 
-             return true;
-         }
-     }
- 
--    public void func_184210_p()
-+    public void dismountRidingEntity()
-     {
--        Entity entity = this.func_184187_bx();
--        super.func_184210_p();
--        Entity entity1 = this.func_184187_bx();
-+        Entity entity = this.getRidingEntity();
-+        super.dismountRidingEntity();
-+        Entity entity1 = this.getRidingEntity();
- 
--        if (entity1 != entity && this.field_71135_a != null)
-+        if (entity1 != entity && this.connection != null)
-         {
--            this.field_71135_a.func_147364_a(this.field_70165_t, this.field_70163_u, this.field_70161_v, this.field_70177_z, this.field_70125_A);
-+            this.connection.setPlayerLocation(this.posX, this.posY, this.posZ, this.rotationYaw, this.rotationPitch);
-         }
-     }
- 
--    public boolean func_180431_b(DamageSource p_180431_1_)
-+    public boolean isEntityInvulnerable(DamageSource source)
-     {
--        return super.func_180431_b(p_180431_1_) || this.func_184850_K();
-+        return super.isEntityInvulnerable(source) || this.isInvulnerableDimensionChange();
-     }
- 
--    protected void func_184231_a(double p_184231_1_, boolean p_184231_3_, IBlockState p_184231_4_, BlockPos p_184231_5_)
-+    protected void updateFallState(double y, boolean onGroundIn, IBlockState state, BlockPos pos)
-     {
-     }
- 
--    protected void func_184594_b(BlockPos p_184594_1_)
-+    protected void frostWalk(BlockPos pos)
-     {
--        if (!this.func_175149_v())
-+        if (!this.isSpectator())
-         {
--            super.func_184594_b(p_184594_1_);
-+            super.frostWalk(pos);
-         }
-     }
- 
--    public void func_71122_b(double p_71122_1_, boolean p_71122_3_)
-+    public void handleFalling(double y, boolean onGroundIn)
-     {
--        int i = MathHelper.func_76128_c(this.field_70165_t);
--        int j = MathHelper.func_76128_c(this.field_70163_u - 0.20000000298023224D);
--        int k = MathHelper.func_76128_c(this.field_70161_v);
-+        int i = MathHelper.floor(this.posX);
-+        int j = MathHelper.floor(this.posY - 0.20000000298023224D);
-+        int k = MathHelper.floor(this.posZ);
+             this.field_71135_a.func_147359_a(new SPacketEffect(1032, BlockPos.field_177992_a, 0, false));
+             this.field_71144_ck = -1;
+             this.field_71149_ch = -1.0F;
+@@ -730,7 +860,7 @@
          BlockPos blockpos = new BlockPos(i, j, k);
--        IBlockState iblockstate = this.field_70170_p.func_180495_p(blockpos);
-+        IBlockState iblockstate = this.world.getBlockState(blockpos);
+         IBlockState iblockstate = this.field_70170_p.func_180495_p(blockpos);
  
 -        if (iblockstate.func_185904_a() == Material.field_151579_a)
-+        if (iblockstate.getBlock().isAir(iblockstate, this.world, blockpos))
++        if (iblockstate.func_177230_c().isAir(iblockstate, this.field_70170_p, blockpos))
          {
--            BlockPos blockpos1 = blockpos.func_177977_b();
--            IBlockState iblockstate1 = this.field_70170_p.func_180495_p(blockpos1);
--            Block block = iblockstate1.func_177230_c();
-+            BlockPos blockpos1 = blockpos.down();
-+            IBlockState iblockstate1 = this.world.getBlockState(blockpos1);
-+            Block block = iblockstate1.getBlock();
- 
-             if (block instanceof BlockFence || block instanceof BlockWall || block instanceof BlockFenceGate)
-             {
-@@ -743,376 +873,405 @@
-             }
-         }
- 
--        super.func_184231_a(p_71122_1_, p_71122_3_, iblockstate, blockpos);
-+        super.updateFallState(y, onGroundIn, iblockstate, blockpos);
-     }
- 
--    public void func_175141_a(TileEntitySign p_175141_1_)
-+    public void openEditSign(TileEntitySign signTile)
-     {
--        p_175141_1_.func_145912_a(this);
--        this.field_71135_a.func_147359_a(new SPacketSignEditorOpen(p_175141_1_.func_174877_v()));
-+        signTile.setPlayer(this);
-+        this.connection.sendPacket(new SPacketSignEditorOpen(signTile.getPos()));
-     }
- 
--    public void func_71117_bO()
-+    public void getNextWindowId()
-     {
--        this.field_71139_cq = this.field_71139_cq % 100 + 1;
-+        this.currentWindowId = this.currentWindowId % 100 + 1;
-     }
- 
--    public void func_180468_a(IInteractionObject p_180468_1_)
-+    public void displayGui(IInteractionObject guiOwner)
-     {
--        if (p_180468_1_ instanceof ILootContainer && ((ILootContainer)p_180468_1_).func_184276_b() != null && this.func_175149_v())
-+        if (guiOwner instanceof ILootContainer && ((ILootContainer)guiOwner).getLootTable() != null && this.isSpectator())
-         {
--            this.func_146105_b((new TextComponentTranslation("container.spectatorCantOpen", new Object[0])).func_150255_a((new Style()).func_150238_a(TextFormatting.RED)), true);
-+            this.sendStatusMessage((new TextComponentTranslation("container.spectatorCantOpen", new Object[0])).setStyle((new Style()).setColor(TextFormatting.RED)), true);
+             BlockPos blockpos1 = blockpos.func_177977_b();
+             IBlockState iblockstate1 = this.field_70170_p.func_180495_p(blockpos1);
+@@ -765,11 +895,19 @@
          }
          else
          {
--            this.func_71117_bO();
--            this.field_71135_a.func_147359_a(new SPacketOpenWindow(this.field_71139_cq, p_180468_1_.func_174875_k(), p_180468_1_.func_145748_c_()));
--            this.field_71070_bA = p_180468_1_.func_174876_a(this.field_71071_by, this);
--            this.field_71070_bA.field_75152_c = this.field_71139_cq;
--            this.field_71070_bA.func_75132_a(this);
 +            //MCPCRevive start
-+            Container ct = CraftEventFactory.callInventoryOpenEvent(this,guiOwner.createContainer(inventory,this));
-+            if(ct != null)
-+            {
-+                return;
-+            }
-+            //MCPCRevive end
-+            this.getNextWindowId();
-+            this.connection.sendPacket(new SPacketOpenWindow(this.currentWindowId, guiOwner.getGuiID(), guiOwner.getDisplayName()));
-+            this.openContainer = guiOwner.createContainer(this.inventory, this);
-+            this.openContainer.windowId = this.currentWindowId;
-+            this.openContainer.addListener(this);
-+            net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.event.entity.player.PlayerContainerEvent.    Open(this, this.openContainer));
-         }
-     }
- 
--    public void func_71007_a(IInventory p_71007_1_)
-+    public void displayGUIChest(IInventory chestInventory)
-     {
--        if (p_71007_1_ instanceof ILootContainer && ((ILootContainer)p_71007_1_).func_184276_b() != null && this.func_175149_v())
-+        if (chestInventory instanceof ILootContainer && ((ILootContainer)chestInventory).getLootTable() != null && this.isSpectator())
-         {
--            this.func_146105_b((new TextComponentTranslation("container.spectatorCantOpen", new Object[0])).func_150255_a((new Style()).func_150238_a(TextFormatting.RED)), true);
-+            this.sendStatusMessage((new TextComponentTranslation("container.spectatorCantOpen", new Object[0])).setStyle((new Style()).setColor(TextFormatting.RED)), true);
-         }
-         else
-         {
--            if (this.field_71070_bA != this.field_71069_bz)
-+            if (this.openContainer != this.inventoryContainer)
-             {
--                this.func_71053_j();
-+                this.closeScreen();
-             }
--
--            if (p_71007_1_ instanceof ILockableContainer)
-+            //MCPCRevive start
-+            Container ct = CraftEventFactory.callInventoryOpenEvent(this,new ContainerChest(this.inventory,chestInventory,this));
++            Container ct = CraftEventFactory.callInventoryOpenEvent(this,p_180468_1_.func_174876_a(field_71071_by,this));
 +            if(ct == null)
-             {
--                ILockableContainer ilockablecontainer = (ILockableContainer)p_71007_1_;
++            {
 +                return;
 +            }
 +            //MCPCRevive end
-+            if (chestInventory instanceof ILockableContainer)
+             this.func_71117_bO();
+             this.field_71135_a.func_147359_a(new SPacketOpenWindow(this.field_71139_cq, p_180468_1_.func_174875_k(), p_180468_1_.func_145748_c_()));
+             this.field_71070_bA = p_180468_1_.func_174876_a(this.field_71071_by, this);
+             this.field_71070_bA.field_75152_c = this.field_71139_cq;
+             this.field_71070_bA.func_75132_a(this);
++            net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.event.entity.player.PlayerContainerEvent.Open(this, this.field_71070_bA));
+         }
+     }
+ 
+@@ -785,7 +923,13 @@
+             {
+                 this.func_71053_j();
+             }
+-
++            //MCPCRevive start
++            Container ct = CraftEventFactory.callInventoryOpenEvent(this,new ContainerChest(this.field_71071_by,p_71007_1_,this));
++            if(ct == null)
 +            {
-+                ILockableContainer ilockablecontainer = (ILockableContainer)chestInventory;
- 
--                if (ilockablecontainer.func_174893_q_() && !this.func_175146_a(ilockablecontainer.func_174891_i()) && !this.func_175149_v())
-+                if (ilockablecontainer.isLocked() && !this.canOpen(ilockablecontainer.getLockCode()) && !this.isSpectator())
-                 {
--                    this.field_71135_a.func_147359_a(new SPacketChat(new TextComponentTranslation("container.isLocked", new Object[] {p_71007_1_.func_145748_c_()}), (byte)2));
--                    this.field_71135_a.func_147359_a(new SPacketSoundEffect(SoundEvents.field_187654_U, SoundCategory.BLOCKS, this.field_70165_t, this.field_70163_u, this.field_70161_v, 1.0F, 1.0F));
-+                    this.connection.sendPacket(new SPacketChat(new TextComponentTranslation("container.isLocked", new Object[] {chestInventory.getDisplayName()}), (byte)2));
-+                    this.connection.sendPacket(new SPacketSoundEffect(SoundEvents.BLOCK_CHEST_LOCKED, SoundCategory.BLOCKS, this.posX, this.posY, this.posZ, 1.0F, 1.0F));
-                     return;
-                 }
-             }
- 
--            this.func_71117_bO();
-+            this.getNextWindowId();
- 
--            if (p_71007_1_ instanceof IInteractionObject)
-+            if (chestInventory instanceof IInteractionObject)
++                return;
++            }
++            //MCPCRevive end
+             if (p_71007_1_ instanceof ILockableContainer)
              {
--                this.field_71135_a.func_147359_a(new SPacketOpenWindow(this.field_71139_cq, ((IInteractionObject)p_71007_1_).func_174875_k(), p_71007_1_.func_145748_c_(), p_71007_1_.func_70302_i_()));
--                this.field_71070_bA = ((IInteractionObject)p_71007_1_).func_174876_a(this.field_71071_by, this);
-+                this.connection.sendPacket(new SPacketOpenWindow(this.currentWindowId, ((IInteractionObject)chestInventory).getGuiID(), chestInventory.getDisplayName(), chestInventory.getSizeInventory()));
-+                this.openContainer = ((IInteractionObject)chestInventory).createContainer(this.inventory, this);
-             }
-             else
-             {
--                this.field_71135_a.func_147359_a(new SPacketOpenWindow(this.field_71139_cq, "minecraft:container", p_71007_1_.func_145748_c_(), p_71007_1_.func_70302_i_()));
--                this.field_71070_bA = new ContainerChest(this.field_71071_by, p_71007_1_, this);
-+                this.connection.sendPacket(new SPacketOpenWindow(this.currentWindowId, "minecraft:container", chestInventory.getDisplayName(), chestInventory.getSizeInventory()));
-+                this.openContainer = new ContainerChest(this.inventory, chestInventory, this);
-             }
+                 ILockableContainer ilockablecontainer = (ILockableContainer)p_71007_1_;
+@@ -813,6 +957,7 @@
  
--            this.field_71070_bA.field_75152_c = this.field_71139_cq;
--            this.field_71070_bA.func_75132_a(this);
-+            this.openContainer.windowId = this.currentWindowId;
-+            this.openContainer.addListener(this);
-+            net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.event.entity.player.PlayerContainerEvent.Open(this, this.openContainer));
+             this.field_71070_bA.field_75152_c = this.field_71139_cq;
+             this.field_71070_bA.func_75132_a(this);
++            net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.event.entity.player.PlayerContainerEvent.Open(this, this.field_71070_bA));
          }
      }
  
--    public void func_180472_a(IMerchant p_180472_1_)
-+    public void displayVillagerTradeGui(IMerchant villager)
-     {
--        this.func_71117_bO();
--        this.field_71070_bA = new ContainerMerchant(this.field_71071_by, p_180472_1_, this.field_70170_p);
--        this.field_71070_bA.field_75152_c = this.field_71139_cq;
--        this.field_71070_bA.func_75132_a(this);
--        IInventory iinventory = ((ContainerMerchant)this.field_71070_bA).func_75174_d();
--        ITextComponent itextcomponent = p_180472_1_.func_145748_c_();
--        this.field_71135_a.func_147359_a(new SPacketOpenWindow(this.field_71139_cq, "minecraft:villager", itextcomponent, iinventory.func_70302_i_()));
--        MerchantRecipeList merchantrecipelist = p_180472_1_.func_70934_b(this);
-+        this.getNextWindowId();
-+        this.openContainer = new ContainerMerchant(this.inventory, villager, this.world);
-+        this.openContainer.windowId = this.currentWindowId;
-+        this.openContainer.addListener(this);
-+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.event.entity.player.PlayerContainerEvent.Open(this, this.openContainer));
-+        IInventory iinventory = ((ContainerMerchant)this.openContainer).getMerchantInventory();
-+        ITextComponent itextcomponent = villager.getDisplayName();
-+        this.connection.sendPacket(new SPacketOpenWindow(this.currentWindowId, "minecraft:villager", itextcomponent, iinventory.getSizeInventory()));
-+        MerchantRecipeList merchantrecipelist = villager.getRecipes(this);
+@@ -822,6 +967,7 @@
+         this.field_71070_bA = new ContainerMerchant(this.field_71071_by, p_180472_1_, this.field_70170_p);
+         this.field_71070_bA.field_75152_c = this.field_71139_cq;
+         this.field_71070_bA.func_75132_a(this);
++        net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.event.entity.player.PlayerContainerEvent.Open(this, this.field_71070_bA));
+         IInventory iinventory = ((ContainerMerchant)this.field_71070_bA).func_75174_d();
+         ITextComponent itextcomponent = p_180472_1_.func_145748_c_();
+         this.field_71135_a.func_147359_a(new SPacketOpenWindow(this.field_71139_cq, "minecraft:villager", itextcomponent, iinventory.func_70302_i_()));
+@@ -838,11 +984,18 @@
  
-         if (merchantrecipelist != null)
-         {
-             PacketBuffer packetbuffer = new PacketBuffer(Unpooled.buffer());
--            packetbuffer.writeInt(this.field_71139_cq);
--            merchantrecipelist.func_151391_a(packetbuffer);
--            this.field_71135_a.func_147359_a(new SPacketCustomPayload("MC|TrList", packetbuffer));
-+            packetbuffer.writeInt(this.currentWindowId);
-+            merchantrecipelist.writeToBuf(packetbuffer);
-+            this.connection.sendPacket(new SPacketCustomPayload("MC|TrList", packetbuffer));
-         }
-     }
- 
--    public void func_184826_a(AbstractHorse p_184826_1_, IInventory p_184826_2_)
-+    public void openGuiHorseInventory(AbstractHorse horse, IInventory inventoryIn)
+     public void func_184826_a(AbstractHorse p_184826_1_, IInventory p_184826_2_)
      {
--        if (this.field_71070_bA != this.field_71069_bz)
 +
-+        if (this.openContainer != this.inventoryContainer)
+         if (this.field_71070_bA != this.field_71069_bz)
          {
--            this.func_71053_j();
-+            this.closeScreen();
+             this.func_71053_j();
          }
 -
--        this.func_71117_bO();
--        this.field_71135_a.func_147359_a(new SPacketOpenWindow(this.field_71139_cq, "EntityHorse", p_184826_2_.func_145748_c_(), p_184826_2_.func_70302_i_(), p_184826_1_.func_145782_y()));
--        this.field_71070_bA = new ContainerHorseInventory(this.field_71071_by, p_184826_2_, p_184826_1_, this);
--        this.field_71070_bA.field_75152_c = this.field_71139_cq;
--        this.field_71070_bA.func_75132_a(this);
 +        //MCPCRevive start
-+        Container ct = CraftEventFactory.callInventoryOpenEvent(this,new ContainerChest(this.inventory,inventoryIn,this));
++        Container ct = CraftEventFactory.callInventoryOpenEvent(this,new ContainerChest(this.field_71071_by,p_184826_2_,this));
 +        if(ct == null)
 +        {
 +            return;
 +        }
 +        //MCPCRevive end
-+        this.getNextWindowId();
-+        this.connection.sendPacket(new SPacketOpenWindow(this.currentWindowId, "EntityHorse", inventoryIn.getDisplayName(), inventoryIn.getSizeInventory(), horse.getEntityId()));
-+        this.openContainer = new ContainerHorseInventory(this.inventory, inventoryIn, horse, this);
-+        this.openContainer.windowId = this.currentWindowId;
-+        this.openContainer.addListener(this);
-     }
- 
--    public void func_184814_a(ItemStack p_184814_1_, EnumHand p_184814_2_)
-+    public void openBook(ItemStack stack, EnumHand hand)
+         this.func_71117_bO();
+         this.field_71135_a.func_147359_a(new SPacketOpenWindow(this.field_71139_cq, "EntityHorse", p_184826_2_.func_145748_c_(), p_184826_2_.func_70302_i_(), p_184826_1_.func_145782_y()));
+         this.field_71070_bA = new ContainerHorseInventory(this.field_71071_by, p_184826_2_, p_184826_1_, this);
+@@ -853,7 +1006,6 @@
+     public void func_184814_a(ItemStack p_184814_1_, EnumHand p_184814_2_)
      {
--        Item item = p_184814_1_.func_77973_b();
+         Item item = p_184814_1_.func_77973_b();
 -
--        if (item == Items.field_151164_bB)
-+        Item item = stack.getItem();
-+        if (item == Items.WRITTEN_BOOK)
+         if (item == Items.field_151164_bB)
          {
              PacketBuffer packetbuffer = new PacketBuffer(Unpooled.buffer());
--            packetbuffer.func_179249_a(p_184814_2_);
--            this.field_71135_a.func_147359_a(new SPacketCustomPayload("MC|BOpen", packetbuffer));
-+            packetbuffer.writeEnumValue(hand);
-+            this.connection.sendPacket(new SPacketCustomPayload("MC|BOpen", packetbuffer));
-         }
+@@ -920,6 +1072,7 @@
+     public void func_71128_l()
+     {
+         this.field_71070_bA.func_75134_a(this);
++        net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.event.entity.player.PlayerContainerEvent.Close(this, this.field_71070_bA));
+         this.field_71070_bA = this.field_71069_bz;
      }
  
--    public void func_184824_a(TileEntityCommandBlock p_184824_1_)
-+    public void displayGuiCommandBlock(TileEntityCommandBlock commandBlock)
+@@ -951,6 +1104,7 @@
      {
--        p_184824_1_.func_184252_d(true);
--        this.func_147097_b(p_184824_1_);
-+        commandBlock.setSendToClient(true);
-+        this.sendTileEntityUpdate(commandBlock);
-     }
- 
--    public void func_71111_a(Container p_71111_1_, int p_71111_2_, ItemStack p_71111_3_)
-+    public void sendSlotContents(Container containerToSend, int slotInd, ItemStack stack)
-     {
--        if (!(p_71111_1_.func_75139_a(p_71111_2_) instanceof SlotCrafting))
-+        if (!(containerToSend.getSlot(slotInd) instanceof SlotCrafting))
+         if (p_71064_1_ != null)
          {
--            if (!this.field_71137_h)
-+            if (!this.isChangingQuantityOnly)
-             {
--                this.field_71135_a.func_147359_a(new SPacketSetSlot(p_71111_1_.field_75152_c, p_71111_2_, p_71111_3_));
-+                this.connection.sendPacket(new SPacketSetSlot(containerToSend.windowId, slotInd, stack));
-             }
-         }
-     }
++            if (p_71064_1_.func_75967_d() && net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.event.entity.player.AchievementEvent(this, (net.minecraft.stats.Achievement) p_71064_1_))) return;
+             this.field_147103_bO.func_150871_b(this, p_71064_1_, p_71064_2_);
  
--    public void func_71120_a(Container p_71120_1_)
-+    public void sendContainerToPlayer(Container containerIn)
+             for (ScoreObjective scoreobjective : this.func_96123_co().func_96520_a(p_71064_1_.func_150952_k()))
+@@ -1100,6 +1254,11 @@
      {
--        this.func_71110_a(p_71120_1_, p_71120_1_.func_75138_a());
-+        this.updateCraftingInventory(containerIn, containerIn.getInventory());
-     }
- 
--    public void func_71110_a(Container p_71110_1_, NonNullList<ItemStack> p_71110_2_)
-+    public void updateCraftingInventory(Container containerToSend, NonNullList<ItemStack> itemsList)
-     {
--        this.field_71135_a.func_147359_a(new SPacketWindowItems(p_71110_1_.field_75152_c, p_71110_2_));
--        this.field_71135_a.func_147359_a(new SPacketSetSlot(-1, -1, this.field_71071_by.func_70445_o()));
-+        this.connection.sendPacket(new SPacketWindowItems(containerToSend.windowId, itemsList));
-+        this.connection.sendPacket(new SPacketSetSlot(-1, -1, this.inventory.getItemStack()));
-     }
- 
--    public void func_71112_a(Container p_71112_1_, int p_71112_2_, int p_71112_3_)
-+    public void sendProgressBarUpdate(Container containerIn, int varToUpdate, int newValue)
-     {
--        this.field_71135_a.func_147359_a(new SPacketWindowProperty(p_71112_1_.field_75152_c, p_71112_2_, p_71112_3_));
-+        this.connection.sendPacket(new SPacketWindowProperty(containerIn.windowId, varToUpdate, newValue));
-     }
- 
--    public void func_175173_a(Container p_175173_1_, IInventory p_175173_2_)
-+    public void sendAllWindowProperties(Container containerIn, IInventory inventory)
-     {
--        for (int i = 0; i < p_175173_2_.func_174890_g(); ++i)
-+        for (int i = 0; i < inventory.getFieldCount(); ++i)
-         {
--            this.field_71135_a.func_147359_a(new SPacketWindowProperty(p_175173_1_.field_75152_c, i, p_175173_2_.func_174887_a_(i)));
-+            this.connection.sendPacket(new SPacketWindowProperty(containerIn.windowId, i, inventory.getField(i)));
-         }
-     }
- 
--    public void func_71053_j()
-+    public void closeScreen()
-     {
--        this.field_71135_a.func_147359_a(new SPacketCloseWindow(this.field_71070_bA.field_75152_c));
--        this.func_71128_l();
-+        this.connection.sendPacket(new SPacketCloseWindow(this.openContainer.windowId));
-+        this.closeContainer();
-     }
- 
--    public void func_71113_k()
-+    public void updateHeldItem()
-     {
--        if (!this.field_71137_h)
-+        if (!this.isChangingQuantityOnly)
-         {
--            this.field_71135_a.func_147359_a(new SPacketSetSlot(-1, -1, this.field_71071_by.func_70445_o()));
-+            this.connection.sendPacket(new SPacketSetSlot(-1, -1, this.inventory.getItemStack()));
-         }
-     }
- 
--    public void func_71128_l()
-+    public void closeContainer()
-     {
--        this.field_71070_bA.func_75134_a(this);
--        this.field_71070_bA = this.field_71069_bz;
-+        this.openContainer.onContainerClosed(this);
-+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.event.entity.player.PlayerContainerEvent.Close(this, this.openContainer));
-+        this.openContainer = this.inventoryContainer;
-     }
- 
--    public void func_110430_a(float p_110430_1_, float p_110430_2_, boolean p_110430_3_, boolean p_110430_4_)
-+    public void setEntityActionState(float strafe, float forward, boolean jumping, boolean sneaking)
-     {
--        if (this.func_184218_aH())
-+        if (this.isRiding())
-         {
--            if (p_110430_1_ >= -1.0F && p_110430_1_ <= 1.0F)
-+            if (strafe >= -1.0F && strafe <= 1.0F)
-             {
--                this.field_70702_br = p_110430_1_;
-+                this.moveStrafing = strafe;
-             }
- 
--            if (p_110430_2_ >= -1.0F && p_110430_2_ <= 1.0F)
-+            if (forward >= -1.0F && forward <= 1.0F)
-             {
--                this.field_70701_bs = p_110430_2_;
-+                this.moveForward = forward;
-             }
- 
--            this.field_70703_bu = p_110430_3_;
--            this.func_70095_a(p_110430_4_);
-+            this.isJumping = jumping;
-+            this.setSneaking(sneaking);
-         }
-     }
- 
--    public boolean func_189102_a(Achievement p_189102_1_)
-+    public boolean hasAchievement(Achievement achievementIn)
-     {
--        return this.field_147103_bO.func_77443_a(p_189102_1_);
-+        return this.statsFile.hasAchievementUnlocked(achievementIn);
-     }
- 
--    public void func_71064_a(StatBase p_71064_1_, int p_71064_2_)
-+    public void addStat(StatBase stat, int amount)
-     {
--        if (p_71064_1_ != null)
-+        if (stat != null)
-         {
--            this.field_147103_bO.func_150871_b(this, p_71064_1_, p_71064_2_);
-+            if (stat.isAchievement() && net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.event.entity.player.AchievementEvent(this, (net.minecraft.stats.Achievement) stat))) return;
-+            this.statsFile.increaseStat(this, stat, amount);
- 
--            for (ScoreObjective scoreobjective : this.func_96123_co().func_96520_a(p_71064_1_.func_150952_k()))
-+            for (ScoreObjective scoreobjective : this.getWorldScoreboard().getObjectivesFromCriteria(stat.getCriteria()))
-             {
--                this.func_96123_co().func_96529_a(this.func_70005_c_(), scoreobjective).func_96649_a(p_71064_2_);
-+                this.getWorldScoreboard().getOrCreateScore(this.getName(), scoreobjective).increaseScore(amount);
-             }
- 
--            if (this.field_147103_bO.func_150879_e())
-+            if (this.statsFile.hasUnsentAchievement())
-             {
--                this.field_147103_bO.func_150876_a(this);
-+                this.statsFile.sendStats(this);
-             }
-         }
-     }
- 
--    public void func_175145_a(StatBase p_175145_1_)
-+    public void takeStat(StatBase stat)
-     {
--        if (p_175145_1_ != null)
-+        if (stat != null)
-         {
--            this.field_147103_bO.func_150873_a(this, p_175145_1_, 0);
-+            this.statsFile.unlockAchievement(this, stat, 0);
- 
--            for (ScoreObjective scoreobjective : this.func_96123_co().func_96520_a(p_175145_1_.func_150952_k()))
-+            for (ScoreObjective scoreobjective : this.getWorldScoreboard().getObjectivesFromCriteria(stat.getCriteria()))
-             {
--                this.func_96123_co().func_96529_a(this.func_70005_c_(), scoreobjective).func_96647_c(0);
-+                this.getWorldScoreboard().getOrCreateScore(this.getName(), scoreobjective).setScorePoints(0);
-             }
- 
--            if (this.field_147103_bO.func_150879_e())
-+            if (this.statsFile.hasUnsentAchievement())
-             {
--                this.field_147103_bO.func_150876_a(this);
-+                this.statsFile.sendStats(this);
-             }
-         }
-     }
- 
--    public void func_71123_m()
-+    public void mountEntityAndWakeUp()
-     {
--        this.func_184226_ay();
-+        this.removePassengers();
- 
--        if (this.field_71083_bS)
-+        if (this.sleeping)
-         {
--            this.func_70999_a(true, false, false);
-+            this.wakeUpPlayer(true, false, false);
-         }
-     }
- 
--    public void func_71118_n()
-+    public void setPlayerHealthUpdated()
-     {
--        this.field_71149_ch = -1.0E8F;
-+        this.lastHealth = -1.0E8F;
-     }
- 
--    public void func_146105_b(ITextComponent p_146105_1_, boolean p_146105_2_)
-+    public void sendStatusMessage(ITextComponent chatComponent, boolean actionBar)
-     {
--        this.field_71135_a.func_147359_a(new SPacketChat(p_146105_1_, (byte)(p_146105_2_ ? 2 : 0)));
-+        this.connection.sendPacket(new SPacketChat(chatComponent, (byte)(actionBar ? 2 : 0)));
-     }
- 
--    protected void func_71036_o()
-+    protected void onItemUseFinish()
-     {
--        if (!this.field_184627_bm.func_190926_b() && this.func_184587_cr())
-+        if (!this.activeItemStack.isEmpty() && this.isHandActive())
-         {
--            this.field_71135_a.func_147359_a(new SPacketEntityStatus(this, (byte)9));
--            super.func_71036_o();
-+            this.connection.sendPacket(new SPacketEntityStatus(this, (byte)9));
-+            super.onItemUseFinish();
-         }
-     }
- 
--    public void func_71049_a(EntityPlayer p_71049_1_, boolean p_71049_2_)
-+    public void clonePlayer(EntityPlayer oldPlayer, boolean respawnFromEnd)
-     {
--        super.func_71049_a(p_71049_1_, p_71049_2_);
--        this.field_71144_ck = -1;
--        this.field_71149_ch = -1.0F;
--        this.field_71146_ci = -1;
--        this.field_71130_g.addAll(((EntityPlayerMP)p_71049_1_).field_71130_g);
-+        super.clonePlayer(oldPlayer, respawnFromEnd);
-+        this.lastExperience = -1;
-+        this.lastHealth = -1.0F;
-+        this.lastFoodLevel = -1;
-+        this.entityRemoveQueue.addAll(((EntityPlayerMP)oldPlayer).entityRemoveQueue);
-     }
- 
--    protected void func_70670_a(PotionEffect p_70670_1_)
-+    protected void onNewPotionEffect(PotionEffect id)
-     {
--        super.func_70670_a(p_70670_1_);
--        this.field_71135_a.func_147359_a(new SPacketEntityEffect(this.func_145782_y(), p_70670_1_));
-+        super.onNewPotionEffect(id);
-+        this.connection.sendPacket(new SPacketEntityEffect(this.getEntityId(), id));
-     }
- 
--    protected void func_70695_b(PotionEffect p_70695_1_, boolean p_70695_2_)
-+    protected void onChangedPotionEffect(PotionEffect id, boolean p_70695_2_)
-     {
--        super.func_70695_b(p_70695_1_, p_70695_2_);
--        this.field_71135_a.func_147359_a(new SPacketEntityEffect(this.func_145782_y(), p_70695_1_));
-+        super.onChangedPotionEffect(id, p_70695_2_);
-+        this.connection.sendPacket(new SPacketEntityEffect(this.getEntityId(), id));
-     }
- 
--    protected void func_70688_c(PotionEffect p_70688_1_)
-+    protected void onFinishedPotionEffect(PotionEffect effect)
-     {
--        super.func_70688_c(p_70688_1_);
--        this.field_71135_a.func_147359_a(new SPacketRemoveEntityEffect(this.func_145782_y(), p_70688_1_.func_188419_a()));
-+        super.onFinishedPotionEffect(effect);
-+        this.connection.sendPacket(new SPacketRemoveEntityEffect(this.getEntityId(), effect.getPotion()));
-     }
- 
--    public void func_70634_a(double p_70634_1_, double p_70634_3_, double p_70634_5_)
-+    public void setPositionAndUpdate(double x, double y, double z)
-     {
--        this.field_71135_a.func_147364_a(p_70634_1_, p_70634_3_, p_70634_5_, this.field_70177_z, this.field_70125_A);
-+        this.connection.setPlayerLocation(x, y, z, this.rotationYaw, this.rotationPitch);
-     }
- 
--    public void func_71009_b(Entity p_71009_1_)
-+    public void onCriticalHit(Entity entityHit)
-     {
--        this.func_71121_q().func_73039_n().func_151248_b(this, new SPacketAnimation(p_71009_1_, 4));
-+        this.getServerWorld().getEntityTracker().sendToTrackingAndSelf(this, new SPacketAnimation(entityHit, 4));
-     }
- 
--    public void func_71047_c(Entity p_71047_1_)
-+    public void onEnchantmentCritical(Entity entityHit)
-     {
--        this.func_71121_q().func_73039_n().func_151248_b(this, new SPacketAnimation(p_71047_1_, 5));
-+        this.getServerWorld().getEntityTracker().sendToTrackingAndSelf(this, new SPacketAnimation(entityHit, 5));
-     }
- 
--    public void func_71016_p()
-+    public void sendPlayerAbilities()
-     {
--        if (this.field_71135_a != null)
-+        if (this.connection != null)
-         {
--            this.field_71135_a.func_147359_a(new SPacketPlayerAbilities(this.field_71075_bZ));
--            this.func_175135_B();
-+            this.connection.sendPacket(new SPacketPlayerAbilities(this.capabilities));
-+            this.updatePotionMetadata();
-         }
-     }
- 
--    public WorldServer func_71121_q()
-+    public WorldServer getServerWorld()
-     {
--        return (WorldServer)this.field_70170_p;
-+        return (WorldServer)this.world;
-     }
- 
--    public void func_71033_a(GameType p_71033_1_)
-+    public void setGameType(GameType gameType)
-     {
--        this.field_71134_c.func_73076_a(p_71033_1_);
--        this.field_71135_a.func_147359_a(new SPacketChangeGameState(3, (float)p_71033_1_.func_77148_a()));
-+        this.interactionManager.setGameType(gameType);
-+        this.connection.sendPacket(new SPacketChangeGameState(3, (float)gameType.getID()));
- 
--        if (p_71033_1_ == GameType.SPECTATOR)
-+        if (gameType == GameType.SPECTATOR)
-         {
--            this.func_184210_p();
-+            this.dismountRidingEntity();
-         }
-         else
-         {
--            this.func_175399_e(this);
-+            this.setSpectatingEntity(this);
-         }
- 
--        this.func_71016_p();
--        this.func_175136_bO();
-+        this.sendPlayerAbilities();
-+        this.markPotionsDirty();
-     }
- 
--    public boolean func_175149_v()
-+    public boolean isSpectator()
-     {
--        return this.field_71134_c.func_73081_b() == GameType.SPECTATOR;
-+        return this.interactionManager.getGameType() == GameType.SPECTATOR;
-     }
- 
--    public boolean func_184812_l_()
-+    public boolean isCreative()
-     {
--        return this.field_71134_c.func_73081_b() == GameType.CREATIVE;
-+        return this.interactionManager.getGameType() == GameType.CREATIVE;
-     }
- 
--    public void func_145747_a(ITextComponent p_145747_1_)
-+    public void sendMessage(ITextComponent component)
-     {
--        this.field_71135_a.func_147359_a(new SPacketChat(p_145747_1_));
-+        this.connection.sendPacket(new SPacketChat(component));
+         this.field_71135_a.func_147359_a(new SPacketChat(p_145747_1_));
      }
 +    public void sendMessage(ITextComponent[] components)
 +    {
 +        for(ITextComponent component : components)
-+        this.connection.sendPacket(new SPacketChat(component));
++        this.field_71135_a.func_147359_a(new SPacketChat(component));
 +    }
  
--    public boolean func_70003_b(int p_70003_1_, String p_70003_2_)
-+    public boolean canUseCommand(int permLevel, String commandName)
+     public boolean func_70003_b(int p_70003_1_, String p_70003_2_)
      {
--        if ("seed".equals(p_70003_2_) && !this.field_71133_b.func_71262_S())
-+        if ("seed".equals(commandName) && !this.mcServer.isDedicatedServer())
-         {
-             return true;
-         }
--        else if (!"tell".equals(p_70003_2_) && !"help".equals(p_70003_2_) && !"me".equals(p_70003_2_) && !"trigger".equals(p_70003_2_))
-+        else if (!"tell".equals(commandName) && !"help".equals(commandName) && !"me".equals(commandName) && !"trigger".equals(commandName))
-         {
--            if (this.field_71133_b.func_184103_al().func_152596_g(this.func_146103_bH()))
-+            if (this.mcServer.getPlayerList().canSendCommands(this.getGameProfile()))
-             {
--                UserListOpsEntry userlistopsentry = (UserListOpsEntry)this.field_71133_b.func_184103_al().func_152603_m().func_152683_b(this.func_146103_bH());
--                return userlistopsentry != null ? userlistopsentry.func_152644_a() >= p_70003_1_ : this.field_71133_b.func_110455_j() >= p_70003_1_;
-+                UserListOpsEntry userlistopsentry = (UserListOpsEntry)this.mcServer.getPlayerList().getOppedPlayers().getEntry(this.getGameProfile());
-+                return userlistopsentry != null ? userlistopsentry.getPermissionLevel() >= permLevel : this.mcServer.getOpPermissionLevel() >= permLevel;
-             }
-             else
-             {
-@@ -1125,152 +1284,235 @@
-         }
-     }
- 
--    public String func_71114_r()
-+    public String getPlayerIP()
-     {
--        String s = this.field_71135_a.field_147371_a.func_74430_c().toString();
-+        String s = this.connection.netManager.getRemoteAddress().toString();
-         s = s.substring(s.indexOf("/") + 1);
-         s = s.substring(0, s.indexOf(":"));
-         return s;
-     }
- 
--    public void func_147100_a(CPacketClientSettings p_147100_1_)
-+    public void handleClientSettings(CPacketClientSettings packetIn)
-     {
--        this.field_71148_cg = p_147100_1_.func_149524_c();
--        this.field_71143_cn = p_147100_1_.func_149523_e();
--        this.field_71140_co = p_147100_1_.func_149520_f();
--        this.func_184212_Q().func_187227_b(field_184827_bp, Byte.valueOf((byte)p_147100_1_.func_149521_d()));
--        this.func_184212_Q().func_187227_b(field_184828_bq, Byte.valueOf((byte)(p_147100_1_.func_186991_f() == EnumHandSide.LEFT ? 0 : 1)));
-+        this.language = packetIn.getLang();
-+        this.chatVisibility = packetIn.getChatVisibility();
-+        this.chatColours = packetIn.isColorsEnabled();
-+        this.getDataManager().set(PLAYER_MODEL_FLAG, Byte.valueOf((byte)packetIn.getModelPartFlags()));
-+        this.getDataManager().set(MAIN_HAND, Byte.valueOf((byte)(packetIn.getMainHand() == EnumHandSide.LEFT ? 0 : 1)));
-     }
- 
--    public EntityPlayer.EnumChatVisibility func_147096_v()
-+    public EntityPlayer.EnumChatVisibility getChatVisibility()
-     {
--        return this.field_71143_cn;
-+        return this.chatVisibility;
-     }
- 
--    public void func_175397_a(String p_175397_1_, String p_175397_2_)
-+    public void loadResourcePack(String url, String hash)
-     {
--        this.field_71135_a.func_147359_a(new SPacketResourcePackSend(p_175397_1_, p_175397_2_));
-+        this.connection.sendPacket(new SPacketResourcePackSend(url, hash));
-     }
- 
--    public BlockPos func_180425_c()
-+    public BlockPos getPosition()
-     {
--        return new BlockPos(this.field_70165_t, this.field_70163_u + 0.5D, this.field_70161_v);
-+        return new BlockPos(this.posX, this.posY + 0.5D, this.posZ);
-     }
- 
--    public void func_143004_u()
-+    public void markPlayerActive()
-     {
--        this.field_143005_bX = MinecraftServer.func_130071_aq();
-+        this.playerLastActiveTime = MinecraftServer.getCurrentTimeMillis();
-     }
- 
--    public StatisticsManagerServer func_147099_x()
-+    public StatisticsManagerServer getStatFile()
-     {
--        return this.field_147103_bO;
-+        return this.statsFile;
-     }
- 
--    public void func_152339_d(Entity p_152339_1_)
-+    public void removeEntity(Entity entityIn)
-     {
--        if (p_152339_1_ instanceof EntityPlayer)
-+        if (entityIn instanceof EntityPlayer)
-         {
--            this.field_71135_a.func_147359_a(new SPacketDestroyEntities(new int[] {p_152339_1_.func_145782_y()}));
-+            this.connection.sendPacket(new SPacketDestroyEntities(new int[] {entityIn.getEntityId()}));
-         }
-         else
-         {
--            this.field_71130_g.add(Integer.valueOf(p_152339_1_.func_145782_y()));
-+            this.entityRemoveQueue.add(Integer.valueOf(entityIn.getEntityId()));
-         }
-     }
- 
--    public void func_184848_d(Entity p_184848_1_)
-+    public void addEntity(Entity entityIn)
-     {
--        this.field_71130_g.remove(Integer.valueOf(p_184848_1_.func_145782_y()));
-+        this.entityRemoveQueue.remove(Integer.valueOf(entityIn.getEntityId()));
-     }
- 
--    protected void func_175135_B()
-+    protected void updatePotionMetadata()
-     {
--        if (this.func_175149_v())
-+        if (this.isSpectator())
-         {
--            this.func_175133_bi();
--            this.func_82142_c(true);
-+            this.resetPotionEffectMetadata();
-+            this.setInvisible(true);
-         }
-         else
-         {
--            super.func_175135_B();
-+            super.updatePotionMetadata();
-         }
- 
--        this.func_71121_q().func_73039_n().func_180245_a(this);
-+        this.getServerWorld().getEntityTracker().updateVisibility(this);
-     }
- 
--    public Entity func_175398_C()
-+    public Entity getSpectatingEntity()
-     {
--        return (Entity)(this.field_175401_bS == null ? this : this.field_175401_bS);
-+        return (Entity)(this.spectatingEntity == null ? this : this.spectatingEntity);
-     }
- 
--    public void func_175399_e(Entity p_175399_1_)
-+    public void setSpectatingEntity(Entity entityToSpectate)
-     {
--        Entity entity = this.func_175398_C();
--        this.field_175401_bS = (Entity)(p_175399_1_ == null ? this : p_175399_1_);
-+        Entity entity = this.getSpectatingEntity();
-+        this.spectatingEntity = (Entity)(entityToSpectate == null ? this : entityToSpectate);
- 
--        if (entity != this.field_175401_bS)
-+        if (entity != this.spectatingEntity)
-         {
--            this.field_71135_a.func_147359_a(new SPacketCamera(this.field_175401_bS));
--            this.func_70634_a(this.field_175401_bS.field_70165_t, this.field_175401_bS.field_70163_u, this.field_175401_bS.field_70161_v);
-+            this.connection.sendPacket(new SPacketCamera(this.spectatingEntity));
-+            this.setPositionAndUpdate(this.spectatingEntity.posX, this.spectatingEntity.posY, this.spectatingEntity.posZ);
-         }
-     }
- 
--    protected void func_184173_H()
-+    protected void decrementTimeUntilPortal()
-     {
--        if (this.field_71088_bW > 0 && !this.field_184851_cj)
-+        if (this.timeUntilPortal > 0 && !this.invulnerableDimensionChange)
-         {
--            --this.field_71088_bW;
-+            --this.timeUntilPortal;
-         }
-     }
- 
--    public void func_71059_n(Entity p_71059_1_)
-+    public void attackTargetEntityWithCurrentItem(Entity targetEntity)
-     {
--        if (this.field_71134_c.func_73081_b() == GameType.SPECTATOR)
-+        if (this.interactionManager.getGameType() == GameType.SPECTATOR)
-         {
--            this.func_175399_e(p_71059_1_);
-+            this.setSpectatingEntity(targetEntity);
-         }
-         else
-         {
--            super.func_71059_n(p_71059_1_);
-+            super.attackTargetEntityWithCurrentItem(targetEntity);
-         }
-     }
- 
--    public long func_154331_x()
-+    public long getLastActiveTime()
-     {
--        return this.field_143005_bX;
-+        return this.playerLastActiveTime;
-     }
- 
-     @Nullable
--    public ITextComponent func_175396_E()
-+    public ITextComponent getTabListDisplayName()
-     {
-         return null;
-     }
- 
--    public void func_184609_a(EnumHand p_184609_1_)
-+    public void swingArm(EnumHand hand)
-     {
--        super.func_184609_a(p_184609_1_);
--        this.func_184821_cY();
-+        super.swingArm(hand);
-+        this.resetCooldown();
-     }
- 
--    public boolean func_184850_K()
-+    public boolean isInvulnerableDimensionChange()
-     {
--        return this.field_184851_cj;
-+        return this.invulnerableDimensionChange;
-     }
- 
--    public void func_184846_L()
-+    public void clearInvulnerableDimensionChange()
-     {
--        this.field_184851_cj = false;
-+        this.invulnerableDimensionChange = false;
-     }
- 
--    public void func_184847_M()
-+    public void setElytraFlying()
-     {
--        this.func_70052_a(7, true);
-+        this.setFlag(7, true);
-     }
- 
--    public void func_189103_N()
-+    public void clearElytraFlying()
-     {
--        this.func_70052_a(7, true);
--        this.func_70052_a(7, false);
-+        this.setFlag(7, true);
-+        this.setFlag(7, false);
+@@ -1273,4 +1432,87 @@
+         this.func_70052_a(7, true);
+         this.func_70052_a(7, false);
      }
 +    // CraftBukkit start - Add per-player time and weather.
 +    public long timeOffset = 0;
@@ -1856,10 +437,10 @@
 +    public long getPlayerTime() {
 +        if (this.relativeTime) {
 +            // Adds timeOffset to the current server time.
-+            return this.world.getWorldTime() + this.timeOffset;
++            return this.field_70170_p.func_72820_D() + this.timeOffset;
 +        } else {
 +            // Adds timeOffset to the beginning of this day.
-+            return this.world.getWorldTime() - (this.world.getWorldTime() % 24000) + this.timeOffset;
++            return this.field_70170_p.func_72820_D() - (this.field_70170_p.func_72820_D() % 24000) + this.timeOffset;
 +        }
 +    }
 +
@@ -1879,9 +460,9 @@
 +        }
 +
 +        if (type == WeatherType.DOWNFALL) {
-+            this.connection.sendPacket(new SPacketChangeGameState(2, 0));
++            this.field_71135_a.func_147359_a(new SPacketChangeGameState(2, 0));
 +        } else {
-+            this.connection.sendPacket(new SPacketChangeGameState(1, 0));
++            this.field_71135_a.func_147359_a(new SPacketChangeGameState(1, 0));
 +        }
 +    }
 +
@@ -1892,20 +473,20 @@
 +        if (this.weather == null) {
 +            // Vanilla
 +            if (oldRain != newRain) {
-+                this.connection.sendPacket(new SPacketChangeGameState(7, newRain));
++                this.field_71135_a.func_147359_a(new SPacketChangeGameState(7, newRain));
 +            }
 +        } else {
 +            // Plugin
 +            if (pluginRainPositionPrevious != pluginRainPosition) {
-+                this.connection.sendPacket(new SPacketChangeGameState(7, pluginRainPosition));
++                this.field_71135_a.func_147359_a(new SPacketChangeGameState(7, pluginRainPosition));
 +            }
 +        }
 +
 +        if (oldThunder != newThunder) {
 +            if (weather == WeatherType.DOWNFALL || weather == null) {
-+                this.connection.sendPacket(new SPacketChangeGameState(8, newThunder));
++                this.field_71135_a.func_147359_a(new SPacketChangeGameState(8, newThunder));
 +            } else {
-+                this.connection.sendPacket(new SPacketChangeGameState(8, 0));
++                this.field_71135_a.func_147359_a(new SPacketChangeGameState(8, 0));
 +            }
 +        }
 +    }
@@ -1920,16 +501,16 @@
 +            pluginRainPosition -= 0.01;
 +        }
 +
-+        pluginRainPosition = MathHelper.clamp(pluginRainPosition, 0.0F, 1.0F);
++        pluginRainPosition = MathHelper.func_76131_a(pluginRainPosition, 0.0F, 1.0F);
 +    }
 +
 +    public void resetPlayerWeather() {
 +        this.weather = null;
-+        this.setPlayerWeather(this.world.getWorldInfo().isRaining() ? WeatherType.DOWNFALL : WeatherType.CLEAR, false);
++        this.setPlayerWeather(this.field_70170_p.func_72912_H().func_76059_o() ? WeatherType.DOWNFALL : WeatherType.CLEAR, false);
 +    }
 +    public int nextContainerCounter() { // CraftBukkit - void -> int
-+        this.currentWindowId = this.currentWindowId % 100 + 1;
-+        return currentWindowId; // CraftBukkit
++        this.field_71139_cq = this.field_71139_cq % 100 + 1;
++        return field_71139_cq; // CraftBukkit
 +    }
 +    //CraftBukkit end
  }

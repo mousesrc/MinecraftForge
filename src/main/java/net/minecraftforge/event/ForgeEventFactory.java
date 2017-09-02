@@ -167,8 +167,8 @@ public class ForgeEventFactory
         BlockPos diragainst = blockSnapshot.getPos().offset(direction.getOpposite());
         IBlockState placedAgainst = blockSnapshot.getWorld().getBlockState(diragainst);
         PlaceEvent event = new PlaceEvent(blockSnapshot, placedAgainst, player, hand);
+        CraftBlockState blockReplaced = new CraftBlockState(blockSnapshot.getReplacedBlock(),blockSnapshot.getWorld().getWorld(),blockSnapshot.getPos());
         CraftBlock blockcurrent = new CraftBlock(new CraftChunk(blockSnapshot.getWorld().getChunkFromBlockCoords(blockSnapshot.getPos())),blockSnapshot.getPos().getX(),blockSnapshot.getPos().getY(),blockSnapshot.getPos().getZ());
-        CraftBlockState blockReplaced = new CraftBlockState(Material.getMaterial(Block.getIdFromBlock(blockSnapshot.getReplacedBlock().getBlock())));
         org.bukkit.block.Block blockagainst = blockcurrent.getWorld().getBlockAt(diragainst.getX(),diragainst.getY(),diragainst.getZ());
         BlockPlaceEvent e = CraftEventFactory.callBlockPlaceEvent(blockSnapshot.getWorld(),player,hand,blockReplaced,diragainst.getX(),diragainst.getY(),diragainst.getZ());
         if(e.isCancelled())

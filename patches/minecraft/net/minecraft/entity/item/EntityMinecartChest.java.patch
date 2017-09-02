@@ -1,6 +1,6 @@
 --- ../src-base/minecraft/net/minecraft/entity/item/EntityMinecartChest.java
 +++ ../src-work/minecraft/net/minecraft/entity/item/EntityMinecartChest.java
-@@ -8,66 +8,73 @@
+@@ -8,11 +8,14 @@
  import net.minecraft.inventory.Container;
  import net.minecraft.inventory.ContainerChest;
  import net.minecraft.item.Item;
@@ -14,82 +14,15 @@
 +
  public class EntityMinecartChest extends EntityMinecartContainer
  {
--    public EntityMinecartChest(World p_i1714_1_)
-+    public EntityMinecartChest(World worldIn)
-     {
--        super(p_i1714_1_);
-+        super(worldIn);
-     }
- 
--    public EntityMinecartChest(World p_i1715_1_, double p_i1715_2_, double p_i1715_4_, double p_i1715_6_)
-+    public EntityMinecartChest(World worldIn, double x, double y, double z)
-     {
--        super(p_i1715_1_, p_i1715_2_, p_i1715_4_, p_i1715_6_);
-+        super(worldIn, x, y, z);
-     }
- 
--    public static void func_189681_a(DataFixer p_189681_0_)
-+    public static void registerFixesMinecartChest(DataFixer fixer)
-     {
--        EntityMinecartContainer.func_190574_b(p_189681_0_, EntityMinecartChest.class);
-+        EntityMinecartContainer.addDataFixers(fixer, EntityMinecartChest.class);
-     }
- 
--    public void func_94095_a(DamageSource p_94095_1_)
-+    public void killMinecart(DamageSource source)
-     {
--        super.func_94095_a(p_94095_1_);
-+        super.killMinecart(source);
- 
--        if (this.field_70170_p.func_82736_K().func_82766_b("doEntityDrops"))
-+        if (this.world.getGameRules().getBoolean("doEntityDrops"))
-         {
--            this.func_145778_a(Item.func_150898_a(Blocks.field_150486_ae), 1, 0.0F);
-+            this.dropItemWithOffset(Item.getItemFromBlock(Blocks.CHEST), 1, 0.0F);
-         }
-     }
- 
--    public int func_70302_i_()
-+    public int getSizeInventory()
-     {
+     public EntityMinecartChest(World p_i1714_1_)
+@@ -45,6 +48,10 @@
          return 27;
      }
  
--    public EntityMinecart.Type func_184264_v()
 +    @Override
 +    public List<ItemStack> getContents() {
-+        return this.minecartContainerItems;
++        return this.field_94113_a;
 +    }
-+    public EntityMinecart.Type getType()
+     public EntityMinecart.Type func_184264_v()
      {
          return EntityMinecart.Type.CHEST;
-     }
- 
--    public IBlockState func_180457_u()
-+    public IBlockState getDefaultDisplayTile()
-     {
--        return Blocks.field_150486_ae.func_176223_P().func_177226_a(BlockChest.field_176459_a, EnumFacing.NORTH);
-+        return Blocks.CHEST.getDefaultState().withProperty(BlockChest.FACING, EnumFacing.NORTH);
-     }
- 
--    public int func_94085_r()
-+    public int getDefaultDisplayTileOffset()
-     {
-         return 8;
-     }
- 
--    public String func_174875_k()
-+    public String getGuiID()
-     {
-         return "minecraft:chest";
-     }
- 
--    public Container func_174876_a(InventoryPlayer p_174876_1_, EntityPlayer p_174876_2_)
-+    public Container createContainer(InventoryPlayer playerInventory, EntityPlayer playerIn)
-     {
--        this.func_184288_f(p_174876_2_);
--        return new ContainerChest(p_174876_1_, this, p_174876_2_);
-+        this.addLoot(playerIn);
-+        return new ContainerChest(playerInventory, this, playerIn);
-     }
- }

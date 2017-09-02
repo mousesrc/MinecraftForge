@@ -69,3 +69,13 @@
      protected boolean func_152368_aE() throws IOException
      {
          boolean flag = false;
+@@ -676,4 +685,9 @@
+         this.field_71321_q.func_71556_a(this.field_184115_n, p_71252_1_);
+         return this.field_184115_n.func_70008_c();
+     }
++    @Override
++    public PropertyManager getPropertyManager()
++    {
++        return field_71340_o;
++    }
+ }

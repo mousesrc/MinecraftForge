@@ -99,7 +99,7 @@
              {
                  float f = iblockstate.func_185903_a(this.field_73090_b, this.field_73090_b.field_70170_p, p_180785_1_) * (float)(i + 1);
  
-@@ -235,13 +259,17 @@
+@@ -235,21 +259,26 @@
  
      private boolean func_180235_c(BlockPos p_180235_1_)
      {
@@ -121,9 +121,10 @@
          }
  
          return flag;
-@@ -249,7 +277,8 @@
+     }
  
-     public boolean func_180237_b(BlockPos p_180237_1_)
+-    public boolean func_180237_b(BlockPos p_180237_1_)
++    public boolean func_180237_b(BlockPos p_180237_1_)    //尝试破坏一个方块
      {
 -        if (this.field_73091_c.func_77145_d() && !this.field_73090_b.func_184614_ca().func_190926_b() && this.field_73090_b.func_184614_ca().func_77973_b() instanceof ItemSword)
 +        int exp = net.minecraftforge.common.ForgeHooks.onBlockBreakEvent(field_73092_a, field_73091_c, field_73090_b, p_180237_1_);

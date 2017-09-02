@@ -1,5 +1,26 @@
 --- ../src-base/minecraft/net/minecraft/block/BlockDynamicLiquid.java
 +++ ../src-work/minecraft/net/minecraft/block/BlockDynamicLiquid.java
+@@ -26,7 +26,7 @@
+ 
+     public void func_180650_b(World p_180650_1_, BlockPos p_180650_2_, IBlockState p_180650_3_, Random p_180650_4_)
+     {
+-        int i = ((Integer)p_180650_3_.func_177229_b(field_176367_b)).intValue();
++        int blockStateLevelValue = ((Integer)p_180650_3_.func_177229_b(field_176367_b)).intValue();
+         int j = 1;
+ 
+         if (this.field_149764_J == Material.field_151587_i && !p_180650_1_.field_73011_w.func_177500_n())
+@@ -34,9 +34,9 @@
+             j = 2;
+         }
+ 
+-        int k = this.func_149738_a(p_180650_1_);
++        int tickRateTargetWorld = this.func_149738_a(p_180650_1_);
+ 
+-        if (i > 0)
++        if (blockStateLevelValue > 0)
+         {
+             int l = -100;
+             this.field_149815_a = 0;
 @@ -67,7 +67,7 @@
                  }
              }
@@ -9,6 +30,66 @@
              {
                  IBlockState iblockstate = p_180650_1_.func_180495_p(p_180650_2_.func_177977_b());
  
+@@ -81,18 +81,18 @@
+                 }
+             }
+ 
+-            if (this.field_149764_J == Material.field_151587_i && i < 8 && i1 < 8 && i1 > i && p_180650_4_.nextInt(4) != 0)
++            if (this.field_149764_J == Material.field_151587_i && blockStateLevelValue < 8 && i1 < 8 && i1 > blockStateLevelValue && p_180650_4_.nextInt(4) != 0)
+             {
+-                k *= 4;
++                tickRateTargetWorld *= 4;
+             }
+ 
+-            if (i1 == i)
++            if (i1 == blockStateLevelValue)
+             {
+                 this.func_180690_f(p_180650_1_, p_180650_2_, p_180650_3_);
+             }
+             else
+             {
+-                i = i1;
++                blockStateLevelValue = i1;
+ 
+                 if (i1 < 0)
+                 {
+@@ -102,7 +102,7 @@
+                 {
+                     p_180650_3_ = p_180650_3_.func_177226_a(field_176367_b, Integer.valueOf(i1));
+                     p_180650_1_.func_180501_a(p_180650_2_, p_180650_3_, 2);
+-                    p_180650_1_.func_175684_a(p_180650_2_, this, k);
++                    p_180650_1_.func_175684_a(p_180650_2_, this, tickRateTargetWorld);
+                     p_180650_1_.func_175685_c(p_180650_2_, this, false);
+                 }
+             }
+@@ -123,21 +123,21 @@
+                 return;
+             }
+ 
+-            if (i >= 8)
++            if (blockStateLevelValue >= 8)
+             {
+-                this.func_176375_a(p_180650_1_, p_180650_2_.func_177977_b(), iblockstate1, i);
++                this.func_176375_a(p_180650_1_, p_180650_2_.func_177977_b(), iblockstate1, blockStateLevelValue);
+             }
+             else
+             {
+-                this.func_176375_a(p_180650_1_, p_180650_2_.func_177977_b(), iblockstate1, i + 8);
++                this.func_176375_a(p_180650_1_, p_180650_2_.func_177977_b(), iblockstate1, blockStateLevelValue + 8);
+             }
+         }
+-        else if (i >= 0 && (i == 0 || this.func_176372_g(p_180650_1_, p_180650_2_.func_177977_b(), iblockstate1)))
++        else if (blockStateLevelValue >= 0 && (blockStateLevelValue == 0 || this.func_176372_g(p_180650_1_, p_180650_2_.func_177977_b(), iblockstate1)))
+         {
+             Set<EnumFacing> set = this.func_176376_e(p_180650_1_, p_180650_2_);
+-            int k1 = i + j;
++            int k1 = blockStateLevelValue + j;
+ 
+-            if (i >= 8)
++            if (blockStateLevelValue >= 8)
+             {
+                 k1 = 1;
+             }
 @@ -166,6 +166,7 @@
                  }
                  else
