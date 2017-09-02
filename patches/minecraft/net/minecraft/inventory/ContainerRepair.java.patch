@@ -72,25 +72,197 @@
                  {
                      int l = ((Integer)iblockstate.func_177229_b(BlockAnvil.field_176505_b)).intValue();
                      ++l;
-@@ -178,10 +209,12 @@
-             Map<Enchantment, Integer> map = EnchantmentHelper.func_82781_a(itemstack1);
-             j = j + itemstack.func_82838_A() + (itemstack2.func_190926_b() ? 0 : itemstack2.func_82838_A());
+@@ -154,38 +185,40 @@
+ 
+     public void func_82848_d()
+     {
+-        ItemStack itemstack = this.field_82853_g.func_70301_a(0);
++        ItemStack itemInput = this.field_82853_g.func_70301_a(0);
+         this.field_82854_e = 1;
+         int i = 0;
+         int j = 0;
+         int k = 0;
+ 
+-        if (itemstack.func_190926_b())
++        if (itemInput.func_190926_b())
+         {
+             this.field_82852_f.func_70299_a(0, ItemStack.field_190927_a);
+             this.field_82854_e = 0;
+         }
+         else
+         {
+-            ItemStack itemstack1 = itemstack.func_77946_l();
++            ItemStack copyOfInput = itemInput.func_77946_l();
+ 
+-            if (itemstack1.func_190916_E() > 1 && !this.field_82855_n.field_71075_bZ.field_75098_d && !(itemstack1.func_77973_b() instanceof ItemNameTag))
++            if (copyOfInput.func_190916_E() > 1 && !this.field_82855_n.field_71075_bZ.field_75098_d && !(copyOfInput.func_77973_b() instanceof ItemNameTag))
+             {
+-                itemstack1.func_190920_e(1);
++                copyOfInput.func_190920_e(1);
+             }
+ 
+-            ItemStack itemstack2 = this.field_82853_g.func_70301_a(1);
+-            Map<Enchantment, Integer> map = EnchantmentHelper.func_82781_a(itemstack1);
+-            j = j + itemstack.func_82838_A() + (itemstack2.func_190926_b() ? 0 : itemstack2.func_82838_A());
++            ItemStack repairMaterial = this.field_82853_g.func_70301_a(1);
++            Map<Enchantment, Integer> map = EnchantmentHelper.func_82781_a(copyOfInput);
++            j = j + itemInput.func_82838_A() + (repairMaterial.func_190926_b() ? 0 : repairMaterial.func_82838_A());
              this.field_82856_l = 0;
 +            boolean flag = false;
  
-             if (!itemstack2.func_190926_b())
+-            if (!itemstack2.func_190926_b())
++            if (!repairMaterial.func_190926_b())
              {
 -                boolean flag = itemstack2.func_77973_b() == Items.field_151134_bR && !Items.field_151134_bR.func_92110_g(itemstack2).func_82582_d();
-+                if (!net.minecraftforge.common.ForgeHooks.onAnvilChange(this, itemstack, itemstack2, field_82852_f, field_82857_m, j)) return;
-+                flag = itemstack2.func_77973_b() == Items.field_151134_bR && !Items.field_151134_bR.func_92110_g(itemstack2).func_82582_d();
++                if (!net.minecraftforge.common.ForgeHooks.onAnvilChange(this, itemInput, repairMaterial, field_82852_f, field_82857_m, j)) return;
++                flag = repairMaterial.func_77973_b() == Items.field_151134_bR && !Items.field_151134_bR.func_92110_g(repairMaterial).func_82582_d();
  
-                 if (itemstack1.func_77984_f() && itemstack1.func_77973_b().func_82789_a(itemstack, itemstack2))
+-                if (itemstack1.func_77984_f() && itemstack1.func_77973_b().func_82789_a(itemstack, itemstack2))
++                if (copyOfInput.func_77984_f() && copyOfInput.func_77973_b().func_82789_a(itemInput, repairMaterial))
                  {
-@@ -327,6 +360,7 @@
-                 i += k;
-                 itemstack1.func_151001_c(this.field_82857_m);
+-                    int l2 = Math.min(itemstack1.func_77952_i(), itemstack1.func_77958_k() / 4);
++                    int l2 = Math.min(copyOfInput.func_77952_i(), copyOfInput.func_77958_k() / 4);
+ 
+                     if (l2 <= 0)
+                     {
+@@ -196,46 +229,46 @@
+ 
+                     int i3;
+ 
+-                    for (i3 = 0; l2 > 0 && i3 < itemstack2.func_190916_E(); ++i3)
++                    for (i3 = 0; l2 > 0 && i3 < repairMaterial.func_190916_E(); ++i3)
+                     {
+-                        int j3 = itemstack1.func_77952_i() - l2;
+-                        itemstack1.func_77964_b(j3);
++                        int j3 = copyOfInput.func_77952_i() - l2;
++                        copyOfInput.func_77964_b(j3);
+                         ++i;
+-                        l2 = Math.min(itemstack1.func_77952_i(), itemstack1.func_77958_k() / 4);
++                        l2 = Math.min(copyOfInput.func_77952_i(), copyOfInput.func_77958_k() / 4);
+                     }
+ 
+                     this.field_82856_l = i3;
+                 }
+                 else
+                 {
+-                    if (!flag && (itemstack1.func_77973_b() != itemstack2.func_77973_b() || !itemstack1.func_77984_f()))
++                    if (!flag && (copyOfInput.func_77973_b() != repairMaterial.func_77973_b() || !copyOfInput.func_77984_f()))
+                     {
+                         this.field_82852_f.func_70299_a(0, ItemStack.field_190927_a);
+                         this.field_82854_e = 0;
+                         return;
+                     }
+ 
+-                    if (itemstack1.func_77984_f() && !flag)
++                    if (copyOfInput.func_77984_f() && !flag)
+                     {
+-                        int l = itemstack.func_77958_k() - itemstack.func_77952_i();
+-                        int i1 = itemstack2.func_77958_k() - itemstack2.func_77952_i();
+-                        int j1 = i1 + itemstack1.func_77958_k() * 12 / 100;
++                        int l = itemInput.func_77958_k() - itemInput.func_77952_i();
++                        int i1 = repairMaterial.func_77958_k() - repairMaterial.func_77952_i();
++                        int j1 = i1 + copyOfInput.func_77958_k() * 12 / 100;
+                         int k1 = l + j1;
+-                        int l1 = itemstack1.func_77958_k() - k1;
++                        int l1 = copyOfInput.func_77958_k() - k1;
+ 
+                         if (l1 < 0)
+                         {
+                             l1 = 0;
+                         }
+ 
+-                        if (l1 < itemstack1.func_77960_j())
++                        if (l1 < copyOfInput.func_77960_j())
+                         {
+-                            itemstack1.func_77964_b(l1);
++                            copyOfInput.func_77964_b(l1);
+                             i += 2;
+                         }
+                     }
+ 
+-                    Map<Enchantment, Integer> map1 = EnchantmentHelper.func_82781_a(itemstack2);
++                    Map<Enchantment, Integer> map1 = EnchantmentHelper.func_82781_a(repairMaterial);
+                     boolean flag2 = false;
+                     boolean flag3 = false;
+ 
+@@ -246,9 +279,9 @@
+                             int i2 = map.containsKey(enchantment1) ? ((Integer)map.get(enchantment1)).intValue() : 0;
+                             int j2 = ((Integer)map1.get(enchantment1)).intValue();
+                             j2 = i2 == j2 ? j2 + 1 : Math.max(j2, i2);
+-                            boolean flag1 = enchantment1.func_92089_a(itemstack);
++                            boolean flag1 = enchantment1.func_92089_a(itemInput);
+ 
+-                            if (this.field_82855_n.field_71075_bZ.field_75098_d || itemstack.func_77973_b() == Items.field_151134_bR)
++                            if (this.field_82855_n.field_71075_bZ.field_75098_d || itemInput.func_77973_b() == Items.field_151134_bR)
+                             {
+                                 flag1 = true;
+                             }
+@@ -314,25 +347,26 @@
+ 
+             if (StringUtils.isBlank(this.field_82857_m))
+             {
+-                if (itemstack.func_82837_s())
++                if (itemInput.func_82837_s())
+                 {
+                     k = 1;
+                     i += k;
+-                    itemstack1.func_135074_t();
++                    copyOfInput.func_135074_t();
+                 }
              }
-+            if (flag && !itemstack1.func_77973_b().isBookEnchantable(itemstack1, itemstack2)) itemstack1 = ItemStack.field_190927_a;
+-            else if (!this.field_82857_m.equals(itemstack.func_82833_r()))
++            else if (!this.field_82857_m.equals(itemInput.func_82833_r()))
+             {
+                 k = 1;
+                 i += k;
+-                itemstack1.func_151001_c(this.field_82857_m);
++                copyOfInput.func_151001_c(this.field_82857_m);
+             }
++            if (flag && !copyOfInput.func_77973_b().isBookEnchantable(copyOfInput, repairMaterial)) copyOfInput = ItemStack.field_190927_a;
  
              this.field_82854_e = j + i;
  
+             if (i <= 0)
+             {
+-                itemstack1 = ItemStack.field_190927_a;
++                copyOfInput = ItemStack.field_190927_a;
+             }
+ 
+             if (k == i && k > 0 && this.field_82854_e >= 40)
+@@ -342,16 +376,16 @@
+ 
+             if (this.field_82854_e >= 40 && !this.field_82855_n.field_71075_bZ.field_75098_d)
+             {
+-                itemstack1 = ItemStack.field_190927_a;
++                copyOfInput = ItemStack.field_190927_a;
+             }
+ 
+-            if (!itemstack1.func_190926_b())
++            if (!copyOfInput.func_190926_b())
+             {
+-                int k2 = itemstack1.func_82838_A();
++                int k2 = copyOfInput.func_82838_A();
+ 
+-                if (!itemstack2.func_190926_b() && k2 < itemstack2.func_82838_A())
++                if (!repairMaterial.func_190926_b() && k2 < repairMaterial.func_82838_A())
+                 {
+-                    k2 = itemstack2.func_82838_A();
++                    k2 = repairMaterial.func_82838_A();
+                 }
+ 
+                 if (k != i || k == 0)
+@@ -359,11 +393,11 @@
+                     k2 = k2 * 2 + 1;
+                 }
+ 
+-                itemstack1.func_82841_c(k2);
+-                EnchantmentHelper.func_82782_a(map, itemstack1);
++                copyOfInput.func_82841_c(k2);
++                EnchantmentHelper.func_82782_a(map, copyOfInput);
+             }
+ 
+-            this.field_82852_f.func_70299_a(0, itemstack1);
++            this.field_82852_f.func_70299_a(0, copyOfInput);
+             this.func_75142_b();
+         }
+     }

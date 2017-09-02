@@ -1307,21 +1307,58 @@
      public void func_147338_a(CPacketEnchantItem p_147338_1_)
      {
          PacketThreadUtil.func_180031_a(p_147338_1_, this, this.field_147369_b.func_71121_q());
-@@ -1167,8 +2024,46 @@
+@@ -1143,49 +2000,88 @@
+ 
+         if (this.field_147369_b.field_71134_c.func_73083_d())
+         {
+-            boolean flag = p_147344_1_.func_149627_c() < 0;
+-            ItemStack itemstack = p_147344_1_.func_149625_d();
++            boolean slotIdInvalid = p_147344_1_.func_149627_c() <= 0 && p_147344_1_.func_149627_c() > 45;
++            ItemStack itemIn = p_147344_1_.func_149625_d();
+ 
+-            if (!itemstack.func_190926_b() && itemstack.func_77942_o() && itemstack.func_77978_p().func_150297_b("BlockEntityTag", 10))
++            if (!itemIn.func_190926_b() && itemIn.func_77942_o() && itemIn.func_77978_p().func_150297_b("BlockEntityTag", 10))
+             {
+-                NBTTagCompound nbttagcompound = itemstack.func_77978_p().func_74775_l("BlockEntityTag");
++                NBTTagCompound itemNBT = itemIn.func_77978_p().func_74775_l("BlockEntityTag");
+ 
+-                if (nbttagcompound.func_74764_b("x") && nbttagcompound.func_74764_b("y") && nbttagcompound.func_74764_b("z"))
++                if (itemNBT.func_74764_b("x") && itemNBT.func_74764_b("y") && itemNBT.func_74764_b("z"))
+                 {
+-                    BlockPos blockpos = new BlockPos(nbttagcompound.func_74762_e("x"), nbttagcompound.func_74762_e("y"), nbttagcompound.func_74762_e("z"));
++                    BlockPos blockpos = new BlockPos(itemNBT.func_74762_e("x"), itemNBT.func_74762_e("y"), itemNBT.func_74762_e("z"));
+                     TileEntity tileentity = this.field_147369_b.field_70170_p.func_175625_s(blockpos);
+ 
+                     if (tileentity != null)
+                     {
+-                        NBTTagCompound nbttagcompound1 = tileentity.func_189515_b(new NBTTagCompound());
+-                        nbttagcompound1.func_82580_o("x");
+-                        nbttagcompound1.func_82580_o("y");
+-                        nbttagcompound1.func_82580_o("z");
+-                        itemstack.func_77983_a("BlockEntityTag", nbttagcompound1);
++                        NBTTagCompound writeResult = tileentity.func_189515_b(new NBTTagCompound());
++                        writeResult.func_82580_o("x");
++                        writeResult.func_82580_o("y");
++                        writeResult.func_82580_o("z");
++                        itemIn.func_77983_a("BlockEntityTag", writeResult);
+                     }
+                 }
              }
  
-             boolean flag1 = p_147344_1_.func_149627_c() >= 1 && p_147344_1_.func_149627_c() <= 45;
+-            boolean flag1 = p_147344_1_.func_149627_c() >= 1 && p_147344_1_.func_149627_c() <= 45;
 -            boolean flag2 = itemstack.func_190926_b() || itemstack.func_77960_j() >= 0 && itemstack.func_190916_E() <= 64 && !itemstack.func_190926_b();
++            boolean slotIdValid = !slotIdInvalid;
 +            // CraftBukkit - Add invalidItems check
-+            boolean flag2 = itemstack.func_190926_b() || itemstack.func_77960_j() >= 0 && itemstack.func_190916_E() <= 64 && !itemstack.func_190926_b() && !invalidItems.contains(Item.func_150891_b(itemstack.func_77973_b()));
-+            if (flag || (flag1 && !ItemStack.func_77989_b(this.field_147369_b.field_71069_bz.func_75139_a(p_147344_1_.func_149627_c()).func_75211_c(), p_147344_1_.func_149625_d()))) { // Insist on valid slot
++            boolean itemIsValid = itemIn.func_190926_b() || itemIn.func_77960_j() >= 0 && itemIn.func_190916_E() <= 64 && !itemIn.func_190926_b() && !invalidItems.contains(Item.func_150891_b(itemIn.func_77973_b()));
++            if (slotIdInvalid || (slotIdValid && !ItemStack.func_77989_b(this.field_147369_b.field_71069_bz.func_75139_a(p_147344_1_.func_149627_c()).func_75211_c(), p_147344_1_.func_149625_d()))) { // Insist on valid slot
 +                // CraftBukkit start - Call click event
 +                HumanEntity player = this.field_147369_b.getBukkitEntity();
 +                InventoryView inventory = new CraftInventoryView(player, player.getInventory(), this.field_147369_b.field_71069_bz);
 +                org.bukkit.inventory.ItemStack item = CraftItemStack.asBukkitCopy(p_147344_1_.func_149625_d());
  
+-            if (flag1 && flag2)
 +                InventoryType.SlotType type = InventoryType.SlotType.QUICKBAR;
-+                if (flag) {
++                if (slotIdInvalid) {
 +                    type = InventoryType.SlotType.OUTSIDE;
 +                } else if (p_147344_1_.func_149627_c() < 36) {
 +                    if (p_147344_1_.func_149627_c() >= 5 && p_147344_1_.func_149627_c() < 9) {
@@ -1330,15 +1367,15 @@
 +                        type = InventoryType.SlotType.CONTAINER;
 +                    }
 +                }
-+                InventoryCreativeEvent event = new InventoryCreativeEvent(inventory, type, flag ? -999 : p_147344_1_.func_149627_c(), item);
++                InventoryCreativeEvent event = new InventoryCreativeEvent(inventory, type, slotIdInvalid ? -999 : p_147344_1_.func_149627_c(), item);
 +                server.getPluginManager().callEvent(event);
 +
-+                itemstack = CraftItemStack.asNMSCopy(event.getCursor());
-+
++                itemIn = CraftItemStack.asNMSCopy(event.getCursor());
++                //System.out.println(event.getResult());
 +                switch (event.getResult()) {
 +                    case ALLOW:
 +                        // Plugin cleared the id / stacksize checks
-+                        flag2 = true;
++                        itemIsValid = true;
 +                        break;
 +                    case DEFAULT:
 +                        break;
@@ -1347,15 +1384,37 @@
 +                        if (p_147344_1_.func_149627_c() >= 0) {
 +                            this.field_147369_b.field_71135_a.func_147359_a(new SPacketSetSlot(this.field_147369_b.field_71069_bz.field_75152_c, p_147344_1_.func_149627_c(), this.field_147369_b.field_71069_bz.func_75139_a(p_147344_1_.func_149627_c()).func_75211_c()));
 +                            this.field_147369_b.field_71135_a.func_147359_a(new SPacketSetSlot(-1, -1, ItemStack.field_190927_a));
++                            return;
 +                        }
-+                        return;
++
 +                }
 +            }
 +            // CraftBukkit end
-             if (flag1 && flag2)
++            if (slotIdValid && itemIsValid)
              {
-                 if (itemstack.func_190926_b())
-@@ -1233,11 +2128,25 @@
+-                if (itemstack.func_190926_b())
++                if (itemIn.func_190926_b())
+                 {
+                     this.field_147369_b.field_71069_bz.func_75141_a(p_147344_1_.func_149627_c(), ItemStack.field_190927_a);
+                 }
+                 else
+                 {
+-                    this.field_147369_b.field_71069_bz.func_75141_a(p_147344_1_.func_149627_c(), itemstack);
++                    this.field_147369_b.field_71069_bz.func_75141_a(p_147344_1_.func_149627_c(), itemIn);
+                 }
+ 
+                 this.field_147369_b.field_71069_bz.func_75128_a(this.field_147369_b, true);
+             }
+-            else if (flag && flag2 && this.field_147375_m < 200)
++            else if (slotIdInvalid && itemIsValid && this.field_147375_m < 200)
+             {
+                 this.field_147375_m += 20;
+-                EntityItem entityitem = this.field_147369_b.func_71019_a(itemstack, true);
++                EntityItem entityitem = this.field_147369_b.func_71019_a(itemIn, true);
+ 
+                 if (entityitem != null)
+                 {
+@@ -1233,11 +2129,25 @@
  
              String[] astring = p_147343_1_.func_187017_b();
  
@@ -1384,7 +1443,7 @@
              tileentitysign.func_70296_d();
              worldserver.func_184138_a(blockpos, iblockstate, iblockstate, 3);
          }
-@@ -1260,12 +2169,28 @@
+@@ -1260,12 +2170,28 @@
      public void func_147348_a(CPacketPlayerAbilities p_147348_1_)
      {
          PacketThreadUtil.func_180031_a(p_147348_1_, this, this.field_147369_b.func_71121_q());
@@ -1414,7 +1473,7 @@
          List<String> list = Lists.<String>newArrayList();
  
          for (String s : this.field_147367_d.func_184104_a(this.field_147369_b, p_147341_1_.func_149419_c(), p_147341_1_.func_179709_b(), p_147341_1_.func_186989_c()))
-@@ -1281,406 +2206,390 @@
+@@ -1281,406 +2207,390 @@
          PacketThreadUtil.func_180031_a(p_147352_1_, this, this.field_147369_b.func_71121_q());
          this.field_147369_b.func_147100_a(p_147352_1_);
      }
