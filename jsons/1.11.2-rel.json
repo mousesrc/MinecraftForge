@@ -7,7 +7,7 @@
   "filePath":"@universal_jar@",
   "welcome":"Welcome to the simple @project@ installer.",
   "minecraft":"@minecraft_version@",
-  "mirrorList" : "http://files.minecraftforge.net/mirror-brand.list",
+  "mirrorList" : "http://127.0.0.1:8000/mirror-brand.list",
   "logo":"/big_logo.png",
   "modList":"none"
 },
@@ -137,34 +137,48 @@
       "serverreq":true
     },
     {
+      "serverreq":true,
       "name": "commons-lang:commons-lang:2.6",
       "url": "http://repo.maven.apache.org/maven2"
     },
     {
+      "serverreq":true,
       "name": "com.googlecode.json-simple:json-simple:1.1.1",
       "url": "http://repo.maven.apache.org/maven2"
     },
     {
+      "serverreq":true,
       "name":"com.google.guava:guava:17.0",
       "url": "http://repo.maven.apache.org/maven2"
     },
     {
+      "serverreq":true,
       "name":"org.avaje:ebean:2.8.1",
       "url": "http://repo.maven.apache.org/maven2"
     },
     {
+      "serverreq":true,
       "name":"org.yaml:snakeyaml:1.17",
       "url": "http://repo.maven.apache.org/maven2"
     },
     {
-      "name":"net.md-5:bungeecord-api:1.10-SNAPSHOT",
+      "serverreq":true,
+      "name":"net.md-5:bungeecord-api:1.11-SNAPSHOT",
       "url": "https://hub.spigotmc.org/nexus/content/groups/public/"
     },
     {
+      "serverreg":true,
+      "server":true,
+      "name":"net.md-5:bungeecord-chat:1.11-SNAPSHOT",
+      "url": "https://hub.spigotmc.org/nexus/content/groups/public"
+    },
+    {
+      "serverreq":true,
       "name":"net.md-5:SpecialSource:1.7.4",
       "url":"http://repo.maven.apache.org/maven2"
     },
     {
+      "serverreq":true,
       "name":"org.spigotmc:spigot-api:1.11.2-R0.1-SNAPSHOT",
       "url":"https://hub.spigotmc.org/nexus/content/groups/public/"
     }

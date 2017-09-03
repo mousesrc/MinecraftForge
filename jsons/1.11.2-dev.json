@@ -109,7 +109,7 @@
       "url": "http://repo.maven.apache.org/maven2"
     },
     {
-      "name":"net.md-5:bungeecord-api:1.10-SNAPSHOT",
+      "name":"net.md-5:bungeecord-api:1.11-SNAPSHOT",
       "url": "https://hub.spigotmc.org/nexus/content/groups/public/"
     },
     {
@@ -119,7 +119,11 @@
     {
       "name":"org.spigotmc:spigot-api:1.11.2-R0.1-SNAPSHOT",
       "url":"https://hub.spigotmc.org/nexus/content/repositories/snapshots/"      
+    },
+    {
+      "serverreg":true,
+      "name":"net.md-5:bungeecord-chat:1.11-SNAPSHOT",
+      "url": "https://hub.spigotmc.org/nexus/content/groups/public"
     }
-
   ]
 }

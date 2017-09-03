@@ -287,7 +287,7 @@ public final class CraftServer implements Server {
         loadIcon();
 
         // Spigot Start - Moved to old location of new DedicatedPlayerList in DedicatedServer
-        // loadPlugins();
+        //loadPlugins();
         // enablePlugins(PluginLoadOrder.STARTUP);
         // Spigot End
     }
@@ -323,7 +323,7 @@ public final class CraftServer implements Server {
     public void loadPlugins() {
         pluginManager.registerInterface(JavaPluginLoader.class);
 
-        File pluginFolder = (File) console.options.valueOf("plugins");
+        File pluginFolder = new File("plugins");
 
         if (pluginFolder.exists()) {
             Plugin[] plugins = pluginManager.loadPlugins(pluginFolder);
@@ -596,12 +596,12 @@ public final class CraftServer implements Server {
 
     @Override
     public String getUpdateFolder() {
-        return this.configuration.getString("settings.update-folder", "update");
+        return "plugins/update";
     }
 
     @Override
     public File getUpdateFolderFile() {
-        return new File((File) console.options.valueOf("plugins"), this.configuration.getString("settings.update-folder", "update"));
+        return new File("plugins/update");
     }
 
     @Override
