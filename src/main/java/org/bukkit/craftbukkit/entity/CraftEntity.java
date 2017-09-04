@@ -10,6 +10,8 @@ import java.util.UUID;
 
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.MCPCRevive.entity.CraftCustomEntity;
+import net.minecraftforge.common.DimensionManager;
+import net.minecraftforge.common.util.FakePlayerFactory;
 import org.bukkit.EntityEffect;
 import org.bukkit.Location;
 import org.bukkit.Server;
@@ -155,8 +157,14 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         if (entity instanceof EntityLivingBase) {
             // Players
             if (entity instanceof EntityPlayer) {
-                if (entity instanceof EntityPlayerMP) { return new CraftPlayer(server, (EntityPlayerMP) entity); }
-                else { return new CraftHumanEntity(server, (EntityPlayer) entity); }
+                if (entity instanceof net.minecraft.entity.player.EntityPlayerMP) { return new CraftPlayer(server, (net.minecraft.entity.player.EntityPlayerMP) entity); }
+                // Cauldron start - support fake player classes from mods
+                // This case is never hit in vanilla
+                //else { return new CraftHumanEntity(server, (net.minecraft.entity.player.EntityPlayer) entity); }
+                else {
+                    return new CraftPlayer(server, FakePlayerFactory.get(DimensionManager.getWorld(entity.world.provider.getDimension()), ((net.minecraft.entity.player.EntityPlayer) entity).getGameProfile()));
+                }
+                // Cauldron end
             }
             // Water Animals
             else if (entity instanceof EntityWaterMob) {

@@ -313,49 +313,12 @@
                  }
                  else if (world.func_180495_p(blockpos).func_177230_c() == Blocks.field_150335_W)
                  {
-@@ -496,6 +683,45 @@
+@@ -496,6 +683,8 @@
              StatList.func_151178_a();
              Biome.func_185358_q();
              func_151353_a();
 +            net.minecraftforge.fml.common.registry.GameData.vanillaSnapshot();
-+            for(ResourceLocation rl : Potion.field_188414_b.func_148742_b())
-+            {
-+                if(!rl.func_110624_b().equals("minecraft"))
-+                {
-+                    EnumHelper.addBukkitPotionType(Potion.field_188414_b.func_82594_a(rl));
-+                }
-+            }
-+            for(ResourceLocation rl : Item.field_150901_e.func_148742_b())
-+            {
-+                if(!rl.func_110624_b().equals("minecraft"))
-+                {
-+                    EnumHelper.addBukkitMaterial(Item.field_150901_e.func_82594_a(rl));
-+                }
-+            }
-+            for(ResourceLocation rl : EntityList.func_180124_b())
-+            {
-+                if(!rl.func_110624_b().equals("minecraft"))
-+                {
-+                    String EntityName = rl.func_110623_a().toUpperCase();
-+                    Class<? extends Entity> EntityClass = EntityList.getClass(rl);
-+                    int typeId = EntityList.getID(EntityClass);
-+                    EnumHelper.addBukkitEntity(EntityName,EntityClass,typeId,true);
-+                }
-+            }
-+            for(DimensionType type : DimensionType.values())
-+            {
-+                if(type.func_186068_a() < -1 && type.func_186068_a() > 1)
-+                {
-+                    EnumHelper.addBukkitEnvironment(type);
-+                }
-+            }
-+            for(ResourceLocation rl : Biome.field_185377_q.func_148742_b())
-+            {
-+                if(!rl.func_110624_b().equals("minecraft"))
-+                {
-+                    EnumHelper.addBukkitBiomeType(Biome.field_185377_q.func_82594_a(rl));
-+                }
-+            }
++
          }
      }
  

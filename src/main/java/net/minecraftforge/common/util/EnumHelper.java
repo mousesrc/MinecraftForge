@@ -26,6 +26,7 @@ import java.util.function.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 
+import net.minecraft.block.Block;
 import net.minecraft.client.renderer.Matrix4f;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.Entity;
@@ -63,8 +64,10 @@ import org.bukkit.enchantments.EnchantmentTarget;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionEffectTypeWrapper;
 import org.bukkit.potion.PotionType;
+import scala.Int;
 
 import javax.annotation.Nullable;
 
@@ -91,7 +94,14 @@ public class EnumHelper {
                     {EnumSkyBlock.class, int.class},
                     {SleepResult.class},
                     {ToolMaterial.class, int.class, int.class, float.class, float.class, int.class},
-                    {EnumRarity.class, TextFormatting.class, String.class}
+                    {EnumRarity.class, TextFormatting.class, String.class},
+                    {org.bukkit.Material.class, int.class},
+                    {World.Environment.class,int.class},
+                    {EnchantmentTarget.class,Function.class},
+                    {PotionType.class,PotionEffectType.class,boolean.class,boolean.class},
+                    {EntityType.class,String.class,Class.class,int.class,boolean.class},
+                    {Biome.class},
+                    {InventoryType.class,int.class,String.class}
             };
 
     @Nullable
@@ -377,7 +387,7 @@ public class EnumHelper {
             IInventory inv = (IInventory)TE;
             int size = inv.getSizeInventory();
             String name = inv.getName();
-            return addEnum(InventoryType.class, name.toUpperCase(),new Object[]{size,name});
+            return addEnum(InventoryType.class, name.toUpperCase(),size,name);
         }
         else
         {
@@ -388,11 +398,11 @@ public class EnumHelper {
     {
         int envID = type.getId();
         String envName = type.getName();
-        return addEnum(World.Environment.class, envName.toUpperCase(), new Object[]{envID});
+        return addEnum(World.Environment.class, envName.toUpperCase(), envID);
     }
     public static EntityType addBukkitEntity(String name, Class<? extends Entity> clazz, int typeId, boolean independent)
     {
-        EntityType type =  addEnum(EntityType.class,name.toUpperCase(),new Object[]{name,clazz,typeId,independent});
+        EntityType type =  addEnum(EntityType.class,name.toUpperCase(),name,clazz,typeId,independent);
         Map<String, EntityType> NAME_MAP = ReflectionHelper.getPrivateValue(EntityType.class, null, "NAME_MAP");
         Map<Short, EntityType> ID_MAP = ReflectionHelper.getPrivateValue(EntityType.class, null, "ID_MAP");
         NAME_MAP.put(type.getName().toLowerCase(),type);
@@ -401,16 +411,29 @@ public class EnumHelper {
     }
     public static Biome addBukkitBiomeType(net.minecraft.world.biome.Biome input)
     {
-        return addEnum(Biome.class,input.getBiomeName().toUpperCase(),new Object[]{});
+        return addEnum(Biome.class,input.getBiomeName().toUpperCase());
     }
-    public static org.bukkit.Material addBukkitMaterial(Item i)
+    public static org.bukkit.Material addBukkitMaterialBlock(Block i)
     {
-        int id = Item.getIdFromItem(i);
-        Map<String, org.bukkit.Material> BY_NAME = ReflectionHelper.getPrivateValue(EntityType.class, null, "BY_NAME");
-        Map<Short, org.bukkit.Material> byId = ReflectionHelper.getPrivateValue(EntityType.class, null, "byId");
-        org.bukkit.Material newMat = addEnum(org.bukkit.Material.class,i.getUnlocalizedName().toUpperCase(),new Object[]{id});
+        int id = Block.getIdFromBlock(i);
+        Map<String, org.bukkit.Material> BY_NAME = ReflectionHelper.getPrivateValue(org.bukkit.Material.class, null, "BY_NAME");
+        Map<Integer, org.bukkit.Material> byId = ReflectionHelper.getPrivateValue(org.bukkit.Material.class, null, "byId");
+        org.bukkit.Material newMat = addEnum(org.bukkit.Material.class,i.getUnlocalizedName().toUpperCase(),id);
         BY_NAME.put(i.getUnlocalizedName(),newMat);
-        byId.put((short)id,newMat);
+        byId.put(id,newMat);
+        return newMat;
+    }
+    public static org.bukkit.Material addBukkitMaterialItem(Item i)
+    {
+        Block block = Block.getBlockFromItem(i);
+        //corresponding block, if we have
+        //we always register corresponding item id for evenything to avoid overriding vanilla items and blocks
+        int id = Item.getIdFromItem(i);
+        Map<String, org.bukkit.Material> BY_NAME = ReflectionHelper.getPrivateValue(org.bukkit.Material.class, null, "BY_NAME");
+        Map<Integer, org.bukkit.Material> byId = ReflectionHelper.getPrivateValue(org.bukkit.Material.class, null, "byId");
+        org.bukkit.Material newMat = addEnum(org.bukkit.Material.class,i.getUnlocalizedName().toUpperCase(),id);
+        BY_NAME.put(i.getUnlocalizedName(),newMat);
+        byId.put(id,newMat);
         return newMat;
     }
     public static EnchantmentTarget addBukkitEnchantmentTarget(Function<Material, Boolean> func, final Enchantment enchantment)
@@ -423,14 +446,14 @@ public class EnumHelper {
                 return item.canApplyAtEnchantingTable(new net.minecraft.item.ItemStack(item),enchantment);
             }
         };
-        return addEnum(EnchantmentTarget.class,name,new Object[]{TheFunction});
+        return addEnum(EnchantmentTarget.class,name,TheFunction);
     }
     public static PotionType addBukkitPotionType(Potion effect)
     {
         boolean upgradable = true;
         boolean extandable = true;
         PotionEffectTypeWrapper wrapper = new PotionEffectTypeWrapper(Potion.getIdFromPotion(effect));
-        return addEnum(PotionType.class,effect.getName().toUpperCase(),new Object[]{wrapper,upgradable,extandable});
+        return addEnum(PotionType.class,effect.getName().toUpperCase(),wrapper,upgradable,extandable);
     }
     // Cauldron start - generate based on the class name
     public static String generateName(net.minecraft.enchantment.Enchantment target) {

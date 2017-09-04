@@ -44,16 +44,17 @@
                  int l = (int)(f1 * 10.0F);
  
                  if (l != this.field_73094_o)
-@@ -139,6 +146,8 @@
+@@ -139,6 +146,9 @@
  
      public void func_180784_a(BlockPos p_180784_1_, EnumFacing p_180784_2_)
      {
++        field_73090_b.lastClickedPos = p_180784_1_;
 +        PlayerInteractEvent.LeftClickBlock event = ForgeHooks.onLeftClickBlock(field_73090_b, p_180784_1_, p_180784_2_, ForgeHooks.rayTraceEyeHitVec(field_73090_b, getBlockReachDistance() + 1));
 +
          if (this.func_73083_d())
          {
              if (!this.field_73092_a.func_175719_a((EntityPlayer)null, p_180784_1_, p_180784_2_))
-@@ -174,17 +183,48 @@
+@@ -174,17 +184,48 @@
                  }
              }
  
@@ -106,7 +107,7 @@
              {
                  this.func_180237_b(p_180784_1_);
              }
-@@ -206,7 +246,7 @@
+@@ -206,7 +247,7 @@
              int i = this.field_73100_i - this.field_73089_e;
              IBlockState iblockstate = this.field_73092_a.func_180495_p(p_180785_1_);
  
@@ -115,7 +116,7 @@
              {
                  float f = iblockstate.func_185903_a(this.field_73090_b, this.field_73090_b.field_70170_p, p_180785_1_) * (float)(i + 1);
  
-@@ -235,21 +275,26 @@
+@@ -235,21 +276,26 @@
  
      private boolean func_180235_c(BlockPos p_180235_1_)
      {
@@ -148,7 +149,7 @@
          {
              return false;
          }
-@@ -266,53 +311,41 @@
+@@ -266,53 +312,41 @@
              }
              else
              {
@@ -214,7 +215,7 @@
                  return flag1;
              }
          }
-@@ -330,8 +363,11 @@
+@@ -330,8 +364,11 @@
          }
          else
          {
@@ -226,7 +227,7 @@
              ActionResult<ItemStack> actionresult = p_187250_3_.func_77957_a(p_187250_2_, p_187250_1_, p_187250_4_);
              ItemStack itemstack = (ItemStack)actionresult.func_188398_b();
  
-@@ -359,6 +395,7 @@
+@@ -359,6 +396,7 @@
  
                  if (itemstack.func_190926_b())
                  {
@@ -234,7 +235,7 @@
                      p_187250_1_.func_184611_a(p_187250_4_, ItemStack.field_190927_a);
                  }
  
-@@ -371,7 +408,9 @@
+@@ -371,9 +409,12 @@
              }
          }
      }
@@ -244,8 +245,11 @@
 +    public boolean firedInteract = false;
      public EnumActionResult func_187251_a(EntityPlayer p_187251_1_, World p_187251_2_, ItemStack p_187251_3_, EnumHand p_187251_4_, BlockPos p_187251_5_, EnumFacing p_187251_6_, float p_187251_7_, float p_187251_8_, float p_187251_9_)
      {
++        p_187251_1_.lastClickedPos = p_187251_5_;
          if (this.field_73091_c == GameType.SPECTATOR)
-@@ -404,13 +443,24 @@
+         {
+             TileEntity tileentity = p_187251_2_.func_175625_s(p_187251_5_);
+@@ -404,13 +445,24 @@
          }
          else
          {
@@ -273,7 +277,7 @@
                  }
              }
  
-@@ -438,14 +488,22 @@
+@@ -438,14 +490,22 @@
                  {
                      int j = p_187251_3_.func_77960_j();
                      int i = p_187251_3_.func_190916_E();
@@ -297,7 +301,7 @@
                  }
              }
          }
-@@ -455,4 +513,13 @@
+@@ -455,4 +515,13 @@
      {
          this.field_73092_a = p_73080_1_;
      }

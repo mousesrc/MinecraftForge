@@ -23,4 +23,5 @@ public class CustomModRecipe implements Recipe {
     public IRecipe getHandle() {
         return iRecipe;
     }
+
 }

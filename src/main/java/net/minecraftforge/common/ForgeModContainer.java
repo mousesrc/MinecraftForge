@@ -24,7 +24,13 @@
 
 package net.minecraftforge.common;
 
+import net.minecraft.block.Block;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityList;
+import net.minecraft.item.Item;
+import net.minecraft.potion.Potion;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.DimensionType;
 import net.minecraft.world.biome.Biome;
 import static net.minecraftforge.common.config.Configuration.CATEGORY_CLIENT;
 import static net.minecraftforge.common.config.Configuration.CATEGORY_GENERAL;
@@ -41,6 +47,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import net.minecraftforge.common.util.EnumHelper;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -504,6 +511,53 @@ public class ForgeModContainer extends DummyModContainer implements WorldAccessC
     public void serverStarting(FMLServerStartingEvent evt)
     {
         evt.registerServerCommand(new ForgeCommand());
+        for(ResourceLocation rl : Potion.REGISTRY.getKeys())
+        {
+            if(!rl.getResourceDomain().equals("minecraft"))
+            {
+                EnumHelper.addBukkitPotionType(Potion.REGISTRY.getObject(rl));
+            }
+        }
+        /*
+        for(ResourceLocation rl : Block.REGISTRY.getKeys())
+        {
+            if(!rl.getResourceDomain().equals("minecraft"))
+            {
+                EnumHelper.addBukkitMaterialBlock(Block.REGISTRY.getObject(rl));
+            }
+        }
+        */
+        for(ResourceLocation rl : Item.REGISTRY.getKeys())
+        {
+            if(!rl.getResourceDomain().equals("minecraft"))
+            {
+                EnumHelper.addBukkitMaterialItem(Item.REGISTRY.getObject(rl));
+            }
+        }
+        for(ResourceLocation rl : EntityList.getEntityNameList())
+        {
+            if(!rl.getResourceDomain().equals("minecraft"))
+            {
+                String EntityName = rl.getResourcePath().toUpperCase();
+                Class<? extends Entity> EntityClass = EntityList.getClass(rl);
+                int typeId = EntityList.getID(EntityClass);
+                EnumHelper.addBukkitEntity(EntityName,EntityClass,typeId,true);
+            }
+        }
+        for(DimensionType type : DimensionType.values())
+        {
+            if(type.getId() < -1 && type.getId() > 1)
+            {
+                EnumHelper.addBukkitEnvironment(type);
+            }
+        }
+        for(ResourceLocation rl : Biome.REGISTRY.getKeys())
+        {
+            if(!rl.getResourceDomain().equals("minecraft"))
+            {
+                EnumHelper.addBukkitBiomeType(Biome.REGISTRY.getObject(rl));
+            }
+        }
     }
     @Override
     public NBTTagCompound getDataForWriting(SaveHandler handler, WorldInfo info)
