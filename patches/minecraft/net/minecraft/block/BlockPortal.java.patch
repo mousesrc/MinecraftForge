@@ -1,0 +1,34 @@
+--- ../src-base/minecraft/net/minecraft/block/BlockPortal.java
++++ ../src-work/minecraft/net/minecraft/block/BlockPortal.java
+@@ -28,6 +28,9 @@
+ import net.minecraft.world.World;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
++import org.bukkit.Location;
++import org.bukkit.event.entity.CreatureSpawnEvent;
++import org.bukkit.event.entity.EntityPortalEnterEvent;
+ 
+ public class BlockPortal extends BlockBreakable
+ {
+@@ -73,8 +76,8 @@
+ 
+             if (i > 0 && !p_180650_1_.func_180495_p(blockpos.func_177984_a()).func_185915_l())
+             {
+-                Entity entity = ItemMonsterPlacer.func_77840_a(p_180650_1_, EntityList.func_191306_a(EntityPigZombie.class), (double)blockpos.func_177958_n() + 0.5D, (double)blockpos.func_177956_o() + 1.1D, (double)blockpos.func_177952_p() + 0.5D);
+-
++                // CraftBukkit - set spawn reason to NETHER_PORTAL
++                Entity entity = ItemMonsterPlacer.spawnCreature(p_180650_1_, EntityList.func_191306_a(EntityPigZombie.class), (double) blockpos.func_177958_n() + 0.5D, (double) blockpos.func_177956_o() + 1.1D, (double) blockpos.func_177952_p() + 0.5D, CreatureSpawnEvent.SpawnReason.NETHER_PORTAL);
+                 if (entity != null)
+                 {
+                     entity.field_71088_bW = entity.func_82147_ab();
+@@ -192,6 +195,10 @@
+     {
+         if (!p_180634_4_.func_184218_aH() && !p_180634_4_.func_184207_aI() && p_180634_4_.func_184222_aU())
+         {
++            // CraftBukkit start - Entity in portal
++            EntityPortalEnterEvent event = new EntityPortalEnterEvent(p_180634_4_.getBukkitEntity(), new Location(p_180634_1_.getWorld(), p_180634_2_.func_177958_n(), p_180634_2_.func_177956_o(), p_180634_2_.func_177952_p()));
++            p_180634_1_.getServer().getPluginManager().callEvent(event);
++            // CraftBukkit end
+             p_180634_4_.func_181015_d(p_180634_2_);
+         }
+     }

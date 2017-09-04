@@ -1,14 +1,15 @@
 --- ../src-base/minecraft/net/minecraft/entity/monster/EntityCreeper.java
 +++ ../src-work/minecraft/net/minecraft/entity/monster/EntityCreeper.java
-@@ -36,6 +36,7 @@
+@@ -36,6 +36,8 @@
  import net.minecraft.world.storage.loot.LootTableList;
  import net.minecraftforge.fml.relauncher.Side;
  import net.minecraftforge.fml.relauncher.SideOnly;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.ExplosionPrimeEvent;
  
  public class EntityCreeper extends EntityMob
  {
-@@ -238,6 +239,11 @@
+@@ -238,6 +240,11 @@
      public void func_70077_a(EntityLightningBolt p_70077_1_)
      {
          super.func_70077_a(p_70077_1_);
@@ -20,7 +21,30 @@
          this.field_70180_af.func_187227_b(field_184714_b, Boolean.valueOf(true));
      }
  
-@@ -315,4 +321,8 @@
+@@ -267,10 +274,18 @@
+         {
+             boolean flag = this.field_70170_p.func_82736_K().func_82766_b("mobGriefing");
+             float f = this.func_70830_n() ? 2.0F : 1.0F;
+-            this.field_70729_aU = true;
+-            this.field_70170_p.func_72876_a(this, this.field_70165_t, this.field_70163_u, this.field_70161_v, (float)this.field_82226_g * f, flag);
+-            this.func_70106_y();
+-            this.func_190741_do();
++            // CraftBukkit start
++            ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), this.field_82226_g * f, false);
++            this.field_70170_p.getServer().getPluginManager().callEvent(event);
++            if (!event.isCancelled()) {
++                this.field_70729_aU = true;
++                this.field_70170_p.func_72885_a(this, this.field_70165_t, this.field_70163_u, this.field_70161_v, event.getRadius(), event.getFire(), flag);
++                this.func_70106_y();
++                this.func_190741_do();
++            } else {
++                field_70833_d = 0;
++            }
++            // CraftBukkit end
+         }
+     }
+ 
+@@ -315,4 +330,8 @@
      {
          ++this.field_175494_bm;
      }

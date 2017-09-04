@@ -11,6 +11,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Functions;
 
 
+import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.network.play.server.SPacketCloseWindow;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -632,10 +633,13 @@ public class CraftEventFactory {
             cause = DamageCause.FLY_INTO_WALL;
         } else if (source == DamageSource.CRAMMING) {
             cause = DamageCause.CRAMMING;
-        } else if (source == DamageSource.GENERIC) {
+        } else if(source == DamageSource.CACTUS)
+        {
+            cause = DamageCause.CONTACT;
+        }
+        else if (source == DamageSource.GENERIC) {
             cause = DamageCause.CUSTOM;
         }
-
         if (cause != null) {
             return callEntityDamageEvent(null, entity, cause, modifiers, modifierFunctions);
         }
@@ -984,8 +988,11 @@ public class CraftEventFactory {
             }
 
             // Client will have updated its idea of the book item; we need to overwrite that
-            Slot slot = player.openContainer.getSlotFromInventory(player.inventory, itemInHandIndex);
-            player.connection.sendPacket(new SPacketSetSlot(player.openContainer.windowId, slot.slotNumber, itemInHand));
+            ItemStack newstack = new ItemStack(Items.WRITTEN_BOOK);
+            newstack.setTagCompound(itemInHand.getTagCompound());
+            //Slot slot = player.openContainer.getSlotFromInventory(player.inventory, itemInHandIndex);
+            player.setItemStackToSlot(EntityEquipmentSlot.MAINHAND,newstack);
+            //player.connection.sendPacket(new SPacketSetSlot(player.openContainer.windowId, slot.slotNumber, itemInHand));
         }
     }
 

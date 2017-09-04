@@ -8,7 +8,7 @@
  import net.minecraft.init.Blocks;
  import net.minecraft.init.Items;
  import net.minecraft.inventory.EntityEquipmentSlot;
-@@ -58,6 +59,10 @@
+@@ -58,6 +59,11 @@
  import net.minecraft.world.storage.loot.LootTable;
  import net.minecraftforge.fml.relauncher.Side;
  import net.minecraftforge.fml.relauncher.SideOnly;
@@ -16,10 +16,11 @@
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.event.entity.EntityTargetEvent;
 +import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
++import org.bukkit.event.entity.EntityUnleashEvent;
  
  public abstract class EntityLiving extends EntityLivingBase
  {
-@@ -69,8 +74,8 @@
+@@ -69,8 +75,8 @@
      protected EntityJumpHelper field_70767_i;
      private final EntityBodyHelper field_70762_j;
      protected PathNavigate field_70699_by;
@@ -30,7 +31,7 @@
      private EntityLivingBase field_70696_bz;
      private final EntitySenses field_70723_bA;
      private final NonNullList<ItemStack> field_184656_bv = NonNullList.<ItemStack>func_191197_a(2, ItemStack.field_190927_a);
-@@ -104,6 +109,9 @@
+@@ -104,6 +110,9 @@
          {
              this.func_184651_r();
          }
@@ -40,7 +41,7 @@
      }
  
      protected void func_184651_r()
-@@ -171,8 +179,41 @@
+@@ -171,8 +180,41 @@
      public void func_70624_b(@Nullable EntityLivingBase p_70624_1_)
      {
          this.field_70696_bz = p_70624_1_;
@@ -82,7 +83,7 @@
      public boolean func_70686_a(Class <? extends EntityLivingBase > p_70686_1_)
      {
          return p_70686_1_ != EntityGhast.class;
-@@ -447,12 +488,19 @@
+@@ -447,12 +489,19 @@
      {
          super.func_70037_a(p_70037_1_);
  
@@ -106,7 +107,7 @@
  
          if (p_70037_1_.func_150297_b("ArmorItems", 9))
          {
-@@ -648,51 +696,47 @@
+@@ -648,51 +697,47 @@
              }
          }
  
@@ -182,7 +183,7 @@
          }
      }
  
-@@ -708,10 +752,22 @@
+@@ -708,10 +753,22 @@
  
      protected void func_70623_bb()
      {
@@ -205,7 +206,7 @@
          else
          {
              Entity entity = this.field_70170_p.func_72890_a(this, -1.0D);
-@@ -845,7 +901,6 @@
+@@ -845,7 +902,6 @@
          return !this.field_70170_p.func_72953_d(this.func_174813_aQ()) && this.field_70170_p.func_184144_a(this, this.func_174813_aQ()).isEmpty() && this.field_70170_p.func_72917_a(this.func_174813_aQ(), this);
      }
  
@@ -213,7 +214,7 @@
      public float func_70603_bj()
      {
          return 1.0F;
-@@ -1183,6 +1238,12 @@
+@@ -1183,6 +1239,12 @@
      {
          if (this.func_110167_bD() && this.func_110166_bE() == p_184230_1_)
          {
@@ -226,7 +227,7 @@
              this.func_110160_i(true, !p_184230_1_.field_71075_bZ.field_75098_d);
              return true;
          }
-@@ -1192,6 +1253,12 @@
+@@ -1192,6 +1254,12 @@
  
              if (itemstack.func_77973_b() == Items.field_151058_ca && this.func_184652_a(p_184230_1_))
              {
@@ -239,3 +240,19 @@
                  this.func_110162_b(p_184230_1_, true);
                  itemstack.func_190918_g(1);
                  return true;
+@@ -1219,11 +1287,15 @@
+         {
+             if (!this.func_70089_S())
+             {
++                this.field_70170_p.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.PLAYER_UNLEASH)); // CraftBukkit
++
+                 this.func_110160_i(true, true);
+             }
+ 
+             if (this.field_110168_bw == null || this.field_110168_bw.field_70128_L)
+             {
++                this.field_70170_p.getServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.HOLDER_GONE)); // CraftBukkit
++
+                 this.func_110160_i(true, true);
+             }
+         }

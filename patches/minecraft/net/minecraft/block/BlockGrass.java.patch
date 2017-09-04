@@ -1,24 +1,65 @@
 --- ../src-base/minecraft/net/minecraft/block/BlockGrass.java
 +++ ../src-work/minecraft/net/minecraft/block/BlockGrass.java
-@@ -38,7 +38,7 @@
+@@ -15,6 +15,10 @@
+ import net.minecraft.world.World;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
++import org.bukkit.block.BlockState;
++import org.bukkit.craftbukkit.util.CraftMagicNumbers;
++import org.bukkit.event.block.BlockFadeEvent;
++import org.bukkit.event.block.BlockSpreadEvent;
+ 
+ public class BlockGrass extends Block implements IGrowable
+ {
+@@ -38,9 +42,21 @@
      {
          if (!p_180650_1_.field_72995_K)
          {
 -            if (p_180650_1_.func_175671_l(p_180650_2_.func_177984_a()) < 4 && p_180650_1_.func_180495_p(p_180650_2_.func_177984_a()).func_185891_c() > 2)
 +            if (p_180650_1_.func_175671_l(p_180650_2_.func_177984_a()) < 4 && p_180650_1_.func_180495_p(p_180650_2_.func_177984_a()).getLightOpacity(p_180650_1_, p_180650_2_.func_177984_a()) > 2)
              {
-                 p_180650_1_.func_175656_a(p_180650_2_, Blocks.field_150346_d.func_176223_P());
+-                p_180650_1_.func_175656_a(p_180650_2_, Blocks.field_150346_d.func_176223_P());
++                // CraftBukkit start
++                // world.setTypeUpdate(blockposition, Blocks.DIRT.getBlockData());
++                org.bukkit.World bworld = p_180650_1_.getWorld();
++                BlockState blockState = bworld.getBlockAt(p_180650_2_.func_177958_n(), p_180650_2_.func_177956_o(), p_180650_2_.func_177952_p()).getState();
++                blockState.setType(CraftMagicNumbers.getMaterial(Blocks.field_150346_d));
++
++                BlockFadeEvent event = new BlockFadeEvent(blockState.getBlock(), blockState);
++                p_180650_1_.getServer().getPluginManager().callEvent(event);
++
++                if (!event.isCancelled()) {
++                    blockState.update(true);
++                }
++                // CraftBukkit end
              }
-@@ -58,7 +58,7 @@
+             else
+             {
+@@ -58,9 +74,21 @@
                          IBlockState iblockstate = p_180650_1_.func_180495_p(blockpos.func_177984_a());
                          IBlockState iblockstate1 = p_180650_1_.func_180495_p(blockpos);
  
 -                        if (iblockstate1.func_177230_c() == Blocks.field_150346_d && iblockstate1.func_177229_b(BlockDirt.field_176386_a) == BlockDirt.DirtType.DIRT && p_180650_1_.func_175671_l(blockpos.func_177984_a()) >= 4 && iblockstate.func_185891_c() <= 2)
 +                        if (iblockstate1.func_177230_c() == Blocks.field_150346_d && iblockstate1.func_177229_b(BlockDirt.field_176386_a) == BlockDirt.DirtType.DIRT && p_180650_1_.func_175671_l(blockpos.func_177984_a()) >= 4 && iblockstate.getLightOpacity(p_180650_1_, p_180650_2_.func_177984_a()) <= 2)
                          {
-                             p_180650_1_.func_175656_a(blockpos, Blocks.field_150349_c.func_176223_P());
+-                            p_180650_1_.func_175656_a(blockpos, Blocks.field_150349_c.func_176223_P());
++                            // CraftBukkit start
++                            // world.setTypeUpdate(blockposition1, Blocks.GRASS.getBlockData());
++                            org.bukkit.World bworld = p_180650_1_.getWorld();
++                            BlockState blockState = bworld.getBlockAt(blockpos.func_177958_n(), blockpos.func_177956_o(), blockpos.func_177952_p()).getState();
++                            blockState.setType(CraftMagicNumbers.getMaterial(Blocks.field_150349_c));
++
++                            BlockSpreadEvent event = new BlockSpreadEvent(blockState.getBlock(), bworld.getBlockAt(p_180650_2_.func_177958_n(), p_180650_2_.func_177956_o(), p_180650_2_.func_177952_p()), blockState);
++                            p_180650_1_.getServer().getPluginManager().callEvent(event);
++
++                            if (!event.isCancelled()) {
++                                blockState.update(true);
++                            }
++                            // CraftBukkit end
                          }
-@@ -96,18 +96,11 @@
+                     }
+                 }
+@@ -96,18 +124,11 @@
              {
                  if (j >= i / 16)
                  {

@@ -72,6 +72,15 @@
      private static final Logger field_184243_a = LogManager.getLogger();
      private static final List<ItemStack> field_190535_b = Collections.<ItemStack>emptyList();
      private static final AxisAlignedBB field_174836_a = new AxisAlignedBB(0.0D, 0.0D, 0.0D, 0.0D, 0.0D, 0.0D);
+@@ -111,7 +155,7 @@
+     public float field_70125_A;
+     public float field_70126_B;
+     public float field_70127_C;
+-    private AxisAlignedBB field_70121_D;
++    public AxisAlignedBB field_70121_D;
+     public boolean field_70122_E;
+     public boolean field_70123_F;
+     public boolean field_70124_G;
 @@ -140,7 +184,7 @@
      public int field_70172_ad;
      protected boolean field_70148_d;

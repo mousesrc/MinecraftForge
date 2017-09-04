@@ -1,17 +1,70 @@
 --- ../src-base/minecraft/net/minecraft/entity/boss/EntityWither.java
 +++ ../src-work/minecraft/net/minecraft/entity/boss/EntityWither.java
-@@ -48,8 +48,10 @@
- import net.minecraft.world.BossInfoServer;
- import net.minecraft.world.EnumDifficulty;
- import net.minecraft.world.World;
+@@ -34,8 +34,10 @@
+ import net.minecraft.network.datasync.DataParameter;
+ import net.minecraft.network.datasync.DataSerializers;
+ import net.minecraft.network.datasync.EntityDataManager;
++import net.minecraft.network.play.server.SPacketEffect;
+ import net.minecraft.pathfinding.PathNavigateGround;
+ import net.minecraft.potion.PotionEffect;
++import net.minecraft.server.MinecraftServer;
+ import net.minecraft.stats.AchievementList;
+ import net.minecraft.util.DamageSource;
+ import net.minecraft.util.EntitySelectors;
+@@ -44,12 +46,12 @@
+ import net.minecraft.util.datafix.DataFixer;
+ import net.minecraft.util.math.BlockPos;
+ import net.minecraft.util.math.MathHelper;
+-import net.minecraft.world.BossInfo;
+-import net.minecraft.world.BossInfoServer;
+-import net.minecraft.world.EnumDifficulty;
+-import net.minecraft.world.World;
++import net.minecraft.world.*;
 +import net.minecraftforge.event.ForgeEventFactory;
  import net.minecraftforge.fml.relauncher.Side;
  import net.minecraftforge.fml.relauncher.SideOnly;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.ExplosionPrimeEvent;
  
  public class EntityWither extends EntityMob implements IRangedAttackMob
  {
-@@ -383,9 +385,13 @@
+@@ -256,8 +258,33 @@
+ 
+             if (j1 <= 0)
+             {
+-                this.field_70170_p.func_72885_a(this, this.field_70165_t, this.field_70163_u + (double)this.func_70047_e(), this.field_70161_v, 7.0F, false, this.field_70170_p.func_82736_K().func_82766_b("mobGriefing"));
+-                this.field_70170_p.func_175669_a(1023, new BlockPos(this), 0);
++                // CraftBukkit start
++                // this.world.createExplosion(this, this.locX, this.locY + (double) this.getHeadHeight(), this.locZ, 7.0F, false, this.world.getGameRules().getBoolean("mobGriefing"));
++                ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), 7.0F, true);
++                this.field_70170_p.getServer().getPluginManager().callEvent(event);
++
++                if (!event.isCancelled()) {
++                    this.field_70170_p.func_72885_a(this, this.field_70165_t, this.field_70163_u + (double) this.func_70047_e(), this.field_70161_v, event.getRadius(), event.getFire(), this.field_70170_p.func_82736_K().func_82766_b("mobGriefing"));
++                }
++                // CraftBukkit end
++
++                // CraftBukkit start - Use relative location for far away sounds
++                // this.world.a(1023, new BlockPosition(this), 0);
++                int viewDistance = ((WorldServer) this.field_70170_p).getServer().getViewDistance() * 16;
++                for (EntityPlayerMP player : (List<EntityPlayerMP>) func_184102_h().func_184102_h().func_184103_al().field_72404_b) {
++                    double deltaX = this.field_70165_t - player.field_70165_t;
++                    double deltaZ = this.field_70161_v - player.field_70161_v;
++                    double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
++                    if (distanceSquared > viewDistance * viewDistance) {
++                        double deltaLength = Math.sqrt(distanceSquared);
++                        double relativeX = player.field_70165_t + (deltaX / deltaLength) * viewDistance;
++                        double relativeZ = player.field_70161_v + (deltaZ / deltaLength) * viewDistance;
++                        this.field_70170_p.func_175669_a(1023, new BlockPos(this), 0);
++                    } else {
++                        this.field_70170_p.func_175669_a(1023, new BlockPos(this), 0);
++                    }
++                }
++                // CraftBukkit end
+             }
+ 
+             this.func_82215_s(j1);
+@@ -383,9 +410,13 @@
                                  IBlockState iblockstate = this.field_70170_p.func_180495_p(blockpos);
                                  Block block = iblockstate.func_177230_c();
  

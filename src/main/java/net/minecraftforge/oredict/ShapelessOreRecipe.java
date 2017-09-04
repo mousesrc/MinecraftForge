@@ -19,10 +19,9 @@
 
 package net.minecraftforge.oredict;
 
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.List;
+
 import net.minecraft.block.Block;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.inventory.InventoryCrafting;
@@ -32,6 +31,9 @@ import net.minecraft.item.crafting.ShapelessRecipes;
 import net.minecraft.util.NonNullList;
 import net.minecraft.world.World;
 import net.minecraftforge.common.ForgeHooks;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
+import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
 import org.bukkit.inventory.Recipe;
 
 import javax.annotation.Nonnull;
@@ -41,30 +43,34 @@ public class ShapelessOreRecipe implements IRecipe
     @Nonnull
     protected ItemStack output = ItemStack.EMPTY;
     protected NonNullList<Object> input = NonNullList.create();
-
     public ShapelessOreRecipe(Block result, Object... recipe){ this(new ItemStack(result), recipe); }
     public ShapelessOreRecipe(Item  result, Object... recipe){ this(new ItemStack(result), recipe); }
-
+    private ShapelessRecipes original;
     public ShapelessOreRecipe(@Nonnull ItemStack result, Object... recipe)
     {
+        List<ItemStack> inputs = new ArrayList<ItemStack>();
         output = result.copy();
         for (Object in : recipe)
         {
             if (in instanceof ItemStack)
             {
                 input.add(((ItemStack)in).copy());
+                inputs.add(((ItemStack)in).copy());
             }
             else if (in instanceof Item)
             {
                 input.add(new ItemStack((Item)in));
+                inputs.add(new ItemStack((Item)in));
             }
             else if (in instanceof Block)
             {
                 input.add(new ItemStack((Block)in));
+                inputs.add(new ItemStack((Block)in));
             }
             else if (in instanceof String)
             {
                 input.add(OreDictionary.getOres((String)in));
+                inputs.add(OreDictionary.getOres((String)in).get(0));
             }
             else
             {
@@ -96,6 +102,7 @@ public class ShapelessOreRecipe implements IRecipe
             }
             input.add(finalObj);
         }
+        original = recipe;
     }
 
     @Override
@@ -181,6 +188,16 @@ public class ShapelessOreRecipe implements IRecipe
 
     @Override
     public Recipe toBukkitRecipe() {
-        return null;
+        CraftItemStack result = CraftItemStack.asCraftMirror(this.output);
+        CraftShapelessRecipe recipe = new CraftShapelessRecipe(result,original);
+
+        for (Object replacements : this.getInput()) {
+            if (replacements != null) {
+                NonNullList<ItemStack> stacks = (NonNullList<ItemStack>) replacements;
+                ItemStack stack = stacks.get(0);
+                recipe.addIngredient(org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(stack.getItem()), stack.getMetadata());
+            }
+        }
+        return  recipe;
     }
 }

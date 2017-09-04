@@ -1,6 +1,14 @@
 --- ../src-base/minecraft/net/minecraft/entity/passive/EntityWolf.java
 +++ ../src-work/minecraft/net/minecraft/entity/passive/EntityWolf.java
-@@ -51,6 +51,7 @@
+@@ -28,6 +28,7 @@
+ import net.minecraft.entity.monster.AbstractSkeleton;
+ import net.minecraft.entity.monster.EntityCreeper;
+ import net.minecraft.entity.monster.EntityGhast;
++import net.minecraft.entity.monster.EntityPolarBear;
+ import net.minecraft.entity.player.EntityPlayer;
+ import net.minecraft.entity.projectile.EntityArrow;
+ import net.minecraft.init.Items;
+@@ -51,6 +52,7 @@
  import net.minecraft.world.storage.loot.LootTableList;
  import net.minecraftforge.fml.relauncher.Side;
  import net.minecraftforge.fml.relauncher.SideOnly;
@@ -8,7 +16,14 @@
  
  public class EntityWolf extends EntityTameable
  {
-@@ -98,6 +99,21 @@
+@@ -92,12 +94,27 @@
+         {
+             public boolean apply(@Nullable Entity p_apply_1_)
+             {
+-                return p_apply_1_ instanceof EntitySheep || p_apply_1_ instanceof EntityRabbit;
++                return p_apply_1_ instanceof EntityAnimal && !(p_apply_1_ instanceof EntityWaterMob && !(p_apply_1_ instanceof EntityWolf) && !(p_apply_1_ instanceof EntityPolarBear));
+             }
+         }));
          this.field_70715_bh.func_75776_a(5, new EntityAINearestAttackableTarget(this, AbstractSkeleton.class, false));
      }
  
@@ -30,7 +45,7 @@
      protected void func_110147_ax()
      {
          super.func_110147_ax();
-@@ -411,7 +427,7 @@
+@@ -411,7 +428,7 @@
                  this.field_70911_d.func_75270_a(!this.func_70906_o());
                  this.field_70703_bu = false;
                  this.field_70699_by.func_75499_g();
@@ -39,7 +54,7 @@
              }
          }
          else if (itemstack.func_77973_b() == Items.field_151103_aS && !this.func_70919_bu())
-@@ -423,7 +439,7 @@
+@@ -423,7 +440,7 @@
  
              if (!this.field_70170_p.field_72995_K)
              {

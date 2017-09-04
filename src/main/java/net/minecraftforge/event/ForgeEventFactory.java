@@ -39,8 +39,10 @@ import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.entity.passive.EntityAnimal;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayer.SleepResult;
+import net.minecraft.entity.projectile.EntityArrow;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemArrow;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResult;
@@ -123,9 +125,13 @@ import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftChunk;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.CraftBlockState;
+import org.bukkit.craftbukkit.entity.CraftItem;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.player.PlayerPickupArrowEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 
 import javax.annotation.Nonnull;
@@ -459,7 +465,7 @@ public class ForgeEventFactory
     public static int onItemPickup(EntityItem entityItem, EntityPlayer entityIn, ItemStack itemstack)
     {
         Event event = new EntityItemPickupEvent(entityIn, entityItem);
-        PlayerPickupItemEvent event1 = new PlayerPickupItemEvent((Player) entityIn.getBukkitEntity(), (org.bukkit.entity.Item) entityItem.getBukkitEntity(),0);
+        org.bukkit.event.Event event1 = new PlayerPickupItemEvent((Player) entityIn.getBukkitEntity(), (CraftItem)entityItem.getBukkitEntity(),0);
         CraftEventFactory.callEvent(event1);
         if(event.isCanceled())
         {

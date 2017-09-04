@@ -526,7 +526,39 @@
              {
                  this.field_72996_f.add(entity);
                  this.func_72923_a(entity);
-@@ -1122,9 +1335,17 @@
+@@ -1055,7 +1268,9 @@
+     {
+         if (p_184165_1_.field_70128_L)
+         {
+-            field_147491_a.warn("Tried to add entity {} but it was marked as removed already", new Object[] {EntityList.func_191301_a(p_184165_1_)});
++            /*
++            LOGGER.warn("Tried to add entity {} but it was marked as removed already", new Object[] {EntityList.getKey(entityIn)});
++            */
+             return false;
+         }
+         else
+@@ -1072,13 +1287,16 @@
+                 }
+                 else
+                 {
+-                    if (!(p_184165_1_ instanceof EntityPlayer))
++                    /*
++                    if (!(entityIn instanceof EntityPlayer))
+                     {
+-                        field_147491_a.warn("Keeping entity {} that already exists with UUID {}", new Object[] {EntityList.func_191301_a(entity), uuid.toString()});
++                        LOGGER.warn("Keeping entity {} that already exists with UUID {}", new Object[] {EntityList.getKey(entity), uuid.toString()});
+                         return false;
+                     }
+-
+-                    field_147491_a.warn("Force-added player with duplicate UUID {}", new Object[] {uuid.toString()});
++                    */
++                    /*
++                    LOGGER.warn("Force-added player with duplicate UUID {}", new Object[] {uuid.toString()});
++                    */
+                 }
+ 
+                 this.func_72973_f(entity);
+@@ -1122,9 +1340,17 @@
  
      public boolean func_72942_c(Entity p_72942_1_)
      {
@@ -545,7 +577,7 @@
              return true;
          }
          else
-@@ -1146,6 +1367,15 @@
+@@ -1146,6 +1372,15 @@
      public Explosion func_72885_a(@Nullable Entity p_72885_1_, double p_72885_2_, double p_72885_4_, double p_72885_6_, float p_72885_8_, boolean p_72885_9_, boolean p_72885_10_)
      {
          Explosion explosion = new Explosion(this, p_72885_1_, p_72885_2_, p_72885_4_, p_72885_6_, p_72885_8_, p_72885_9_, p_72885_10_);
@@ -561,7 +593,7 @@
          explosion.func_77278_a();
          explosion.func_77279_a(false);
  
-@@ -1191,7 +1421,7 @@
+@@ -1191,7 +1426,7 @@
              {
                  if (this.func_147485_a(blockeventdata))
                  {
@@ -570,7 +602,7 @@
                  }
              }
  
-@@ -1217,27 +1447,31 @@
+@@ -1217,27 +1452,31 @@
  
          if (this.field_73003_n != this.field_73004_o)
          {
@@ -608,7 +640,7 @@
          }
      }
  
-@@ -1271,15 +1505,23 @@
+@@ -1271,15 +1510,23 @@
      {
          this.func_180505_a(p_175739_1_, false, p_175739_2_, p_175739_4_, p_175739_6_, p_175739_8_, p_175739_9_, p_175739_11_, p_175739_13_, p_175739_15_, p_175739_17_);
      }
@@ -635,7 +667,7 @@
          }
      }
  
-@@ -1322,6 +1564,11 @@
+@@ -1322,6 +1569,11 @@
          return this.func_72863_F().func_180513_a(this, p_190528_1_, p_190528_2_, p_190528_3_);
      }
  

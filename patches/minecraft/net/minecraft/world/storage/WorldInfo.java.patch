@@ -1,6 +1,6 @@
 --- ../src-base/minecraft/net/minecraft/world/storage/WorldInfo.java
 +++ ../src-work/minecraft/net/minecraft/world/storage/WorldInfo.java
-@@ -14,14 +14,11 @@
+@@ -14,14 +14,12 @@
  import net.minecraft.util.datafix.IDataFixer;
  import net.minecraft.util.datafix.IDataWalker;
  import net.minecraft.util.math.BlockPos;
@@ -14,11 +14,12 @@
  import net.minecraftforge.fml.relauncher.Side;
  import net.minecraftforge.fml.relauncher.SideOnly;
 +import org.bukkit.Bukkit;
++import org.bukkit.event.weather.ThunderChangeEvent;
 +import org.bukkit.event.weather.WeatherChangeEvent;
  
  public class WorldInfo
  {
-@@ -64,8 +61,10 @@
+@@ -64,8 +62,10 @@
      private double field_176153_H = 0.2D;
      private int field_176154_I = 5;
      private int field_176155_J = 15;
@@ -30,7 +31,7 @@
  
      protected WorldInfo()
      {
-@@ -252,7 +251,7 @@
+@@ -252,7 +252,7 @@
  
              for (String s : nbttagcompound1.func_150296_c())
              {
@@ -39,7 +40,7 @@
              }
          }
      }
-@@ -335,6 +334,7 @@
+@@ -335,6 +335,7 @@
          nbttagcompound.func_74757_a("Snapshot", false);
          p_76064_1_.func_74782_a("Version", nbttagcompound);
          p_76064_1_.func_74768_a("DataVersion", 922);
@@ -47,7 +48,7 @@
          p_76064_1_.func_74772_a("RandomSeed", this.field_76100_a);
          p_76064_1_.func_74778_a("generatorName", this.field_76098_b.func_77127_a());
          p_76064_1_.func_74768_a("generatorVersion", this.field_76098_b.func_77131_c());
-@@ -377,9 +377,10 @@
+@@ -377,9 +378,10 @@
          p_76064_1_.func_74782_a("GameRules", this.field_82577_x.func_82770_a());
          NBTTagCompound nbttagcompound1 = new NBTTagCompound();
  
@@ -60,7 +61,28 @@
          }
  
          p_76064_1_.func_74782_a("DimensionData", nbttagcompound1);
-@@ -529,6 +530,19 @@
+@@ -509,7 +511,19 @@
+ 
+     public void func_76069_a(boolean p_76069_1_)
+     {
+-        this.field_76102_o = p_76069_1_;
++
++        // CraftBukkit start
++        org.bukkit.World world = Bukkit.getWorld(func_76065_j());
++        if (world != null) {
++            ThunderChangeEvent thunder = new ThunderChangeEvent(world, p_76069_1_);
++            Bukkit.getServer().getPluginManager().callEvent(thunder);
++            if (thunder.isCancelled()) {
++                return;
++            }
++
++            func_76090_f(0); // Will force a time reset
++        }
++        // CraftBukkit endthis.thundering = thunderingIn;
+     }
+ 
+     public int func_76071_n()
+@@ -529,6 +543,19 @@
  
      public void func_76084_b(boolean p_76084_1_)
      {
@@ -80,7 +102,7 @@
          this.field_76104_m = p_76084_1_;
      }
  
-@@ -709,6 +723,7 @@
+@@ -709,6 +736,7 @@
  
      public void func_176144_a(EnumDifficulty p_176144_1_)
      {
@@ -88,7 +110,7 @@
          this.field_176158_z = p_176144_1_;
      }
  
-@@ -807,17 +822,49 @@
+@@ -807,17 +835,49 @@
          });
      }
  
@@ -140,7 +162,7 @@
      @SideOnly(Side.CLIENT)
      public int func_186344_K()
      {
-@@ -835,4 +882,11 @@
+@@ -835,4 +895,11 @@
      {
          return this.field_186349_b;
      }

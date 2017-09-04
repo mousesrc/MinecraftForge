@@ -50,6 +50,7 @@ import net.minecraft.inventory.Container;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.*;
 import net.minecraft.network.play.server.SPacketBlockChange;
+import net.minecraft.stats.AchievementList;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumFacing;
@@ -271,6 +272,264 @@ public class EventBus implements IEventExceptionHandler
         org.bukkit.event.Event thisevent = null;
         if(event instanceof net.minecraftforge.event.entity.player.PlayerEvent)
         {
+            if (event instanceof PlayerWakeUpEvent) {
+                EntityPlayer mp = ((PlayerWakeUpEvent) event).getEntityPlayer();
+                // CraftBukkit start - fire PlayerBedLeaveEvent
+                if (mp.getBukkitEntity() instanceof Player) {
+                    Player player = (Player) mp.getBukkitEntity();
+
+                    org.bukkit.block.Block bed;
+                    BlockPos blockposition = mp.bedLocation;
+                    if (blockposition != null) {
+                        bed = player.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
+                    } else {
+                        bed = player.getWorld().getBlockAt(player.getLocation());
+                    }
+                    thisevent = new PlayerBedLeaveEvent(player, bed);
+                }
+                // CraftBukkit end
+            }
+            else if (event instanceof PlayerInteractEvent.EntityInteractSpecific) {
+                Vector vec = new Vector();
+                Vec3d v = ((PlayerInteractEvent.EntityInteractSpecific) event).getTarget().getPositionVector();
+                vec.setX(v.xCoord);
+                vec.setY(v.yCoord);
+                vec.setZ(v.zCoord);
+                thisevent = new org.bukkit.event.player.PlayerInteractAtEntityEvent((Player) ((PlayerInteractEvent.EntityInteractSpecific) event).getEntityPlayer().getBukkitEntity(),((PlayerInteractEvent.EntityInteractSpecific) event).getTarget().getBukkitEntity(),vec);
+            }
+            else if (event instanceof PlayerInteractEvent.RightClickBlock) {
+                // CraftBukkit start
+                EntityPlayer player = ((PlayerInteractEvent.RightClickBlock) event).getEntityPlayer();
+                Vec3d hitpos = ((PlayerInteractEvent.RightClickBlock) event).getHitVec();
+                if(hitpos == null)
+                {
+                    hitpos = new Vec3d(player.posX,player.posY,player.posZ);
+                }
+                BlockPos blockPos = new BlockPos(player.posX + hitpos.xCoord, player.posY + hitpos.yCoord, player.posZ + hitpos.zCoord);
+                EnumFacing direction = ((PlayerInteractEvent.RightClickBlock) event).getFace();
+                net.minecraft.item.ItemStack stack = ((PlayerInteractEvent.RightClickBlock) event).getItemStack();
+                thisevent = CraftEventFactory.callPlayerInteractEvent(player, Action.RIGHT_CLICK_BLOCK, blockPos, direction, player.inventory.getCurrentItem(), EnumHand.MAIN_HAND);
+                bukkit_called = true;
+                //CraftBukkit end
+            }
+            else if(event instanceof PlayerInteractEvent.RightClickEmpty)
+            {
+                // CraftBukkit start
+                EntityPlayer player = ((PlayerInteractEvent.RightClickBlock) event).getEntityPlayer();
+                Vec3d hitpos = ((PlayerInteractEvent.RightClickBlock) event).getHitVec();
+                BlockPos blockPos = new BlockPos(player.posX + hitpos.xCoord, player.posY + hitpos.yCoord, player.posZ + hitpos.zCoord);
+                EnumFacing direction = ((PlayerInteractEvent.RightClickBlock) event).getFace();
+                net.minecraft.item.ItemStack stack = ((PlayerInteractEvent.RightClickBlock) event).getItemStack();
+                thisevent = CraftEventFactory.callPlayerInteractEvent(player, Action.RIGHT_CLICK_AIR, blockPos, direction, player.inventory.getCurrentItem(), EnumHand.MAIN_HAND);
+                bukkit_called = true;
+                //CraftBukkit end
+            }
+            else if (event instanceof PlayerInteractEvent.EntityInteract) {
+                Vector vec = new Vector();
+                Vec3d v = ((PlayerInteractEvent.EntityInteract) event).getTarget().getPositionVector();
+                vec.setX(v.xCoord);
+                vec.setY(v.yCoord);
+                vec.setZ(v.zCoord);
+                thisevent = new org.bukkit.event.player.PlayerInteractAtEntityEvent((Player) ((PlayerInteractEvent.EntityInteract) event).getEntityPlayer().getBukkitEntity(),((PlayerInteractEvent.EntityInteract) event).getTarget().getBukkitEntity(),vec);
+            }
+            else if(event instanceof PlayerInteractEvent.LeftClickEmpty)
+            {
+                // CraftBukkit start
+                EntityPlayer player = ((PlayerInteractEvent.LeftClickBlock) event).getEntityPlayer();
+                Vec3d hitpos = ((PlayerInteractEvent.LeftClickBlock) event).getHitVec();
+                BlockPos blockPos = new BlockPos(player.posX + hitpos.xCoord, player.posY + hitpos.yCoord, player.posZ + hitpos.zCoord);
+                EnumFacing direction = ((PlayerInteractEvent.LeftClickBlock) event).getFace();
+                net.minecraft.item.ItemStack stack = ((PlayerInteractEvent.LeftClickBlock) event).getItemStack();
+                thisevent = CraftEventFactory.callPlayerInteractEvent(player, Action.LEFT_CLICK_AIR, blockPos, direction, player.inventory.getCurrentItem(), EnumHand.MAIN_HAND);
+                bukkit_called = true;
+                //CraftBukkit end
+
+            }
+            else if (event instanceof PlayerInteractEvent.LeftClickBlock) {
+                // CraftBukkit start
+                EntityPlayer player = ((PlayerInteractEvent.LeftClickBlock) event).getEntityPlayer();
+                Vec3d hitpos = ((PlayerInteractEvent.LeftClickBlock) event).getHitVec();
+                BlockPos blockPos = new BlockPos(player.posX + hitpos.xCoord, player.posY + hitpos.yCoord, player.posZ + hitpos.zCoord);
+                EnumFacing direction = ((PlayerInteractEvent.LeftClickBlock) event).getFace();
+                net.minecraft.item.ItemStack stack = ((PlayerInteractEvent.LeftClickBlock) event).getItemStack();
+                thisevent = CraftEventFactory.callPlayerInteractEvent(player, Action.LEFT_CLICK_BLOCK, blockPos, direction, player.inventory.getCurrentItem(), EnumHand.MAIN_HAND);
+                bukkit_called = true;
+                //CraftBukkit end
+            }
+            else if(event instanceof PlayerInteractEvent.RightClickItem)
+            {
+
+            }
+            else if (event instanceof AchievementEvent) {
+                net.minecraft.stats.Achievement thisAchievement = ((AchievementEvent) event).getAchievement();
+                Achievement bukkit = null;
+                if(thisAchievement == AchievementList.ACQUIRE_IRON)
+                {
+                    bukkit = Achievement.ACQUIRE_IRON;
+                }
+                else if(thisAchievement == AchievementList.BAKE_CAKE)
+                {
+                    bukkit = Achievement.BAKE_CAKE;
+                }
+                else if(thisAchievement == AchievementList.BLAZE_ROD)
+                {
+                    bukkit = Achievement.GET_BLAZE_ROD;
+                }
+                else if(thisAchievement == AchievementList.BOOKCASE)
+                {
+                    bukkit = Achievement.BOOKCASE;
+                }
+                else if(thisAchievement == AchievementList.BREED_COW)
+                {
+                    bukkit = Achievement.BREED_COW;
+                }
+                else if(thisAchievement == AchievementList.BUILD_BETTER_PICKAXE)
+                {
+                    bukkit = Achievement.BUILD_BETTER_PICKAXE;
+                }
+                else if(thisAchievement == AchievementList.BUILD_FURNACE)
+                {
+                    bukkit = Achievement.BUILD_FURNACE;
+                }
+                else if(thisAchievement == AchievementList.BUILD_HOE)
+                {
+                    bukkit = Achievement.BUILD_HOE;
+                }
+                else if(thisAchievement == AchievementList.BUILD_PICKAXE)
+                {
+                    bukkit = Achievement.BUILD_PICKAXE;
+                }
+                else if(thisAchievement == AchievementList.BUILD_WORK_BENCH)
+                {
+                    bukkit = Achievement.BUILD_WORKBENCH;
+                }
+                else if(thisAchievement == AchievementList.COOK_FISH)
+                {
+                    bukkit = Achievement.COOK_FISH;
+                }
+                else if(thisAchievement == AchievementList.DIAMONDS)
+                {
+                    bukkit = Achievement.GET_DIAMONDS;
+                }
+                else if(thisAchievement == AchievementList.DIAMONDS_TO_YOU)
+                {
+                    bukkit = Achievement.DIAMONDS_TO_YOU;
+                }
+                else if(thisAchievement == AchievementList.EXPLORE_ALL_BIOMES)
+                {
+                    bukkit = Achievement.EXPLORE_ALL_BIOMES;
+                }
+                else if(thisAchievement == AchievementList.FLY_PIG)
+                {
+                    bukkit = Achievement.FLY_PIG;
+                }
+                else if(thisAchievement == AchievementList.ENCHANTMENTS)
+                {
+                    bukkit = Achievement.ENCHANTMENTS;
+                }
+                else if(thisAchievement == AchievementList.BUILD_SWORD)
+                {
+                    bukkit = Achievement.BUILD_SWORD;
+                }
+                else if(thisAchievement == AchievementList.FULL_BEACON)
+                {
+                    bukkit = Achievement.FULL_BEACON;
+                }
+                else if(thisAchievement == AchievementList.KILL_ENEMY)
+                {
+                    bukkit = Achievement.KILL_ENEMY;
+                }
+                else if(thisAchievement == AchievementList.KILL_WITHER)
+                {
+                    bukkit = Achievement.KILL_WITHER;
+                }
+                else if(thisAchievement == AchievementList.KILL_COW)
+                {
+                    bukkit = Achievement.KILL_COW;
+                }
+                else if(thisAchievement == AchievementList.OVERKILL)
+                {
+                    bukkit = Achievement.OVERKILL;
+                }
+                else if(thisAchievement == AchievementList.PORTAL)
+                {
+                    bukkit = Achievement.NETHER_PORTAL;
+                }
+                else if(thisAchievement == AchievementList.THE_END)
+                {
+                    bukkit = Achievement.END_PORTAL;
+                }
+                else if(thisAchievement == AchievementList.THE_END2)
+                {
+                    bukkit = Achievement.THE_END;
+                }
+                else if(thisAchievement == AchievementList.GHAST)
+                {
+                    bukkit = Achievement.GHAST_RETURN;
+                }
+                else if(thisAchievement == AchievementList.SNIPE_SKELETON)
+                {
+                    bukkit = Achievement.SNIPE_SKELETON;
+                }
+                else if(thisAchievement == AchievementList.POTION)
+                {
+                    bukkit = Achievement.BREW_POTION;
+                }
+                else if(thisAchievement == AchievementList.MAKE_BREAD)
+                {
+                    bukkit = Achievement.MAKE_BREAD;
+                }
+                else if(thisAchievement == AchievementList.MINE_WOOD)
+                {
+                    bukkit = Achievement.MINE_WOOD;
+                }
+                else if(thisAchievement == AchievementList.ON_A_RAIL)
+                {
+                    bukkit = Achievement.ON_A_RAIL;
+                }
+                else if(thisAchievement == AchievementList.OPEN_INVENTORY)
+                {
+                    bukkit = Achievement.OPEN_INVENTORY;
+                }
+                else if(thisAchievement == AchievementList.OVERPOWERED)
+                {
+                    bukkit = Achievement.OVERPOWERED;
+                }
+                else if(thisAchievement == AchievementList.SPAWN_WITHER)
+                {
+                    bukkit = Achievement.SPAWN_WITHER;
+                }
+                else
+                {
+                    //TODO: GIVE EXTRA ENUM OF MOD_ACHIEVEMENT
+                }
+                thisevent = new PlayerAchievementAwardedEvent((Player) ((AchievementEvent) event).getEntityPlayer().getBukkitEntity(), bukkit);
+            } else if (event instanceof PlayerSleepInBedEvent) {
+                EntityPlayer mp = ((PlayerSleepInBedEvent) event).getEntityPlayer();
+                BlockPos bedLocation = ((PlayerSleepInBedEvent) event).getPos();
+                // CraftBukkit start - fire PlayerBedEnterEvent
+                if (mp.getBukkitEntity() instanceof Player) {
+                    Player player = (Player) mp.getBukkitEntity();
+                    org.bukkit.block.Block mybed = player.getWorld().getBlockAt(bedLocation.getX(), bedLocation.getY(), bedLocation.getZ());
+
+                    thisevent = new PlayerBedEnterEvent(player, mybed);
+                }
+                // CraftBukkit end
+
+            }
+            else if (event instanceof PlayerSetSpawnEvent) {
+                World world = ((PlayerSetSpawnEvent) event).getEntityPlayer().getEntityWorld();
+                BlockPos newspawn = ((PlayerSetSpawnEvent) event).getNewSpawn();
+                thisevent = new SpawnChangeEvent(world.getWorld(),new Location(world.getWorld(),newspawn.getX(),newspawn.getY(),newspawn.getZ()));
+
+            }
+            else if (event instanceof PlayerDestroyItemEvent) {
+                CraftEventFactory.callPlayerItemBreakEvent(((PlayerDestroyItemEvent) event).getEntityPlayer(),((PlayerDestroyItemEvent) event).getOriginal());
+                bukkit_called = true;
+            }
+        }
+        else if(event instanceof net.minecraftforge.fml.common.gameevent.PlayerEvent)
+        {
             if(event instanceof net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerLoggedInEvent)
             {
                 net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerLoggedInEvent event1 = (net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerLoggedInEvent) event;
@@ -292,39 +551,15 @@ public class EventBus implements IEventExceptionHandler
                 boolean isBedspawn = p.getBedLocation(p.getServerWorld().provider.getDimension()) != null;
                 thisevent = new PlayerRespawnEvent((Player) p.getBukkitEntity(),loc,isBedspawn);
             }
-            /* moven to forgeevent factory
-            else if(event instanceof net.minecraftforge.fml.common.gameevent.PlayerEvent.ItemPickupEvent)
-            {
-                net.minecraftforge.fml.common.gameevent.PlayerEvent.ItemPickupEvent event1 = (net.minecraftforge.fml.common.gameevent.PlayerEvent.ItemPickupEvent) event;
-                thisevent = new PlayerPickupItemEvent((Player) event1.player.getBukkitEntity(),((Item)event1.pickedUp.getBukkitEntity()),0);
-            }*/
             else if(event instanceof net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerChangedDimensionEvent)
             {
                 net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerChangedDimensionEvent event1 = (net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerChangedDimensionEvent) event;
                 thisevent = new PlayerChangedWorldEvent((Player) event1.player.getBukkitEntity(), DimensionManager.getWorld(event1.fromDim).getWorld());
-            }/*
-            else if(event instanceof net.minecraftforge.fml.common.gameevent.PlayerEvent.ItemSmeltedEvent)
-            {
-                net.minecraftforge.fml.common.gameevent.PlayerEvent.ItemSmeltedEvent event1 = (net.minecraftforge.fml.common.gameevent.PlayerEvent.ItemSmeltedEvent) event;
-                event1.player
-                thisevent = new FurnaceSmeltEvent()
             }
-            *///move to TileEntityFurnace
-            /*
-            else if(event instanceof net.minecraftforge.fml.common.gameevent.PlayerEvent.ItemCraftedEvent)
-            {
-                CraftItemEvent()
-            }*/// won't be here;
         }
         else if(event instanceof BlockEvent)
         {
-            if(event instanceof BlockEvent.PlaceEvent)
-            {
-                /*
-
-                *///Moving into ForgeEventFactory
-            }
-            else if(event instanceof BlockEvent.BreakEvent)
+            if(event instanceof BlockEvent.BreakEvent)
             {
                 BlockEvent.BreakEvent event1 = (BlockEvent.BreakEvent) event;
                 thisevent = new BlockBreakEvent(event1.getWorld().getWorld().getBlockAt(event1.getPos().getX(),event1.getPos().getY(),event1.getPos().getZ()), (Player) event1.getPlayer().getBukkitEntity());
@@ -353,6 +588,7 @@ public class EventBus implements IEventExceptionHandler
                // event.
                // thisevent = new BlockGrowEvent()
             }
+
             //NeighborNotigy
             //NoteBlock
             //CreateFluidSourceEvent
@@ -435,169 +671,14 @@ public class EventBus implements IEventExceptionHandler
             } else if (event instanceof EntityJoinWorldEvent) {
 
             } else if (event instanceof LivingEvent) {
-                if (event instanceof PlayerEvent) {
-                    if (event instanceof PlayerContainerEvent) {
-                            if(event instanceof PlayerContainerEvent.Open)
-                            {
-                               //IN EntityPlayerMP
-                            }
-                    } else if (event instanceof PlayerWakeUpEvent) {
-                        EntityPlayer mp = ((PlayerWakeUpEvent) event).getEntityPlayer();
-                        // CraftBukkit start - fire PlayerBedLeaveEvent
-                        if (mp.getBukkitEntity() instanceof Player) {
-                            Player player = (Player) mp.getBukkitEntity();
-
-                            org.bukkit.block.Block bed;
-                            BlockPos blockposition = mp.bedLocation;
-                            if (blockposition != null) {
-                                bed = player.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
-                            } else {
-                                bed = player.getWorld().getBlockAt(player.getLocation());
-                            }
-                            thisevent = new PlayerBedLeaveEvent(player, bed);
-                        }
-                        // CraftBukkit end
-
-                    } else if (event instanceof SleepingLocationCheckEvent) {
-
-                    } else if (event instanceof PlayerEvent.BreakSpeed) {
-
-                    } else if (event instanceof ArrowLooseEvent) {
-                       // CraftEventFactory.callProjectileLaunchEvent(((ArrowLooseEvent) event).getEntity());
-                    } else if (event instanceof UseHoeEvent) {
-
-                    } else if (event instanceof PlayerEvent.Clone) {
-
-                    } else if (event instanceof AnvilRepairEvent) {
-
-                    } else if (event instanceof AchievementEvent) {
-                       thisevent = new PlayerAchievementAwardedEvent((Player) ((AchievementEvent) event).getEntityPlayer().getBukkitEntity(), Achievement.valueOf(((AchievementEvent) event).getAchievement().getStatName().getUnformattedText()));
-
-                    } else if (event instanceof PlayerSleepInBedEvent) {
-                        EntityPlayer mp = ((PlayerSleepInBedEvent) event).getEntityPlayer();
-                        BlockPos bedLocation = ((PlayerSleepInBedEvent) event).getPos();
-                        // CraftBukkit start - fire PlayerBedEnterEvent
-                        if (mp.getBukkitEntity() instanceof Player) {
-                            Player player = (Player) mp.getBukkitEntity();
-                            org.bukkit.block.Block mybed = player.getWorld().getBlockAt(bedLocation.getX(), bedLocation.getY(), bedLocation.getZ());
-
-                            thisevent = new PlayerBedEnterEvent(player, mybed);
-                        }
-                        // CraftBukkit end
-
-                    } else if (event instanceof PlayerEvent.StopTracking) {
-
-                    } else if (event instanceof PlayerDestroyItemEvent) {
-                        CraftEventFactory.callPlayerItemBreakEvent(((PlayerDestroyItemEvent) event).getEntityPlayer(),((PlayerDestroyItemEvent) event).getOriginal());
-                        bukkit_called = true;
-                    } else if (event instanceof FillBucketEvent) {
-                        //CraftEventFactory.callPlayerBucketFillEvent()
-                       //ItemBucket
-
-                    } else if (event instanceof BonemealEvent) {
-
-                    } else if (event instanceof PlayerInteractEvent) {
-                        if (event instanceof PlayerInteractEvent.EntityInteractSpecific) {
-                            Vector vec = new Vector();
-                            Vec3d v = ((PlayerInteractEvent.EntityInteractSpecific) event).getTarget().getPositionVector();
-                            vec.setX(v.xCoord);
-                            vec.setY(v.yCoord);
-                            vec.setZ(v.zCoord);
-                            thisevent = new org.bukkit.event.player.PlayerInteractAtEntityEvent((Player) ((PlayerInteractEvent.EntityInteractSpecific) event).getEntityPlayer().getBukkitEntity(),((PlayerInteractEvent.EntityInteractSpecific) event).getTarget().getBukkitEntity(),vec);
-                        }
-                        else if (event instanceof PlayerInteractEvent.RightClickBlock) {
-                            // CraftBukkit start
-                            EntityPlayer player = ((PlayerInteractEvent.RightClickBlock) event).getEntityPlayer();
-                            Vec3d hitpos = ((PlayerInteractEvent.RightClickBlock) event).getHitVec();
-                            BlockPos blockPos = new BlockPos(player.posX + hitpos.xCoord, player.posY + hitpos.yCoord, player.posZ + hitpos.zCoord);
-                            EnumFacing direction = ((PlayerInteractEvent.RightClickBlock) event).getFace();
-                            net.minecraft.item.ItemStack stack = ((PlayerInteractEvent.RightClickBlock) event).getItemStack();
-                            thisevent = CraftEventFactory.callPlayerInteractEvent(player, Action.RIGHT_CLICK_BLOCK, blockPos, direction, player.inventory.getCurrentItem(), EnumHand.MAIN_HAND);
-                            bukkit_called = true;
-                            //CraftBukkit end
-                        }
-                        else if(event instanceof PlayerInteractEvent.RightClickEmpty)
-                        {
-                            // CraftBukkit start
-                            EntityPlayer player = ((PlayerInteractEvent.RightClickBlock) event).getEntityPlayer();
-                            Vec3d hitpos = ((PlayerInteractEvent.RightClickBlock) event).getHitVec();
-                            BlockPos blockPos = new BlockPos(player.posX + hitpos.xCoord, player.posY + hitpos.yCoord, player.posZ + hitpos.zCoord);
-                            EnumFacing direction = ((PlayerInteractEvent.RightClickBlock) event).getFace();
-                            net.minecraft.item.ItemStack stack = ((PlayerInteractEvent.RightClickBlock) event).getItemStack();
-                            thisevent = CraftEventFactory.callPlayerInteractEvent(player, Action.RIGHT_CLICK_AIR, blockPos, direction, player.inventory.getCurrentItem(), EnumHand.MAIN_HAND);
-                            bukkit_called = true;
-                            //CraftBukkit end
-                        }
-                        else if (event instanceof PlayerInteractEvent.EntityInteract) {
-                            Vector vec = new Vector();
-                            Vec3d v = ((PlayerInteractEvent.EntityInteractSpecific) event).getTarget().getPositionVector();
-                            vec.setX(v.xCoord);
-                            vec.setY(v.yCoord);
-                            vec.setZ(v.zCoord);
-                            thisevent = new org.bukkit.event.player.PlayerInteractAtEntityEvent((Player) ((PlayerInteractEvent.EntityInteractSpecific) event).getEntityPlayer().getBukkitEntity(),((PlayerInteractEvent.EntityInteractSpecific) event).getTarget().getBukkitEntity(),vec);
-                        }
-                        else if(event instanceof PlayerInteractEvent.LeftClickEmpty)
-                        {
-                            // CraftBukkit start
-                            EntityPlayer player = ((PlayerInteractEvent.LeftClickBlock) event).getEntityPlayer();
-                            Vec3d hitpos = ((PlayerInteractEvent.LeftClickBlock) event).getHitVec();
-                            BlockPos blockPos = new BlockPos(player.posX + hitpos.xCoord, player.posY + hitpos.yCoord, player.posZ + hitpos.zCoord);
-                            EnumFacing direction = ((PlayerInteractEvent.LeftClickBlock) event).getFace();
-                            net.minecraft.item.ItemStack stack = ((PlayerInteractEvent.LeftClickBlock) event).getItemStack();
-                            thisevent = CraftEventFactory.callPlayerInteractEvent(player, Action.LEFT_CLICK_AIR, blockPos, direction, player.inventory.getCurrentItem(), EnumHand.MAIN_HAND);
-                            bukkit_called = true;
-                            //CraftBukkit end
-
-                        }
-                        else if (event instanceof PlayerInteractEvent.LeftClickBlock) {
-                            // CraftBukkit start
-                            EntityPlayer player = ((PlayerInteractEvent.LeftClickBlock) event).getEntityPlayer();
-                            Vec3d hitpos = ((PlayerInteractEvent.LeftClickBlock) event).getHitVec();
-                            BlockPos blockPos = new BlockPos(player.posX + hitpos.xCoord, player.posY + hitpos.yCoord, player.posZ + hitpos.zCoord);
-                            EnumFacing direction = ((PlayerInteractEvent.LeftClickBlock) event).getFace();
-                            net.minecraft.item.ItemStack stack = ((PlayerInteractEvent.LeftClickBlock) event).getItemStack();
-                            thisevent = CraftEventFactory.callPlayerInteractEvent(player, Action.LEFT_CLICK_BLOCK, blockPos, direction, player.inventory.getCurrentItem(), EnumHand.MAIN_HAND);
-                            bukkit_called = true;
-                            //CraftBukkit end
-                        }
-                        else if(event instanceof PlayerInteractEvent.RightClickItem)
-                        {
-
-                        }
-
-                    } else if (event instanceof EntityItemPickupEvent) {
-                       //fired before ,duplicate
-
-                    } else if (event instanceof PlayerEvent.HarvestCheck) {
-
-                    } else if (event instanceof PlayerSetSpawnEvent) {
-                        World world = ((PlayerSetSpawnEvent) event).getEntityPlayer().getEntityWorld();
-                        BlockPos newspawn = ((PlayerSetSpawnEvent) event).getNewSpawn();
-                        thisevent = new SpawnChangeEvent(world.getWorld(),new Location(world.getWorld(),newspawn.getX(),newspawn.getY(),newspawn.getZ()));
-
-                    } else if (event instanceof PlayerFlyableFallEvent) {
-                       //
-
-                    } else if (event instanceof ItemFishedEvent) {
-                        //in fishhook
-                    } else if (event instanceof PlayerEvent.StartTracking) {
-
-                    } else if (event instanceof PlayerEvent.Visibility) {
-
-                    } else if (event instanceof PlayerPickupXpEvent) {
-
-                    } else if (event instanceof ArrowNockEvent) {
-
-                    } else if (event instanceof LivingHurtEvent) {
-                        double amount = ((LivingHurtEvent) event).getAmount();
-                        DamageSource source = ((LivingHurtEvent) event).getSource();
-                        Entity src = ((LivingHurtEvent) event).getEntityLiving();
-                        EntityDamageEvent.DamageCause cause = null;
-                        thisevent = new EntityDamageEvent(src.getBukkitEntity(), DamageSource.asBukkit(source),amount);
-                    } else if (event instanceof PlayerBrewedPotionEvent) {
-
-                    }
-                } else if (event instanceof LivingHealEvent) {
+                if (event instanceof LivingHurtEvent) {
+                    double amount = ((LivingHurtEvent) event).getAmount();
+                    DamageSource source = ((LivingHurtEvent) event).getSource();
+                    Entity src = ((LivingHurtEvent) event).getEntityLiving();
+                    EntityDamageEvent.DamageCause cause = null;
+                    thisevent = new EntityDamageEvent(src.getBukkitEntity(), DamageSource.asBukkit(source),amount);
+                }
+                else if (event instanceof LivingHealEvent) {
                     float amount = ((LivingHealEvent) event).getAmount();
                     EntityLivingBase e = ((LivingHealEvent) event).getEntityLiving();
                     thisevent = new EntityRegainHealthEvent(e.getBukkitEntity(),amount, EntityRegainHealthEvent.RegainReason.REGEN);

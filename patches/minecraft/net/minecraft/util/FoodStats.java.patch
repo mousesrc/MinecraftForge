@@ -1,0 +1,53 @@
+--- ../src-base/minecraft/net/minecraft/util/FoodStats.java
++++ ../src-work/minecraft/net/minecraft/util/FoodStats.java
+@@ -1,20 +1,29 @@
+ package net.minecraft.util;
+ 
+ import net.minecraft.entity.player.EntityPlayer;
++import net.minecraft.entity.player.EntityPlayerMP;
+ import net.minecraft.item.ItemFood;
+ import net.minecraft.item.ItemStack;
+ import net.minecraft.nbt.NBTTagCompound;
+ import net.minecraft.world.EnumDifficulty;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
++import org.apache.commons.lang.Validate;
+ 
+ public class FoodStats
+ {
++    private final EntityPlayer entityhuman;
+     public int field_75127_a = 20;
+     public float field_75125_b = 5.0F;
+     public float field_75126_c;
+     private int field_75123_d;
+     private int field_75124_e = 20;
++    // CraftBukkit start - added EntityHuman constructor
++    public FoodStats(EntityPlayer entityhuman) {
++        Validate.notNull(entityhuman);
++        this.entityhuman = entityhuman;
++    }
++    // CraftBukkit end
+ 
+     public void func_75122_a(int p_75122_1_, float p_75122_2_)
+     {
+@@ -22,9 +31,17 @@
+         this.field_75125_b = Math.min(this.field_75125_b + (float)p_75122_1_ * p_75122_2_ * 2.0F, (float)this.field_75127_a);
+     }
+ 
+-    public void func_151686_a(ItemFood p_151686_1_, ItemStack p_151686_2_)
+-    {
+-        this.func_75122_a(p_151686_1_.func_150905_g(p_151686_2_), p_151686_1_.func_150906_h(p_151686_2_));
++    public void func_151686_a(ItemFood p_151686_1_, ItemStack p_151686_2_) {
++        // CraftBukkit start
++        int oldFoodLevel = field_75127_a;
++
++        org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(entityhuman, p_151686_1_.func_150905_g(p_151686_2_) + oldFoodLevel);
++
++        if (!event.isCancelled()) {
++            this.func_75122_a(event.getFoodLevel() - oldFoodLevel, p_151686_1_.func_150906_h(p_151686_2_));
++        }
++
++        // CraftBukkit end
+     }
+ 
+     public void func_75118_a(EntityPlayer p_75118_1_)

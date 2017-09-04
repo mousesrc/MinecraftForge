@@ -6,6 +6,9 @@ import java.util.Collections;
 import java.util.List;
 
 
+import net.minecraft.inventory.IInventory;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraftforge.MCPCRevive.inventory.CraftCustomInventoryContainer;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -16,6 +19,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.craftbukkit.CraftChunk;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.ItemStack;
@@ -39,12 +43,18 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.EnumSkyBlock;
 
+import static net.minecraft.world.biome.Biome.REGISTRY;
+
 public class CraftBlock implements Block {
     private final CraftChunk chunk;
     private final int x;
     private final int y;
     private final int z;
-
+    // Cauldron start - add support for custom biomes
+    //MCPCRevive : adapt to 1.11.2(OK ,looks unnecessary)
+    // private static final Biome[] BIOME_MAPPING = new Biome[REGISTRY.getKeys().size()];
+    // private static final net.minecraft.world.biome.Biome[] BIOMEBASE_MAPPING = new net.minecraft.world.biome.Biome[REGISTRY.getKeys().size()];
+    // Cauldron end
     public CraftBlock(CraftChunk chunk, int x, int y, int z) {
         this.x = x;
         this.y = y;
@@ -277,7 +287,20 @@ public class CraftBlock implements Block {
 
     public BlockState getState() {
         Material material = getType();
-
+        // Cauldron start - if null, check for TE that implements IInventory
+        if (material == null)
+        {
+            TileEntity te = ((CraftWorld)this.getWorld()).getHandle().getTileEntity(new BlockPos(this.getX(), this.getY(), this.getZ()));
+            if (te != null && te instanceof IInventory)
+            {
+                // In order to allow plugins to properly grab the container location, we must pass a class that extends CraftBlockState and implements InventoryHolder.
+                // Note: This will be returned when TileEntity.getOwner() is called
+                return new CraftCustomInventoryContainer(this);
+            }
+            // pass default state
+            return new CraftBlockState(this);
+        }
+        // Cauldron end
         switch (material) {
         case SIGN:
         case SIGN_POST:
@@ -349,6 +372,16 @@ public class CraftBlock implements Block {
         case REDSTONE_COMPARATOR_ON:
             return new CraftComparator(this);
         default:
+            // Cauldron start
+            TileEntity te = ((CraftWorld)this.getWorld()).getHandle().getTileEntity(new BlockPos(this.getX(), this.getY(), this.getZ()));
+            if (te != null && te instanceof IInventory)
+            {
+                // In order to allow plugins to properly grab the container location, we must pass a class that extends CraftBlockState and implements InventoryHolder.
+                // Note: This will be returned when TileEntity.getOwner() is called
+                return new CraftCustomInventoryContainer(this);
+            }
+            // pass default state
+            // Cauldron end
             return new CraftBlockState(this);
         }
     }
@@ -365,7 +398,7 @@ public class CraftBlock implements Block {
         if (base == null) {
             return null;
         }
-        return Biome.valueOf(net.minecraft.world.biome.Biome.REGISTRY.getNameForObject(base).getResourcePath().toUpperCase(java.util.Locale.ENGLISH));
+        return Biome.valueOf(REGISTRY.getNameForObject(base).getResourcePath().toUpperCase(java.util.Locale.ENGLISH));
     }
 
     public static net.minecraft.world.biome.Biome biomeToBiomeBase(Biome bio) {
@@ -373,7 +406,7 @@ public class CraftBlock implements Block {
             return null;
         }
 
-        return net.minecraft.world.biome.Biome.REGISTRY.getObject(new ResourceLocation(bio.name().toLowerCase(java.util.Locale.ENGLISH)));
+        return REGISTRY.getObject(new ResourceLocation(bio.name().toLowerCase(java.util.Locale.ENGLISH)));
     }
 
     public double getTemperature() {
@@ -439,7 +472,12 @@ public class CraftBlock implements Block {
     }
 
     public boolean isEmpty() {
-        return getType() == Material.AIR;
+        // Cauldron start - support custom air blocks (Railcraft player aura tracking block)
+        //return getType() == Material.AIR;
+        if (getType() == Material.AIR) return true;
+        if (!(getWorld() instanceof CraftWorld)) return false;
+        return ((CraftWorld) getWorld()).getHandle().isAirBlock(new BlockPos(getX(), getY(), getZ()));
+        // Cauldron end
     }
 
     public boolean isLiquid() {

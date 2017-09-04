@@ -1,0 +1,102 @@
+--- ../src-base/minecraft/net/minecraft/dispenser/BehaviorDefaultDispenseItem.java
++++ ../src-work/minecraft/net/minecraft/dispenser/BehaviorDefaultDispenseItem.java
+@@ -5,6 +5,10 @@
+ import net.minecraft.item.ItemStack;
+ import net.minecraft.util.EnumFacing;
+ import net.minecraft.world.World;
++import org.bukkit.block.Block;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.block.BlockDispenseEvent;
++import org.bukkit.util.Vector;
+ 
+ public class BehaviorDefaultDispenseItem implements IBehaviorDispenseItem
+ {
+@@ -21,17 +25,24 @@
+         EnumFacing enumfacing = (EnumFacing)p_82487_1_.func_189992_e().func_177229_b(BlockDispenser.field_176441_a);
+         IPosition iposition = BlockDispenser.func_149939_a(p_82487_1_);
+         ItemStack itemstack = p_82487_2_.func_77979_a(1);
+-        func_82486_a(p_82487_1_.func_82618_k(), itemstack, 6, enumfacing, iposition);
++        // CraftBukkit start
++        if (!doDispense(p_82487_1_.func_82618_k(), itemstack, 6, enumfacing, p_82487_1_)) {
++            itemstack.func_190917_f(1);
++        }
++        // CraftBukkit end
+         return p_82487_2_;
+     }
+ 
+-    public static void func_82486_a(World p_82486_0_, ItemStack p_82486_1_, int p_82486_2_, EnumFacing p_82486_3_, IPosition p_82486_4_)
++    public static boolean doDispense(World world, ItemStack itemstack, int speed, EnumFacing enumdirection, IBlockSource isourceblock)
+     {
+-        double d0 = p_82486_4_.func_82615_a();
+-        double d1 = p_82486_4_.func_82617_b();
+-        double d2 = p_82486_4_.func_82616_c();
++        IPosition iposition = BlockDispenser.func_149939_a(isourceblock);
++        // CraftBukkit end
+ 
+-        if (p_82486_3_.func_176740_k() == EnumFacing.Axis.Y)
++        double d0 = iposition.func_82615_a();
++        double d1 = iposition.func_82617_b();
++        double d2 = iposition.func_82616_c();
++
++        if (enumdirection.func_176740_k() == EnumFacing.Axis.Y)
+         {
+             d1 = d1 - 0.125D;
+         }
+@@ -40,15 +51,49 @@
+             d1 = d1 - 0.15625D;
+         }
+ 
+-        EntityItem entityitem = new EntityItem(p_82486_0_, d0, d1, d2, p_82486_1_);
+-        double d3 = p_82486_0_.field_73012_v.nextDouble() * 0.1D + 0.2D;
+-        entityitem.field_70159_w = (double)p_82486_3_.func_82601_c() * d3;
++        EntityItem entityitem = new EntityItem(world, d0, d1, d2, itemstack);
++        double d3 = world.field_73012_v.nextDouble() * 0.1D + 0.2D;
++        entityitem.field_70159_w = (double)enumdirection.func_82601_c() * d3;
+         entityitem.field_70181_x = 0.20000000298023224D;
+-        entityitem.field_70179_y = (double)p_82486_3_.func_82599_e() * d3;
+-        entityitem.field_70159_w += p_82486_0_.field_73012_v.nextGaussian() * 0.007499999832361937D * (double)p_82486_2_;
+-        entityitem.field_70181_x += p_82486_0_.field_73012_v.nextGaussian() * 0.007499999832361937D * (double)p_82486_2_;
+-        entityitem.field_70179_y += p_82486_0_.field_73012_v.nextGaussian() * 0.007499999832361937D * (double)p_82486_2_;
+-        p_82486_0_.func_72838_d(entityitem);
++        entityitem.field_70179_y = (double)enumdirection.func_82599_e() * d3;
++        entityitem.field_70159_w += world.field_73012_v.nextGaussian() * 0.007499999832361937D * (double)speed;
++        entityitem.field_70181_x += world.field_73012_v.nextGaussian() * 0.007499999832361937D * (double)speed;
++        entityitem.field_70179_y += world.field_73012_v.nextGaussian() * 0.007499999832361937D * (double)speed;
++
++        // CraftBukkit start
++        Block block = world.getWorld().getBlockAt(isourceblock.func_180699_d().func_177958_n(), isourceblock.func_180699_d().func_177956_o(), isourceblock.func_180699_d().func_177952_p());
++        CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack);
++
++        BlockDispenseEvent event = new BlockDispenseEvent(block, craftItem.clone(), new Vector(entityitem.field_70159_w, entityitem.field_70181_x, entityitem.field_70179_y));
++        if (!BlockDispenser.eventFired) {
++            world.getServer().getPluginManager().callEvent(event);
++        }
++
++        if (event.isCancelled()) {
++            return false;
++        }
++
++        entityitem.func_92058_a(CraftItemStack.asNMSCopy(event.getItem()));
++        entityitem.field_70159_w = event.getVelocity().getX();
++        entityitem.field_70181_x = event.getVelocity().getY();
++        entityitem.field_70179_y = event.getVelocity().getZ();
++
++        if (!event.getItem().getType().equals(craftItem.getType())) {
++            // Chain to handler for new item
++            ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
++            IBehaviorDispenseItem idispensebehavior = (IBehaviorDispenseItem) BlockDispenser.field_149943_a.func_82594_a(eventStack.func_77973_b());
++            if (idispensebehavior != IBehaviorDispenseItem.field_82483_a && idispensebehavior.getClass() != BehaviorDefaultDispenseItem.class) {
++                idispensebehavior.func_82482_a(isourceblock, eventStack);
++            } else {
++                world.func_72838_d(entityitem);
++            }
++            return false;
++        }
++
++        world.func_72838_d(entityitem);
++
++        return true;
++        //CraftBukkit end
+     }
+ 
+     protected void func_82485_a(IBlockSource p_82485_1_)

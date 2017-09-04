@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -30,7 +31,7 @@ public class CraftBlockState implements BlockState {
     protected int type;
     protected MaterialData data;
     protected int flag;
-
+    private NBTTagCompound nbt= null; // Cauldron
     public CraftBlockState(final Block block) {
         this.world = (CraftWorld) block.getWorld();
         this.x = block.getX();
@@ -39,6 +40,15 @@ public class CraftBlockState implements BlockState {
         this.type = block.getTypeId();
         this.chunk = (CraftChunk) block.getChunk();
         this.flag = 3;
+        // Cauldron start - save TE data
+        TileEntity te = world.getHandle().getTileEntity(new BlockPos(x, y, z));
+        if (te != null)
+        {
+            nbt = new NBTTagCompound();
+            te.writeToNBT(nbt);
+        }
+        else nbt = null;
+        // Cauldron end
 
         createData(block.getData());
     }
@@ -168,6 +178,16 @@ public class CraftBlockState implements BlockState {
                 return false;
             }
         }
+        // Cauldron start - restore TE data from snapshot
+        if (nbt != null)
+        {
+            TileEntity te = world.getHandle().getTileEntity(new BlockPos(x, y, z));
+            if (te != null)
+            {
+                te.readFromNBT(nbt);
+            }
+        }
+        // Cauldron end
 
         BlockPos pos = new BlockPos(x, y, z);
         IBlockState newBlock = CraftMagicNumbers.getBlock(getType()).getStateFromMeta(getRawData());
@@ -248,6 +268,11 @@ public class CraftBlockState implements BlockState {
         if (this.data != other.data && (this.data == null || !this.data.equals(other.data))) {
             return false;
         }
+        // Cauldron start
+        if (this.nbt != other.nbt && (this.nbt == null || !this.nbt.equals(other.nbt))) {
+            return false;
+        }
+        // Cauldron end
         return true;
     }
 
@@ -263,10 +288,13 @@ public class CraftBlockState implements BlockState {
         return hash;
     }
 
+    // Cauldron start
     public TileEntity getTileEntity() {
-        return null;
+        if (nbt != null)
+            return TileEntity.create(world.getHandle(),nbt);
+        else return null;
     }
-
+    // Cauldron end
     public void setMetadata(String metadataKey, MetadataValue newMetadataValue) {
         requirePlaced();
         chunk.getCraftWorld().getBlockMetadata().setMetadata(getBlock(), metadataKey, newMetadataValue);

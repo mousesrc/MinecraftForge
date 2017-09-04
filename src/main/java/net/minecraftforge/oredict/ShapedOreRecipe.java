@@ -19,10 +19,7 @@
 
 package net.minecraftforge.oredict;
 
-import java.util.List;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import net.minecraft.block.Block;
 import net.minecraft.item.crafting.IRecipe;
@@ -33,7 +30,11 @@ import net.minecraft.item.crafting.ShapedRecipes;
 import net.minecraft.util.NonNullList;
 import net.minecraft.world.World;
 import net.minecraftforge.common.ForgeHooks;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
+import org.bukkit.event.entity.ItemSpawnEvent;
 import org.bukkit.inventory.Recipe;
+import org.bukkit.inventory.ShapedRecipe;
 
 import javax.annotation.Nonnull;
 
@@ -42,14 +43,14 @@ public class ShapedOreRecipe implements IRecipe
     //Added in for future ease of change, but hard coded for now.
     public static final int MAX_CRAFT_GRID_WIDTH = 3;
     public static final int MAX_CRAFT_GRID_HEIGHT = 3;
-
+    private static Random RNG = new Random();
     @Nonnull
     protected ItemStack output = ItemStack.EMPTY;
     protected Object[] input = null;
     protected int width = 0;
     protected int height = 0;
     protected boolean mirrored = true;
-
+    private ShapedRecipes original;
     public ShapedOreRecipe(Block     result, Object... recipe){ this(new ItemStack(result), recipe); }
     public ShapedOreRecipe(Item      result, Object... recipe){ this(new ItemStack(result), recipe); }
     public ShapedOreRecipe(@Nonnull ItemStack result, Object... recipe)
@@ -107,7 +108,8 @@ public class ShapedOreRecipe implements IRecipe
         }
 
         HashMap<Character, Object> itemMap = new HashMap<Character, Object>();
-
+        List<ItemStack> originalItemInList = new ArrayList<ItemStack>();
+        ItemStack[] stacks = new ItemStack[recipe.length / 2];
         for (; idx < recipe.length; idx += 2)
         {
             Character chr = (Character)recipe[idx];
@@ -116,18 +118,22 @@ public class ShapedOreRecipe implements IRecipe
             if (in instanceof ItemStack)
             {
                 itemMap.put(chr, ((ItemStack)in).copy());
+                originalItemInList.add(((ItemStack) in).copy());
             }
             else if (in instanceof Item)
             {
                 itemMap.put(chr, new ItemStack((Item)in));
+                originalItemInList.add(new ItemStack((Item)in));
             }
             else if (in instanceof Block)
             {
                 itemMap.put(chr, new ItemStack((Block)in, 1, OreDictionary.WILDCARD_VALUE));
+                originalItemInList.add( new ItemStack((Block)in));
             }
             else if (in instanceof String)
             {
                 itemMap.put(chr, OreDictionary.getOres((String)in));
+                originalItemInList.add(OreDictionary.getOres((String)in).get(0));
             }
             else
             {
@@ -147,6 +153,8 @@ public class ShapedOreRecipe implements IRecipe
         {
             input[x++] = itemMap.get(chr);
         }
+        originalItemInList.toArray(stacks);
+        this.original = new ShapedRecipes(width,height,stacks,result);
     }
 
     ShapedOreRecipe(ShapedRecipes recipe, Map<ItemStack, String> replacements)
@@ -154,7 +162,7 @@ public class ShapedOreRecipe implements IRecipe
         output = recipe.getRecipeOutput();
         width = recipe.recipeWidth;
         height = recipe.recipeHeight;
-
+        original = recipe;
         input = new Object[recipe.recipeItems.length];
 
         for(int i = 0; i < input.length; i++)
@@ -290,7 +298,59 @@ public class ShapedOreRecipe implements IRecipe
 
     @Override
     public Recipe toBukkitRecipe() {
-        return null;
+        CraftItemStack result = CraftItemStack.asCraftMirror(this.getRecipeOutput());
+        CraftShapedRecipe recipe = new CraftShapedRecipe(result,original);
+        switch (this.getHeight()) {
+            case 1:
+                switch (this.getWidth()) {
+                    case 1:
+                        recipe.shape("a");
+                        break;
+                    case 2:
+                        recipe.shape("ab");
+                        break;
+                    case 3:
+                        recipe.shape("abc");
+                        break;
+                }
+                break;
+            case 2:
+                switch (this.getWidth()) {
+                    case 1:
+                        recipe.shape("a","b");
+                        break;
+                    case 2:
+                        recipe.shape("ab","cd");
+                        break;
+                    case 3:
+                        recipe.shape("abc","def");
+                        break;
+                }
+                break;
+            case 3:
+                switch (this.getWidth()) {
+                    case 1:
+                        recipe.shape("a","b","c");
+                        break;
+                    case 2:
+                        recipe.shape("ab","cd","ef");
+                        break;
+                    case 3:
+                        recipe.shape("abc","def","ghi");
+                        break;
+                }
+                break;
+        }
+        char c = 'a';
+        for (Object replacements : this.getInput()) {
+            if (replacements != null) {
+                NonNullList<ItemStack> stacks = (NonNullList<ItemStack>) replacements;
+                ItemStack stack = stacks.get(RNG.nextInt(((NonNullList<ItemStack>) replacements).size()));
+                recipe.setIngredient(c, org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(stack.getItem()), stack.getMetadata());
+            }
+            c++;
+        }
+        return recipe;
     }
 
     public int getWidth()

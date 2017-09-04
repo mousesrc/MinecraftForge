@@ -1,14 +1,16 @@
 --- ../src-base/minecraft/net/minecraft/entity/passive/AbstractHorse.java
 +++ ../src-work/minecraft/net/minecraft/entity/passive/AbstractHorse.java
-@@ -54,6 +54,7 @@
+@@ -54,6 +54,9 @@
  import net.minecraft.world.World;
  import net.minecraftforge.fml.relauncher.Side;
  import net.minecraftforge.fml.relauncher.SideOnly;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.event.entity.EntityRegainHealthEvent;
++import org.bukkit.event.entity.HorseJumpEvent;
  
  public abstract class AbstractHorse extends EntityAnimal implements IInventoryChangedListener, IJumpingMount
  {
-@@ -85,7 +86,9 @@
+@@ -85,7 +88,9 @@
      private float field_110288_bO;
      protected boolean field_190688_bE = true;
      protected int field_110285_bP;
@@ -18,7 +20,7 @@
      public AbstractHorse(World p_i47299_1_)
      {
          super(p_i47299_1_);
-@@ -286,7 +289,7 @@
+@@ -286,7 +291,7 @@
          return 2;
      }
  
@@ -27,7 +29,7 @@
      {
          ContainerHorseChest containerhorsechest = this.field_110296_bG;
          this.field_110296_bG = new ContainerHorseChest("HorseChest", this.func_190686_di());
-@@ -310,6 +313,7 @@
+@@ -310,6 +315,7 @@
  
          this.field_110296_bG.func_110134_a(this);
          this.func_110232_cE();
@@ -35,7 +37,7 @@
      }
  
      protected void func_110232_cE()
-@@ -462,7 +466,7 @@
+@@ -462,7 +468,7 @@
  
      public int func_190676_dC()
      {
@@ -44,7 +46,7 @@
      }
  
      protected float func_70599_aP()
-@@ -542,7 +546,7 @@
+@@ -542,7 +548,7 @@
  
          if (this.func_110143_aJ() < this.func_110138_aP() && f > 0.0F)
          {
@@ -53,7 +55,7 @@
              flag = true;
          }
  
-@@ -635,7 +639,7 @@
+@@ -635,7 +641,7 @@
          {
              if (this.field_70146_Z.nextInt(900) == 0 && this.field_70725_aQ == 0)
              {
@@ -62,7 +64,26 @@
              }
  
              if (this.func_190684_dE())
-@@ -1219,4 +1223,22 @@
+@@ -1065,6 +1071,18 @@
+ 
+     public void func_184775_b(int p_184775_1_)
+     {
++        // CraftBukkit start
++        float power;
++        if (p_184775_1_ >= 90) {
++            power = 1.0F;
++        } else {
++            power = 0.4F + 0.4F * (float) p_184775_1_ / 90.0F;
++        }
++        HorseJumpEvent event = CraftEventFactory.callHorseJumpEvent(this, power);
++        if (event.isCancelled()) {
++            return;
++        }
++        // CraftBukkit end
+         this.field_110294_bI = true;
+         this.func_110220_cK();
+     }
+@@ -1219,4 +1237,22 @@
  
          return p_180482_2_;
      }

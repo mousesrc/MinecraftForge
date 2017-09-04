@@ -1,6 +1,50 @@
 --- ../src-base/minecraft/net/minecraft/item/ItemArmor.java
 +++ ../src-work/minecraft/net/minecraft/item/ItemArmor.java
-@@ -187,7 +187,9 @@
+@@ -29,6 +29,10 @@
+ import net.minecraft.world.World;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
++import org.bukkit.block.Block;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.block.BlockDispenseEvent;
++import org.bukkit.util.Vector;
+ 
+ public class ItemArmor extends Item
+ {
+@@ -63,6 +67,32 @@
+             EntityLivingBase entitylivingbase = (EntityLivingBase)list.get(0);
+             EntityEquipmentSlot entityequipmentslot = EntityLiving.func_184640_d(p_185082_1_);
+             ItemStack itemstack = p_185082_1_.func_77979_a(1);
++            // CraftBukkit start
++            World world = p_185082_0_.func_82618_k();
++            Block block = world.getWorld().getBlockAt(p_185082_0_.func_180699_d().func_177958_n(), p_185082_0_.func_180699_d().func_177956_o(), p_185082_0_.func_180699_d().func_177952_p());
++            CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack);
++
++            BlockDispenseEvent event = new BlockDispenseEvent(block, craftItem.clone(), new Vector(0, 0, 0));
++            if (!BlockDispenser.eventFired) {
++                world.getServer().getPluginManager().callEvent(event);
++            }
++
++            if (event.isCancelled()) {
++                itemstack.func_190917_f(1);
++                return itemstack;
++            }
++
++            if (!event.getItem().equals(craftItem)) {
++                itemstack.func_190917_f(1);
++                // Chain to handler for new item
++                ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
++                IBehaviorDispenseItem idispensebehavior = (IBehaviorDispenseItem) BlockDispenser.field_149943_a.func_82594_a(eventStack.func_77973_b());
++                if (idispensebehavior != IBehaviorDispenseItem.field_82483_a && idispensebehavior != ItemArmor.field_96605_cw) {
++                    idispensebehavior.func_82482_a(p_185082_0_, eventStack);
++                    return itemstack;
++                }
++            }
++            // CraftBukkit end
+             entitylivingbase.func_184201_a(entityequipmentslot, itemstack);
+ 
+             if (entitylivingbase instanceof EntityLiving)
+@@ -187,7 +217,9 @@
  
      public boolean func_82789_a(ItemStack p_82789_1_, ItemStack p_82789_2_)
      {
@@ -11,7 +55,7 @@
      }
  
      public ActionResult<ItemStack> func_77659_a(World p_77659_1_, EntityPlayer p_77659_2_, EnumHand p_77659_3_)
-@@ -221,6 +223,19 @@
+@@ -221,6 +253,19 @@
          return multimap;
      }
  
@@ -31,7 +75,7 @@
      public static enum ArmorMaterial
      {
          LEATHER("leather", 5, new int[]{1, 2, 3, 1}, 15, SoundEvents.field_187728_s, 0.0F),
-@@ -235,6 +250,8 @@
+@@ -235,6 +280,8 @@
          private final int field_78055_h;
          private final SoundEvent field_185020_j;
          private final float field_189417_k;
@@ -40,7 +84,7 @@
  
          private ArmorMaterial(String p_i47117_3_, int p_i47117_4_, int[] p_i47117_5_, int p_i47117_6_, SoundEvent p_i47117_7_, float p_i47117_8_)
          {
-@@ -266,6 +283,7 @@
+@@ -266,6 +313,7 @@
              return this.field_185020_j;
          }
  
@@ -48,7 +92,7 @@
          public Item func_151685_b()
          {
              return this == LEATHER ? Items.field_151116_aA : (this == CHAIN ? Items.field_151042_j : (this == GOLD ? Items.field_151043_k : (this == IRON ? Items.field_151042_j : (this == DIAMOND ? Items.field_151045_i : null))));
-@@ -281,5 +299,21 @@
+@@ -281,5 +329,21 @@
          {
              return this.field_189417_k;
          }

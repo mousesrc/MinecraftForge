@@ -1,6 +1,6 @@
 --- ../src-base/minecraft/net/minecraft/inventory/ContainerMerchant.java
 +++ ../src-work/minecraft/net/minecraft/inventory/ContainerMerchant.java
-@@ -5,13 +5,25 @@
+@@ -5,17 +5,30 @@
  import net.minecraft.entity.player.InventoryPlayer;
  import net.minecraft.item.ItemStack;
  import net.minecraft.world.World;
@@ -26,3 +26,8 @@
      public ContainerMerchant(InventoryPlayer p_i1821_1_, IMerchant p_i1821_2_, World p_i1821_3_)
      {
          this.field_75178_e = p_i1821_2_;
+         this.field_75177_g = p_i1821_3_;
++        this.player = p_i1821_1_;
+         this.field_75176_f = new InventoryMerchant(p_i1821_1_.field_70458_d, p_i1821_2_);
+         this.func_75146_a(new Slot(this.field_75176_f, 0, 36, 53));
+         this.func_75146_a(new Slot(this.field_75176_f, 1, 62, 53));

@@ -4,21 +4,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 
-import net.minecraft.tileentity.IHopper;
+import net.minecraft.tileentity.*;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.inventory.InventoryEnderChest;
 import net.minecraft.inventory.InventoryMerchant;
 import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.tileentity.TileEntityBeacon;
-import net.minecraft.tileentity.TileEntityBrewingStand;
-import net.minecraft.tileentity.TileEntityDispenser;
-import net.minecraft.tileentity.TileEntityDropper;
-import net.minecraft.tileentity.TileEntityFurnace;
-import net.minecraft.tileentity.TileEntityShulkerBox;
 
+import net.minecraft.util.math.BlockPos;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Location;
+import org.bukkit.block.BlockState;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
@@ -75,8 +71,14 @@ public class CraftInventory implements Inventory {
     }
 
     public ItemStack[] getContents() {
-        List<net.minecraft.item.ItemStack> mcItems = getInventory().getContents();
-
+        // Cauldron start - fixes appeng TileDrive AbstractMethodError
+        List<net.minecraft.item.ItemStack> mcItems = null;
+        try {
+            mcItems = getInventory().getContents();
+        } catch (AbstractMethodError e) {
+            return new ItemStack[0]; // return empty list
+        }
+        // Cauldron end
         return asCraftMirror(mcItems);
     }
 
@@ -437,7 +439,13 @@ public class CraftInventory implements Inventory {
     }
 
     public List<HumanEntity> getViewers() {
-        return this.inventory.getViewers();
+        // Cauldron start
+        try {
+            return this.inventory.getViewers();
+        } catch (AbstractMethodError e) {
+            return new java.util.ArrayList<HumanEntity>();
+        }
+        // Cauldron end
     }
 
     public String getTitle() {
@@ -480,7 +488,26 @@ public class CraftInventory implements Inventory {
     }
 
     public InventoryHolder getHolder() {
-        return inventory.getOwner();
+        // Cauldron start - fixes openblocks AbstractMethodError
+        try {
+            return inventory.getOwner();
+        } catch (AbstractMethodError e) {
+            if (inventory instanceof net.minecraft.tileentity.TileEntity) {
+                TileEntity tile = (TileEntity) inventory;
+                BlockState state = (BlockState) tile.getWorld().getWorld().getBlockAt(tile.getPos().getX(),tile.getPos().getY(),tile.getPos().getZ());
+                if(state instanceof InventoryHolder) {
+                    return (InventoryHolder) state;
+                }
+                else
+                {
+                    return null;
+                }
+                //return CauldronUtils.getOwner((net.minecraft.tileentity.TileEntity)inventory);
+            } else {
+                return null;
+            }
+        }
+        // Cauldron end
     }
 
     public int getMaxStackSize() {

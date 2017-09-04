@@ -1,6 +1,45 @@
 --- ../src-base/minecraft/net/minecraft/block/BlockRedstoneOre.java
 +++ ../src-work/minecraft/net/minecraft/block/BlockRedstoneOre.java
-@@ -92,12 +92,16 @@
+@@ -16,6 +16,10 @@
+ import net.minecraft.world.World;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.block.Action;
++import org.bukkit.event.entity.EntityInteractEvent;
++import org.bukkit.event.player.PlayerInteractEvent;
+ 
+ public class BlockRedstoneOre extends Block
+ {
+@@ -46,8 +50,25 @@
+ 
+     public void func_176199_a(World p_176199_1_, BlockPos p_176199_2_, Entity p_176199_3_)
+     {
+-        this.func_176352_d(p_176199_1_, p_176199_2_);
+-        super.func_176199_a(p_176199_1_, p_176199_2_, p_176199_3_);
++        // this.interact(world, blockposition);
++        // super.stepOn(world, blockposition, entity);
++        if (p_176199_3_ instanceof EntityPlayer) {
++            PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent((EntityPlayer) p_176199_3_, Action.PHYSICAL, p_176199_2_, null, null, null);
++            if (!event.isCancelled()) {
++                //this.onEntityWalk(worldIn, pos, entityIn); // add entity
++                super.func_176199_a(p_176199_1_, p_176199_2_, p_176199_3_);
++            }
++        } else {
++            EntityInteractEvent event = new EntityInteractEvent(p_176199_3_.getBukkitEntity(), p_176199_1_.getWorld().getBlockAt(p_176199_2_.func_177958_n(), p_176199_2_.func_177956_o(), p_176199_2_.func_177952_p()));
++            p_176199_1_.getServer().getPluginManager().callEvent(event);
++            if (!event.isCancelled()) {
++                //this.onEntityWalk(worldIn, pos, entityIn); // add entity
++                super.func_176199_a(p_176199_1_, p_176199_2_, p_176199_3_);
++            }
++        }
++        // CraftBukkit end
++        //this.activate(worldIn, pos);
++       // super.onEntityWalk(worldIn, pos, entityIn);
+     }
+ 
+     public boolean func_180639_a(World p_180639_1_, BlockPos p_180639_2_, IBlockState p_180639_3_, EntityPlayer p_180639_4_, EnumHand p_180639_5_, EnumFacing p_180639_6_, float p_180639_7_, float p_180639_8_, float p_180639_9_)
+@@ -92,12 +113,16 @@
      public void func_180653_a(World p_180653_1_, BlockPos p_180653_2_, IBlockState p_180653_3_, float p_180653_4_, int p_180653_5_)
      {
          super.func_180653_a(p_180653_1_, p_180653_2_, p_180653_3_, p_180653_4_, p_180653_5_);

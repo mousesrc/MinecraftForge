@@ -9,6 +9,7 @@ import java.util.UUID;
 
 
 import net.minecraft.world.WorldServer;
+import net.minecraftforge.MCPCRevive.entity.CraftCustomEntity;
 import org.bukkit.EntityEffect;
 import org.bukkit.Location;
 import org.bukkit.Server;
@@ -312,7 +313,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         else if (entity instanceof EntityAreaEffectCloud) { return new CraftAreaEffectCloud(server, (EntityAreaEffectCloud) entity); }
         else if (entity instanceof EntityEvokerFangs) { return new CraftEvokerFangs(server, (EntityEvokerFangs) entity); }
         else if (entity instanceof EntityLlamaSpit) { return new CraftLlamaSpit(server, (EntityLlamaSpit) entity); }
-
+        // Cauldron - used for custom entities that extend Entity directly
+        else if (entity instanceof net.minecraft.entity.Entity) { return new CraftCustomEntity(server, (net.minecraft.entity.Entity)entity); }
         throw new AssertionError("Unknown entity " + (entity == null ? null : entity.getClass()));
     }
 

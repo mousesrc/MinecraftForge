@@ -1,17 +1,39 @@
 --- ../src-base/minecraft/net/minecraft/item/ItemBow.java
 +++ ../src-work/minecraft/net/minecraft/item/ItemBow.java
-@@ -83,6 +83,10 @@
+@@ -5,6 +5,7 @@
+ import net.minecraft.enchantment.EnchantmentHelper;
+ import net.minecraft.entity.EntityLivingBase;
+ import net.minecraft.entity.player.EntityPlayer;
++import net.minecraft.entity.player.EntityPlayerMP;
+ import net.minecraft.entity.projectile.EntityArrow;
+ import net.minecraft.init.Enchantments;
+ import net.minecraft.init.Items;
+@@ -16,8 +17,13 @@
+ import net.minecraft.util.ResourceLocation;
+ import net.minecraft.util.SoundCategory;
+ import net.minecraft.world.World;
++import net.minecraftforge.event.ForgeEventFactory;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
++import org.bukkit.craftbukkit.entity.CraftPlayer;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityCombustEvent;
++import org.bukkit.event.entity.EntityShootBowEvent;
+ 
+ public class ItemBow extends Item
+ {
+@@ -83,6 +89,10 @@
              boolean flag = entityplayer.field_71075_bZ.field_75098_d || EnchantmentHelper.func_77506_a(Enchantments.field_185312_x, p_77615_1_) > 0;
              ItemStack itemstack = this.func_185060_a(entityplayer);
  
 +            int i = this.func_77626_a(p_77615_1_) - p_77615_4_;
-+            i = net.minecraftforge.event.ForgeEventFactory.onArrowLoose(p_77615_1_, p_77615_2_, entityplayer, i, !itemstack.func_190926_b() || flag);
++            i = ForgeEventFactory.onArrowLoose(p_77615_1_, p_77615_2_, entityplayer, i, !itemstack.func_190926_b() || flag);
 +            if (i < 0) return;
 +
              if (!itemstack.func_190926_b() || flag)
              {
                  if (itemstack.func_190926_b())
-@@ -90,12 +94,11 @@
+@@ -90,12 +100,11 @@
                      itemstack = new ItemStack(Items.field_151032_g);
                  }
  
@@ -25,7 +47,46 @@
  
                      if (!p_77615_2_.field_72995_K)
                      {
-@@ -183,6 +186,9 @@
+@@ -124,9 +133,37 @@
+ 
+                         if (EnchantmentHelper.func_77506_a(Enchantments.field_185311_w, p_77615_1_) > 0)
+                         {
+-                            entityarrow.func_70015_d(100);
++                            // CraftBukkit start - call EntityCombustEvent
++                            EntityCombustEvent event = new EntityCombustEvent(entityarrow.getBukkitEntity(), 100);
++                            entityarrow.field_70170_p.getServer().getPluginManager().callEvent(event);
++
++                            if (!event.isCancelled()) {
++                                entityarrow.func_70015_d(event.getDuration());
++                            }
++                            // CraftBukkit end
+                         }
++                        // CraftBukkit start
++                        EntityShootBowEvent event = CraftEventFactory.callEntityShootBowEvent(entityplayer, itemstack, entityarrow, f);
++                        if (event.isCancelled()) {
++                            event.getProjectile().remove();
++                            return;
++                        }
+ 
++                        itemstack.func_77972_a(1, entityplayer);
++                        if (flag1 || entityplayer.field_71075_bZ.field_75098_d && (itemstack.func_77973_b() == Items.field_185166_h || itemstack.func_77973_b() == Items.field_185167_i)) {
++                            entityarrow.field_70251_a = EntityArrow.PickupStatus.CREATIVE_ONLY;
++                        }
++
++                        if (event.getProjectile() == entityarrow.getBukkitEntity()) {
++                            if (!p_77615_2_.func_72838_d(entityarrow)) {
++                                if (entityplayer instanceof EntityPlayerMP) {
++                                    ((CraftPlayer)((EntityPlayerMP) entityplayer).getBukkitEntity()).updateInventory();
++                                }
++                                return;
++                            }
++                        }
++                        // CraftBukkit end
++
+                         p_77615_1_.func_77972_a(1, entityplayer);
+ 
+                         if (flag1 || entityplayer.field_71075_bZ.field_75098_d && (itemstack.func_77973_b() == Items.field_185166_h || itemstack.func_77973_b() == Items.field_185167_i))
+@@ -183,6 +220,9 @@
          ItemStack itemstack = p_77659_2_.func_184586_b(p_77659_3_);
          boolean flag = !this.func_185060_a(p_77659_2_).func_190926_b();
  

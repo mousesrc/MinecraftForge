@@ -1,0 +1,20 @@
+--- ../src-base/minecraft/net/minecraft/network/play/server/SPacketSpawnPosition.java
++++ ../src-work/minecraft/net/minecraft/network/play/server/SPacketSpawnPosition.java
+@@ -10,7 +10,7 @@
+ 
+ public class SPacketSpawnPosition implements Packet<INetHandlerPlayClient>
+ {
+-    public BlockPos field_179801_a;
++    protected BlockPos field_179801_a;
+ 
+     public SPacketSpawnPosition()
+     {
+@@ -36,7 +36,7 @@
+         p_148833_1_.func_147271_a(this);
+     }
+ 
+-    @SideOnly(Side.CLIENT)
++    //@SideOnly(Side.CLIENT) //for bukkit
+     public BlockPos func_179800_a()
+     {
+         return this.field_179801_a;

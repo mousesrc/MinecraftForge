@@ -1,11 +1,17 @@
 package org.bukkit.craftbukkit.enchantments;
 
+import net.minecraft.item.Item;
+import net.minecraftforge.common.util.EnumHelper;
+import org.apache.commons.lang.StringUtils;
+import org.bukkit.Material;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.enchantments.EnchantmentTarget;
 import org.bukkit.enchantments.EnchantmentWrapper;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.function.Function;
 
 
 public class CraftEnchantment extends Enchantment {
@@ -25,7 +31,7 @@ public class CraftEnchantment extends Enchantment {
     public int getStartLevel() {
         return target.getMinLevel();
     }
-
+    private String generatedName = null;
     @Override
     public EnchantmentTarget getItemTarget() {
         switch (target.type) {
@@ -52,9 +58,16 @@ public class CraftEnchantment extends Enchantment {
         case BREAKABLE:
             return EnchantmentTarget.BREAKABLE;
         default:
-            return null;
+            // Cauldron start - generate based on the class name
+            if (generatedName != null) {
+                generatedName = EnumHelper.generateName(target);
+            }
+            return EnchantmentTarget.valueOf(generatedName);
+            // Cauldron end
         }
     }
+
+
 
     @Override
     public boolean isTreasure() {
@@ -135,7 +148,7 @@ public class CraftEnchantment extends Enchantment {
         case 71:
             return "VANISHING_CURSE";
         default:
-            return "UNKNOWN_ENCHANT_" + getId();
+            return generatedName;
         }
     }
 

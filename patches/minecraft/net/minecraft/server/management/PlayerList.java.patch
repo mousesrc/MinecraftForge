@@ -16,7 +16,7 @@
  import net.minecraft.world.World;
  import net.minecraft.world.WorldServer;
  import net.minecraft.world.border.IBorderListener;
-@@ -60,10 +63,20 @@
+@@ -60,10 +63,23 @@
  import net.minecraft.world.demo.DemoWorldManager;
  import net.minecraft.world.storage.IPlayerFileData;
  import net.minecraft.world.storage.WorldInfo;
@@ -29,15 +29,18 @@
 +import org.bukkit.Location;
 +import org.bukkit.Server;
 +import org.bukkit.craftbukkit.CraftServer;
++import org.bukkit.craftbukkit.chunkio.ChunkIOExecutor;
++import org.bukkit.craftbukkit.util.CraftChatMessage;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.Event;
++import org.bukkit.event.player.PlayerJoinEvent;
 +import org.bukkit.event.player.PlayerRespawnEvent;
 +import org.bukkit.event.player.PlayerTeleportEvent;
 +import org.spigotmc.SpigotConfig;
  
  public abstract class PlayerList
  {
-@@ -89,8 +102,16 @@
+@@ -89,8 +105,16 @@
      private boolean field_72407_n;
      private int field_72408_o;
  
@@ -56,7 +59,7 @@
          this.field_72401_g = new UserListBans(field_152613_a);
          this.field_72413_h = new UserListIPBans(field_152614_b);
          this.field_72414_i = new UserListOps(field_152615_c);
-@@ -102,7 +123,7 @@
+@@ -102,7 +126,7 @@
          this.field_72405_c = 8;
      }
  
@@ -65,7 +68,7 @@
      {
          GameProfile gameprofile = p_72355_2_.func_146103_bH();
          PlayerProfileCache playerprofilecache = this.field_72400_f.func_152358_ax();
-@@ -111,6 +132,17 @@
+@@ -111,6 +135,17 @@
          playerprofilecache.func_152649_a(gameprofile);
          NBTTagCompound nbttagcompound = this.func_72380_a(p_72355_2_);
          p_72355_2_.func_70029_a(this.field_72400_f.func_71218_a(p_72355_2_.field_71093_bK));
@@ -83,7 +86,7 @@
          p_72355_2_.field_71134_c.func_73080_a((WorldServer)p_72355_2_.field_70170_p);
          String s1 = "local";
  
-@@ -119,12 +151,12 @@
+@@ -119,12 +154,12 @@
              s1 = p_72355_1_.func_74430_c().toString();
          }
  
@@ -99,7 +102,7 @@
          nethandlerplayserver.func_147359_a(new SPacketCustomPayload("MC|Brand", (new PacketBuffer(Unpooled.buffer())).func_180714_a(this.func_72365_p().getServerModName())));
          nethandlerplayserver.func_147359_a(new SPacketServerDifficulty(worldinfo.func_176130_y(), worldinfo.func_176123_z()));
          nethandlerplayserver.func_147359_a(new SPacketPlayerAbilities(p_72355_2_.field_71075_bZ));
-@@ -200,6 +232,7 @@
+@@ -200,6 +235,7 @@
          }
  
          p_72355_2_.func_71116_b();
@@ -107,7 +110,7 @@
      }
  
      public void func_96456_a(ServerScoreboard p_96456_1_, EntityPlayerMP p_96456_2_)
-@@ -290,6 +323,7 @@
+@@ -290,6 +326,7 @@
              nbttagcompound1 = this.field_72400_f.func_184110_aI().func_188257_a(FixTypes.PLAYER, nbttagcompound);
              p_72380_1_.func_70020_e(nbttagcompound1);
              field_148546_d.debug("loading single player");
@@ -115,7 +118,7 @@
          }
          else
          {
-@@ -299,8 +333,24 @@
+@@ -299,8 +336,24 @@
          return nbttagcompound1;
      }
  
@@ -140,15 +143,54 @@
          this.field_72412_k.func_75753_a(p_72391_1_);
          StatisticsManagerServer statisticsmanagerserver = (StatisticsManagerServer)this.field_148547_k.get(p_72391_1_.func_110124_au());
  
-@@ -322,6 +372,7 @@
-             p_72377_1_.field_71135_a.func_147359_a(new SPacketPlayerListItem(SPacketPlayerListItem.Action.ADD_PLAYER, new EntityPlayerMP[] {(EntityPlayerMP)this.field_72404_b.get(i)}));
+@@ -312,20 +365,38 @@
+ 
+     public void func_72377_c(EntityPlayerMP p_72377_1_)
+     {
+-        this.field_72404_b.add(p_72377_1_);
+-        this.field_177454_f.put(p_72377_1_.func_110124_au(), p_72377_1_);
+-        this.func_148540_a(new SPacketPlayerListItem(SPacketPlayerListItem.Action.ADD_PLAYER, new EntityPlayerMP[] {p_72377_1_}));
+-        WorldServer worldserver = this.field_72400_f.func_71218_a(p_72377_1_.field_71093_bK);
++       onPlayerJoin(p_72377_1_,"Welcome Player " + p_72377_1_.func_70005_c_() + " to Server");
++    }
++    public void onPlayerJoin(EntityPlayerMP playerIn,String Msg)
++    {
++        this.field_72404_b.add(playerIn);
++        this.field_177454_f.put(playerIn.func_110124_au(), playerIn);
++        // CraftBukkit start
++        PlayerJoinEvent playerJoinEvent = new PlayerJoinEvent(cserver.getPlayer(playerIn), Msg);
++        cserver.getPluginManager().callEvent(playerJoinEvent);
+ 
++        Msg = playerJoinEvent.getJoinMessage();
++
++        if (Msg != null && Msg.length() > 0) {
++            for (ITextComponent line : CraftChatMessage.fromString(Msg)) {
++                field_72400_f.func_184103_al().func_148540_a(new SPacketChat(line));
++            }
++        }
++
++        ChunkIOExecutor.adjustPoolSize(func_72394_k());
++        // CraftBukkit end
++        this.func_148540_a(new SPacketPlayerListItem(SPacketPlayerListItem.Action.ADD_PLAYER, new EntityPlayerMP[] {playerIn}));
++        WorldServer worldserver = this.field_72400_f.func_71218_a(playerIn.field_71093_bK);
++
+         for (int i = 0; i < this.field_72404_b.size(); ++i)
+         {
+-            p_72377_1_.field_71135_a.func_147359_a(new SPacketPlayerListItem(SPacketPlayerListItem.Action.ADD_PLAYER, new EntityPlayerMP[] {(EntityPlayerMP)this.field_72404_b.get(i)}));
++            playerIn.field_71135_a.func_147359_a(new SPacketPlayerListItem(SPacketPlayerListItem.Action.ADD_PLAYER, new EntityPlayerMP[] {(EntityPlayerMP)this.field_72404_b.get(i)}));
          }
  
+-        worldserver.func_72838_d(p_72377_1_);
+-        this.func_72375_a(p_72377_1_, (WorldServer)null);
 +        net.minecraftforge.common.chunkio.ChunkIOExecutor.adjustPoolSize(this.func_72394_k());
-         worldserver.func_72838_d(p_72377_1_);
-         this.func_72375_a(p_72377_1_, (WorldServer)null);
++        worldserver.func_72838_d(playerIn);
++        this.func_72375_a(playerIn, (WorldServer)null);
      }
-@@ -333,6 +384,7 @@
+-
+     public void func_72358_d(EntityPlayerMP p_72358_1_)
+     {
+         p_72358_1_.func_71121_q().func_184164_w().func_72685_d(p_72358_1_);
+@@ -333,6 +404,7 @@
  
      public void func_72367_e(EntityPlayerMP p_72367_1_)
      {
@@ -156,7 +198,7 @@
          WorldServer worldserver = p_72367_1_.func_71121_q();
          p_72367_1_.func_71029_a(StatList.field_75947_j);
          this.func_72391_b(p_72367_1_);
-@@ -367,6 +419,7 @@
+@@ -367,6 +439,7 @@
              this.field_177454_f.remove(uuid);
              this.field_148547_k.remove(uuid);
          }
@@ -164,7 +206,7 @@
  
          this.func_148540_a(new SPacketPlayerListItem(SPacketPlayerListItem.Action.REMOVE_PLAYER, new EntityPlayerMP[] {p_72367_1_}));
      }
-@@ -450,13 +503,31 @@
+@@ -450,13 +523,31 @@
  
      public EntityPlayerMP func_72368_a(EntityPlayerMP p_72368_1_, int p_72368_2_, boolean p_72368_3_)
      {
@@ -198,7 +240,7 @@
          p_72368_1_.field_71093_bK = p_72368_2_;
          PlayerInteractionManager playerinteractionmanager;
  
-@@ -468,10 +539,12 @@
+@@ -468,10 +559,12 @@
          {
              playerinteractionmanager = new PlayerInteractionManager(this.field_72400_f.func_71218_a(p_72368_1_.field_71093_bK));
          }
@@ -211,7 +253,7 @@
          entityplayermp.func_145769_d(p_72368_1_.func_145782_y());
          entityplayermp.func_174817_o(p_72368_1_);
          entityplayermp.func_184819_a(p_72368_1_.func_184591_cq());
-@@ -483,26 +556,32 @@
+@@ -483,26 +576,32 @@
  
          WorldServer worldserver = this.field_72400_f.func_71218_a(p_72368_1_.field_71093_bK);
          this.func_72381_a(entityplayermp, p_72368_1_, worldserver);
@@ -251,7 +293,7 @@
              entityplayermp.func_70107_b(entityplayermp.field_70165_t, entityplayermp.field_70163_u + 1.0D, entityplayermp.field_70161_v);
          }
  
-@@ -515,10 +594,15 @@
+@@ -515,10 +614,15 @@
          this.func_187243_f(entityplayermp);
          worldserver.func_184164_w().func_72683_a(entityplayermp);
          worldserver.func_72838_d(entityplayermp);
@@ -267,7 +309,7 @@
          return entityplayermp;
      }
  
-@@ -533,15 +617,32 @@
+@@ -533,15 +637,32 @@
  
      public void func_187242_a(EntityPlayerMP p_187242_1_, int p_187242_2_)
      {
@@ -302,7 +344,7 @@
          this.func_72375_a(p_187242_1_, worldserver);
          p_187242_1_.field_71135_a.func_147364_a(p_187242_1_.field_70165_t, p_187242_1_.field_70163_u, p_187242_1_.field_70161_v, p_187242_1_.field_70177_z, p_187242_1_.field_70125_A);
          p_187242_1_.field_71134_c.func_73080_a(worldserver1);
-@@ -553,17 +654,106 @@
+@@ -553,17 +674,106 @@
          {
              p_187242_1_.field_71135_a.func_147359_a(new SPacketEntityEffect(p_187242_1_.func_145782_y(), potioneffect));
          }
@@ -412,7 +454,7 @@
          {
              d0 = MathHelper.func_151237_a(d0 / 8.0D, p_82448_4_.func_175723_af().func_177726_b() + 16.0D, p_82448_4_.func_175723_af().func_177728_d() - 16.0D);
              d1 = MathHelper.func_151237_a(d1 / 8.0D, p_82448_4_.func_175723_af().func_177736_c() + 16.0D, p_82448_4_.func_175723_af().func_177733_e() - 16.0D);
-@@ -574,7 +764,7 @@
+@@ -574,7 +784,7 @@
                  p_82448_3_.func_72866_a(p_82448_1_, false);
              }
          }
@@ -421,7 +463,7 @@
          {
              d0 = MathHelper.func_151237_a(d0 * 8.0D, p_82448_4_.func_175723_af().func_177726_b() + 16.0D, p_82448_4_.func_175723_af().func_177728_d() - 16.0D);
              d1 = MathHelper.func_151237_a(d1 * 8.0D, p_82448_4_.func_175723_af().func_177736_c() + 16.0D, p_82448_4_.func_175723_af().func_177733_e() - 16.0D);
-@@ -585,7 +775,8 @@
+@@ -585,7 +795,8 @@
                  p_82448_3_.func_72866_a(p_82448_1_, false);
              }
          }
@@ -431,7 +473,7 @@
          {
              BlockPos blockpos;
  
-@@ -620,7 +811,7 @@
+@@ -620,7 +831,7 @@
              if (p_82448_1_.func_70089_S())
              {
                  p_82448_1_.func_70012_b(d0, p_82448_1_.field_70163_u, d1, p_82448_1_.field_70177_z, p_82448_1_.field_70125_A);
@@ -440,7 +482,7 @@
                  p_82448_4_.func_72838_d(p_82448_1_);
                  p_82448_4_.func_72866_a(p_82448_1_, false);
              }
-@@ -635,11 +826,40 @@
+@@ -635,11 +846,40 @@
      {
          if (++this.field_72408_o > 600)
          {
@@ -482,7 +524,7 @@
      public void func_148540_a(Packet<?> p_148540_1_)
      {
          for (int i = 0; i < this.field_72404_b.size(); ++i)
-@@ -762,6 +982,12 @@
+@@ -762,6 +1002,12 @@
      {
          int i = this.field_72400_f.func_110455_j();
          this.field_72414_i.func_152687_a(new UserListOpsEntry(p_152605_1_, this.field_72400_f.func_110455_j(), this.field_72414_i.func_183026_b(p_152605_1_)));
@@ -495,7 +537,7 @@
          this.func_187245_a(this.func_177451_a(p_152605_1_.getId()), i);
      }
  
-@@ -769,6 +995,12 @@
+@@ -769,6 +1015,12 @@
      {
          this.field_72414_i.func_152684_c(p_152610_1_);
          this.func_187245_a(this.func_177451_a(p_152610_1_.getId()), 0);
@@ -508,7 +550,7 @@
      }
  
      private void func_187245_a(EntityPlayerMP p_187245_1_, int p_187245_2_)
-@@ -981,12 +1213,19 @@
+@@ -981,12 +1233,19 @@
  
      public void func_72392_r()
      {

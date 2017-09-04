@@ -1,10 +1,14 @@
 --- ../src-base/minecraft/net/minecraft/server/management/PlayerInteractionManager.java
 +++ ../src-work/minecraft/net/minecraft/server/management/PlayerInteractionManager.java
-@@ -25,9 +25,12 @@
+@@ -25,9 +25,16 @@
  import net.minecraft.world.ILockableContainer;
  import net.minecraft.world.World;
  import net.minecraft.world.WorldServer;
++import net.minecraftforge.common.ForgeHooks;
++import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 +import net.minecraftforge.fml.common.eventhandler.Event;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.block.BlockDamageEvent;
  
  public class PlayerInteractionManager
  {
@@ -13,7 +17,7 @@
      public World field_73092_a;
      public EntityPlayerMP field_73090_b;
      private GameType field_73091_c = GameType.NOT_SET;
-@@ -89,7 +92,7 @@
+@@ -89,7 +96,7 @@
              IBlockState iblockstate = this.field_73092_a.func_180495_p(this.field_180241_i);
              Block block = iblockstate.func_177230_c();
  
@@ -22,7 +26,7 @@
              {
                  this.field_73097_j = false;
              }
-@@ -116,7 +119,7 @@
+@@ -116,7 +123,7 @@
              IBlockState iblockstate1 = this.field_73092_a.func_180495_p(this.field_180240_f);
              Block block1 = iblockstate1.func_177230_c();
  
@@ -31,7 +35,7 @@
              {
                  this.field_73092_a.func_175715_c(this.field_73090_b.func_145782_y(), this.field_180240_f, -1);
                  this.field_73094_o = -1;
-@@ -125,7 +128,7 @@
+@@ -125,7 +132,7 @@
              else
              {
                  int k = this.field_73100_i - this.field_73089_e;
@@ -40,16 +44,16 @@
                  int l = (int)(f1 * 10.0F);
  
                  if (l != this.field_73094_o)
-@@ -139,6 +142,8 @@
+@@ -139,6 +146,8 @@
  
      public void func_180784_a(BlockPos p_180784_1_, EnumFacing p_180784_2_)
      {
-+        net.minecraftforge.event.entity.player.PlayerInteractEvent.LeftClickBlock event = net.minecraftforge.common.ForgeHooks.onLeftClickBlock(field_73090_b, p_180784_1_, p_180784_2_, net.minecraftforge.common.ForgeHooks.rayTraceEyeHitVec(field_73090_b, getBlockReachDistance() + 1));
++        PlayerInteractEvent.LeftClickBlock event = ForgeHooks.onLeftClickBlock(field_73090_b, p_180784_1_, p_180784_2_, ForgeHooks.rayTraceEyeHitVec(field_73090_b, getBlockReachDistance() + 1));
 +
          if (this.func_73083_d())
          {
              if (!this.field_73092_a.func_175719_a((EntityPlayer)null, p_180784_1_, p_180784_2_))
-@@ -174,17 +179,36 @@
+@@ -174,17 +183,48 @@
                  }
              }
  
@@ -61,7 +65,7 @@
 +            if (!iblockstate.func_177230_c().isAir(iblockstate, field_73092_a, p_180784_1_))
              {
 -                block.func_180649_a(this.field_73092_a, p_180784_1_, this.field_73090_b);
-+                if (event.getUseBlock() != net.minecraftforge.fml.common.eventhandler.Event.Result.DENY)
++                if (event.getUseBlock() != Event.Result.DENY)
 +                {
 +                    block.func_180649_a(this.field_73092_a, p_180784_1_, this.field_73090_b);
 +                    this.field_73092_a.func_175719_a((EntityPlayer)null, p_180784_1_, p_180784_2_);
@@ -74,7 +78,7 @@
 +                }
                  f = iblockstate.func_185903_a(this.field_73090_b, this.field_73090_b.field_70170_p, p_180784_1_);
              }
-+            if (event.getUseItem() == net.minecraftforge.fml.common.eventhandler.Event.Result.DENY)
++            if (event.getUseItem() == Event.Result.DENY)
 +            {
 +                if (f >= 1.0F)
 +                {
@@ -84,13 +88,25 @@
 +                }
 +                return;
 +            }
++            BlockDamageEvent blockEvent = CraftEventFactory.callBlockDamageEvent(this.field_73090_b, p_180784_1_.func_177958_n(), p_180784_1_.func_177956_o(), p_180784_1_.func_177952_p(), this.field_73090_b.field_71071_by.func_70448_g(), f >= 1.0f);
  
 -            if (iblockstate.func_185904_a() != Material.field_151579_a && f >= 1.0F)
++            if (blockEvent.isCancelled()) {
++                // Let the client know the block still exists
++                ((EntityPlayerMP) this.field_73090_b).field_71135_a.func_147359_a(new SPacketBlockChange(this.field_73092_a, p_180784_1_));
++                return;
++            }
++
++            if (blockEvent.getInstaBreak()) {
++                f = 2.0f;
++            }
++            // CraftBukkit end
++
 +            if (!iblockstate.func_177230_c().isAir(iblockstate, field_73092_a, p_180784_1_) && f >= 1.0F)
              {
                  this.func_180237_b(p_180784_1_);
              }
-@@ -206,7 +230,7 @@
+@@ -206,7 +246,7 @@
              int i = this.field_73100_i - this.field_73089_e;
              IBlockState iblockstate = this.field_73092_a.func_180495_p(p_180785_1_);
  
@@ -99,7 +115,7 @@
              {
                  float f = iblockstate.func_185903_a(this.field_73090_b, this.field_73090_b.field_70170_p, p_180785_1_) * (float)(i + 1);
  
-@@ -235,21 +259,26 @@
+@@ -235,21 +275,26 @@
  
      private boolean func_180235_c(BlockPos p_180235_1_)
      {
@@ -132,7 +148,7 @@
          {
              return false;
          }
-@@ -266,53 +295,41 @@
+@@ -266,53 +311,41 @@
              }
              else
              {
@@ -198,7 +214,7 @@
                  return flag1;
              }
          }
-@@ -330,8 +347,11 @@
+@@ -330,8 +363,11 @@
          }
          else
          {
@@ -210,7 +226,7 @@
              ActionResult<ItemStack> actionresult = p_187250_3_.func_77957_a(p_187250_2_, p_187250_1_, p_187250_4_);
              ItemStack itemstack = (ItemStack)actionresult.func_188398_b();
  
-@@ -359,6 +379,7 @@
+@@ -359,6 +395,7 @@
  
                  if (itemstack.func_190926_b())
                  {
@@ -218,7 +234,7 @@
                      p_187250_1_.func_184611_a(p_187250_4_, ItemStack.field_190927_a);
                  }
  
-@@ -371,7 +392,9 @@
+@@ -371,7 +408,9 @@
              }
          }
      }
@@ -229,7 +245,7 @@
      public EnumActionResult func_187251_a(EntityPlayer p_187251_1_, World p_187251_2_, ItemStack p_187251_3_, EnumHand p_187251_4_, BlockPos p_187251_5_, EnumFacing p_187251_6_, float p_187251_7_, float p_187251_8_, float p_187251_9_)
      {
          if (this.field_73091_c == GameType.SPECTATOR)
-@@ -404,13 +427,24 @@
+@@ -404,13 +443,24 @@
          }
          else
          {
@@ -257,7 +273,7 @@
                  }
              }
  
-@@ -438,14 +472,22 @@
+@@ -438,14 +488,22 @@
                  {
                      int j = p_187251_3_.func_77960_j();
                      int i = p_187251_3_.func_190916_E();
@@ -281,7 +297,7 @@
                  }
              }
          }
-@@ -455,4 +497,13 @@
+@@ -455,4 +513,13 @@
      {
          this.field_73092_a = p_73080_1_;
      }
